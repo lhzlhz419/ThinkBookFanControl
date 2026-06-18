@@ -88,7 +88,8 @@ public static class CurveProfileStore
 
         try
         {
-            var loaded = JsonSerializer.Deserialize<AppSettings>(File.ReadAllText(SettingsPath), JsonOptions);
+            var settingsJson = File.ReadAllText(SettingsPath);
+            var loaded = JsonSerializer.Deserialize<AppSettings>(settingsJson, JsonOptions);
             if (loaded is null)
                 return defaults;
 
@@ -101,7 +102,9 @@ public static class CurveProfileStore
             defaults.ControlStrategy = Enum.IsDefined(loaded.ControlStrategy) ? loaded.ControlStrategy : ControlStrategy.FixedRpm;
             defaults.FanCurveWarningAccepted = loaded.FanCurveWarningAccepted;
             defaults.GameExitHoldSeconds = PickAllowed(loaded.GameExitHoldSeconds, [0, 10, 20, 30, 60], defaults.GameExitHoldSeconds);
-            defaults.FixedRpm = NormalizeFixedRpmSettings(loaded.FixedRpm ?? defaults.FixedRpm, FallbackMinRpm, FallbackMaxRpm);
+            defaults.ManualGameMode = loaded.ManualGameMode;
+            defaults.FixedSyncFanSpeeds = !settingsJson.Contains(nameof(AppSettings.FixedSyncFanSpeeds), StringComparison.OrdinalIgnoreCase) || loaded.FixedSyncFanSpeeds;
+            defaults.FixedRpm = NormalizeFixedRpmSettings(MigrateLegacyFixedRpm(settingsJson, loaded.FixedRpm ?? defaults.FixedRpm), FallbackMinRpm, FallbackMaxRpm);
             defaults.ResumeFanControlOnNextStart = loaded.ResumeFanControlOnNextStart || loaded.FanControlWasRunning;
             defaults.StartWithWindows = loaded.StartWithWindows;
             defaults.StartToTray = loaded.StartToTray;
@@ -142,20 +145,32 @@ public static class CurveProfileStore
     {
         var result = new FixedRpmSettings
         {
-            PowerSavingNormalRpm = ClampFixedRpm(settings.PowerSavingNormalRpm, minimum, maximum),
-            PowerSavingGameRpm = ClampFixedRpm(settings.PowerSavingGameRpm, minimum, maximum),
-            IntelligentNormalRpm = ClampFixedRpm(settings.IntelligentNormalRpm, minimum, maximum),
-            IntelligentGameRpm = ClampFixedRpm(settings.IntelligentGameRpm, minimum, maximum),
-            PerformanceNormalRpm = ClampFixedRpm(settings.PerformanceNormalRpm, minimum, maximum),
-            PerformanceGameRpm = ClampFixedRpm(settings.PerformanceGameRpm, minimum, maximum),
-            GeekNormalRpm = ClampFixedRpm(settings.GeekNormalRpm, minimum, maximum),
-            GeekGameRpm = ClampFixedRpm(settings.GeekGameRpm, minimum, maximum),
+            PowerSavingNormalFan1Rpm = ClampFixedRpm(settings.PowerSavingNormalFan1Rpm, minimum, maximum),
+            PowerSavingNormalFan2Rpm = ClampFixedRpm(settings.PowerSavingNormalFan2Rpm, minimum, maximum),
+            PowerSavingGameFan1Rpm = ClampFixedRpm(settings.PowerSavingGameFan1Rpm, minimum, maximum),
+            PowerSavingGameFan2Rpm = ClampFixedRpm(settings.PowerSavingGameFan2Rpm, minimum, maximum),
+            IntelligentNormalFan1Rpm = ClampFixedRpm(settings.IntelligentNormalFan1Rpm, minimum, maximum),
+            IntelligentNormalFan2Rpm = ClampFixedRpm(settings.IntelligentNormalFan2Rpm, minimum, maximum),
+            IntelligentGameFan1Rpm = ClampFixedRpm(settings.IntelligentGameFan1Rpm, minimum, maximum),
+            IntelligentGameFan2Rpm = ClampFixedRpm(settings.IntelligentGameFan2Rpm, minimum, maximum),
+            PerformanceNormalFan1Rpm = ClampFixedRpm(settings.PerformanceNormalFan1Rpm, minimum, maximum),
+            PerformanceNormalFan2Rpm = ClampFixedRpm(settings.PerformanceNormalFan2Rpm, minimum, maximum),
+            PerformanceGameFan1Rpm = ClampFixedRpm(settings.PerformanceGameFan1Rpm, minimum, maximum),
+            PerformanceGameFan2Rpm = ClampFixedRpm(settings.PerformanceGameFan2Rpm, minimum, maximum),
+            GeekNormalFan1Rpm = ClampFixedRpm(settings.GeekNormalFan1Rpm, minimum, maximum),
+            GeekNormalFan2Rpm = ClampFixedRpm(settings.GeekNormalFan2Rpm, minimum, maximum),
+            GeekGameFan1Rpm = ClampFixedRpm(settings.GeekGameFan1Rpm, minimum, maximum),
+            GeekGameFan2Rpm = ClampFixedRpm(settings.GeekGameFan2Rpm, minimum, maximum),
         };
 
-        result.PowerSavingGameRpm = EnsureGameAtLeastNormal(result.PowerSavingNormalRpm, result.PowerSavingGameRpm, minimum, maximum);
-        result.IntelligentGameRpm = EnsureGameAtLeastNormal(result.IntelligentNormalRpm, result.IntelligentGameRpm, minimum, maximum);
-        result.PerformanceGameRpm = EnsureGameAtLeastNormal(result.PerformanceNormalRpm, result.PerformanceGameRpm, minimum, maximum);
-        result.GeekGameRpm = EnsureGameAtLeastNormal(result.GeekNormalRpm, result.GeekGameRpm, minimum, maximum);
+        result.PowerSavingGameFan1Rpm = EnsureGameAtLeastNormal(result.PowerSavingNormalFan1Rpm, result.PowerSavingGameFan1Rpm, minimum, maximum);
+        result.PowerSavingGameFan2Rpm = EnsureGameAtLeastNormal(result.PowerSavingNormalFan2Rpm, result.PowerSavingGameFan2Rpm, minimum, maximum);
+        result.IntelligentGameFan1Rpm = EnsureGameAtLeastNormal(result.IntelligentNormalFan1Rpm, result.IntelligentGameFan1Rpm, minimum, maximum);
+        result.IntelligentGameFan2Rpm = EnsureGameAtLeastNormal(result.IntelligentNormalFan2Rpm, result.IntelligentGameFan2Rpm, minimum, maximum);
+        result.PerformanceGameFan1Rpm = EnsureGameAtLeastNormal(result.PerformanceNormalFan1Rpm, result.PerformanceGameFan1Rpm, minimum, maximum);
+        result.PerformanceGameFan2Rpm = EnsureGameAtLeastNormal(result.PerformanceNormalFan2Rpm, result.PerformanceGameFan2Rpm, minimum, maximum);
+        result.GeekGameFan1Rpm = EnsureGameAtLeastNormal(result.GeekNormalFan1Rpm, result.GeekGameFan1Rpm, minimum, maximum);
+        result.GeekGameFan2Rpm = EnsureGameAtLeastNormal(result.GeekNormalFan2Rpm, result.GeekGameFan2Rpm, minimum, maximum);
         return result;
     }
 
@@ -266,6 +281,68 @@ public static class CurveProfileStore
         if (game == 0 || normal == 0 || game >= normal)
             return game;
         return ClampFixedRpm(normal, minimum, maximum);
+    }
+
+    private static FixedRpmSettings MigrateLegacyFixedRpm(string settingsJson, FixedRpmSettings current)
+    {
+        try
+        {
+            using var document = JsonDocument.Parse(settingsJson);
+            if (!document.RootElement.TryGetProperty(nameof(AppSettings.FixedRpm), out var fixedRpm))
+                return current;
+
+            CopyLegacyPair(fixedRpm, "PowerSavingNormalRpm", value =>
+            {
+                current.PowerSavingNormalFan1Rpm = value;
+                current.PowerSavingNormalFan2Rpm = value;
+            });
+            CopyLegacyPair(fixedRpm, "PowerSavingGameRpm", value =>
+            {
+                current.PowerSavingGameFan1Rpm = value;
+                current.PowerSavingGameFan2Rpm = value;
+            });
+            CopyLegacyPair(fixedRpm, "IntelligentNormalRpm", value =>
+            {
+                current.IntelligentNormalFan1Rpm = value;
+                current.IntelligentNormalFan2Rpm = value;
+            });
+            CopyLegacyPair(fixedRpm, "IntelligentGameRpm", value =>
+            {
+                current.IntelligentGameFan1Rpm = value;
+                current.IntelligentGameFan2Rpm = value;
+            });
+            CopyLegacyPair(fixedRpm, "PerformanceNormalRpm", value =>
+            {
+                current.PerformanceNormalFan1Rpm = value;
+                current.PerformanceNormalFan2Rpm = value;
+            });
+            CopyLegacyPair(fixedRpm, "PerformanceGameRpm", value =>
+            {
+                current.PerformanceGameFan1Rpm = value;
+                current.PerformanceGameFan2Rpm = value;
+            });
+            CopyLegacyPair(fixedRpm, "GeekNormalRpm", value =>
+            {
+                current.GeekNormalFan1Rpm = value;
+                current.GeekNormalFan2Rpm = value;
+            });
+            CopyLegacyPair(fixedRpm, "GeekGameRpm", value =>
+            {
+                current.GeekGameFan1Rpm = value;
+                current.GeekGameFan2Rpm = value;
+            });
+        }
+        catch
+        {
+        }
+
+        return current;
+    }
+
+    private static void CopyLegacyPair(JsonElement fixedRpm, string propertyName, Action<int> setter)
+    {
+        if (fixedRpm.TryGetProperty(propertyName, out var property) && property.TryGetInt32(out var value))
+            setter(value);
     }
 
     private static double NormalizeSmoothingSamples(double value, double fallback)

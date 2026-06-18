@@ -38,14 +38,22 @@ public enum ItsMode
 
 public sealed class FixedRpmSettings
 {
-    public int PowerSavingNormalRpm { get; set; } = 1500;
-    public int PowerSavingGameRpm { get; set; } = 2500;
-    public int IntelligentNormalRpm { get; set; } = 1800;
-    public int IntelligentGameRpm { get; set; } = 3000;
-    public int PerformanceNormalRpm { get; set; } = 2200;
-    public int PerformanceGameRpm { get; set; } = 3600;
-    public int GeekNormalRpm { get; set; } = 2600;
-    public int GeekGameRpm { get; set; } = 4200;
+    public int PowerSavingNormalFan1Rpm { get; set; } = 1500;
+    public int PowerSavingNormalFan2Rpm { get; set; } = 1500;
+    public int PowerSavingGameFan1Rpm { get; set; } = 2500;
+    public int PowerSavingGameFan2Rpm { get; set; } = 2500;
+    public int IntelligentNormalFan1Rpm { get; set; } = 1800;
+    public int IntelligentNormalFan2Rpm { get; set; } = 1800;
+    public int IntelligentGameFan1Rpm { get; set; } = 3000;
+    public int IntelligentGameFan2Rpm { get; set; } = 3000;
+    public int PerformanceNormalFan1Rpm { get; set; } = 2200;
+    public int PerformanceNormalFan2Rpm { get; set; } = 2200;
+    public int PerformanceGameFan1Rpm { get; set; } = 3600;
+    public int PerformanceGameFan2Rpm { get; set; } = 3600;
+    public int GeekNormalFan1Rpm { get; set; } = 2600;
+    public int GeekNormalFan2Rpm { get; set; } = 2600;
+    public int GeekGameFan1Rpm { get; set; } = 4200;
+    public int GeekGameFan2Rpm { get; set; } = 4200;
 }
 
 public sealed class FanProfile
@@ -72,6 +80,8 @@ public sealed class AppSettings
     public ControlStrategy ControlStrategy { get; set; } = ControlStrategy.FixedRpm;
     public bool FanCurveWarningAccepted { get; set; }
     public double GameExitHoldSeconds { get; set; } = 20;
+    public bool ManualGameMode { get; set; }
+    public bool FixedSyncFanSpeeds { get; set; } = true;
     public FixedRpmSettings FixedRpm { get; set; } = new();
     public bool ResumeFanControlOnNextStart { get; set; }
     public bool FanControlWasRunning { get; set; }
