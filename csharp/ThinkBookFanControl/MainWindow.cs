@@ -177,6 +177,7 @@ public sealed class MainWindow : Window
         Height = 840;
         MinWidth = 820;
         MinHeight = 620;
+        Icon = LoadWindowIcon();
         FontFamily = new FontFamily("Segoe UI");
         _gameExitHoldCombo.Width = 58;
         _languageCombo.Width = 72;
@@ -680,7 +681,7 @@ public sealed class MainWindow : Window
         _trayMenu = new Forms.ContextMenuStrip();
         _trayIcon = new Forms.NotifyIcon
         {
-            Icon = Drawing.SystemIcons.Application,
+            Icon = LoadTrayIcon(),
             Visible = true,
             ContextMenuStrip = _trayMenu
         };
@@ -759,6 +760,35 @@ public sealed class MainWindow : Window
             _trayVramItem.Text = $"VRAM: {_lastVramText}";
         if (_trayFanItem is not null)
             _trayFanItem.Text = $"{T("Fan1")}: {_lastFan1Text}   {T("Fan2")}: {_lastFan2Text}";
+    }
+
+    private static ImageSource? LoadWindowIcon()
+    {
+        var iconPath = AppIconPath();
+        if (File.Exists(iconPath))
+            return System.Windows.Media.Imaging.BitmapFrame.Create(new Uri(iconPath, UriKind.Absolute));
+        return null;
+    }
+
+    private static Drawing.Icon LoadTrayIcon()
+    {
+        var iconPath = AppIconPath();
+        if (File.Exists(iconPath))
+            return new Drawing.Icon(iconPath);
+
+        if (!string.IsNullOrWhiteSpace(Environment.ProcessPath))
+        {
+            var associatedIcon = Drawing.Icon.ExtractAssociatedIcon(Environment.ProcessPath);
+            if (associatedIcon is not null)
+                return associatedIcon;
+        }
+
+        return Drawing.SystemIcons.Application;
+    }
+
+    private static string AppIconPath()
+    {
+        return Path.Combine(AppContext.BaseDirectory, "Assets", "app.ico");
     }
 
     private void ShowWindowFromTray()

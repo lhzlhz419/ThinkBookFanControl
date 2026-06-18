@@ -9,9 +9,14 @@
     <ImplicitUsings>disable</ImplicitUsings>
     <RollForward>LatestMajor</RollForward>
     <ApplicationManifest>app.manifest</ApplicationManifest>
+    <ApplicationIcon>Assets\app.ico</ApplicationIcon>
   </PropertyGroup>
 
   <ItemGroup>
+    <Content Include="Assets\app.ico">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+
     <PackageReference Include="DiskInfoToolkit" Version="1.1.2" />
     <PackageReference Include="HidSharp" Version="2.6.4" />
     <PackageReference Include="Mono.Posix.NETStandard" Version="1.0.0" />
