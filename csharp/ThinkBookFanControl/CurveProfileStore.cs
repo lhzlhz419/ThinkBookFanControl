@@ -107,6 +107,7 @@ public static class CurveProfileStore
                 ? loaded.FixedGameModeOverride
                 : (loaded.ManualGameMode ? FixedGameModeOverride.GameUntilGamesEnd : FixedGameModeOverride.None);
             defaults.FixedModeHotkey = NormalizeHotkey(loaded.FixedModeHotkey);
+            defaults.AutoDetectGames = !settingsJson.Contains(nameof(AppSettings.AutoDetectGames), StringComparison.OrdinalIgnoreCase) || loaded.AutoDetectGames;
             defaults.FixedSyncFanSpeeds = !settingsJson.Contains(nameof(AppSettings.FixedSyncFanSpeeds), StringComparison.OrdinalIgnoreCase) || loaded.FixedSyncFanSpeeds;
             defaults.FixedRpm = NormalizeFixedRpmSettings(MigrateLegacyFixedRpm(settingsJson, loaded.FixedRpm ?? defaults.FixedRpm), FallbackMinRpm, FallbackMaxRpm);
             defaults.ResumeFanControlOnNextStart = loaded.ResumeFanControlOnNextStart || loaded.FanControlWasRunning;

@@ -90,6 +90,7 @@ public sealed class AppSettings
     public bool ManualGameMode { get; set; }
     public FixedGameModeOverride FixedGameModeOverride { get; set; }
     public string FixedModeHotkey { get; set; } = "";
+    public bool AutoDetectGames { get; set; } = true;
     public bool FixedSyncFanSpeeds { get; set; } = true;
     public FixedRpmSettings FixedRpm { get; set; } = new();
     public bool ResumeFanControlOnNextStart { get; set; }

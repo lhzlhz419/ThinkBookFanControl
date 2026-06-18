@@ -76,6 +76,7 @@ public sealed class MainWindow : Window
     private readonly Button _fixedModeHotkeyButton = new() { MinWidth = 96, Margin = new Thickness(0, 0, 8, 0) };
     private readonly CheckBox _syncFanSpeedsCheck = new() { VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 10, 0) };
     private readonly CheckBox _fixedSyncFanSpeedsCheck = new() { VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 10, 0) };
+    private readonly CheckBox _autoDetectGamesCheck = new() { VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 10, 0) };
     private readonly CheckBox _startupCheck = new() { VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(14, 0, 10, 0) };
     private readonly CheckBox _startToTrayCheck = new() { VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 10, 0) };
     private readonly CheckBox _minimizeToTrayCheck = new() { VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 10, 0) };
@@ -340,7 +341,7 @@ public sealed class MainWindow : Window
 
     private Border BuildFixedRpmPanel()
     {
-        var panel = new StackPanel { Margin = new Thickness(12, 12, 12, 8), HorizontalAlignment = HorizontalAlignment.Left };
+        var panel = new StackPanel { Margin = new Thickness(12, 12, 12, 8), HorizontalAlignment = HorizontalAlignment.Center };
         _fixedRpmHeader = new TextBlock
         {
             Text = "Fixed RPM",
@@ -352,14 +353,20 @@ public sealed class MainWindow : Window
         _labels.Add(_fixedRpmHeader);
         panel.Children.Add(_fixedRpmHeader);
 
-        var options = new WrapPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 0, 0, 14) };
+        var options = new WrapPanel
+        {
+            Orientation = Orientation.Horizontal,
+            Margin = new Thickness(0, 0, 0, 14),
+            HorizontalAlignment = HorizontalAlignment.Center
+        };
         AddLabeledControl(options, _gameExitHoldLabel, _gameExitHoldCombo);
         AddStandaloneControl(options, _fixedSyncFanSpeedsCheck);
+        AddStandaloneControl(options, _autoDetectGamesCheck);
         AddLabeledControl(options, _fixedModeLabel, _fixedModeCombo);
         AddLabeledControl(options, _fixedModeHotkeyLabel, _fixedModeHotkeyButton);
         panel.Children.Add(options);
 
-        var grid = new Grid { MaxWidth = 760, HorizontalAlignment = HorizontalAlignment.Left };
+        var grid = new Grid { MaxWidth = 760, HorizontalAlignment = HorizontalAlignment.Center };
         grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(120) });
         grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(125) });
         grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(125) });
@@ -390,7 +397,13 @@ public sealed class MainWindow : Window
         _labels.Add(_fixedRpmNote);
         panel.Children.Add(_fixedRpmNote);
 
-        return new Border { Margin = new Thickness(12, 0, 12, 8), Padding = new Thickness(0), Child = panel };
+        return new Border
+        {
+            Margin = new Thickness(12, 0, 12, 8),
+            Padding = new Thickness(0),
+            HorizontalAlignment = HorizontalAlignment.Stretch,
+            Child = panel
+        };
     }
 
     private void AddFixedRpmRow(Grid grid, int row, ItsMode mode, string label)
@@ -1205,6 +1218,8 @@ public sealed class MainWindow : Window
 
     private bool UpdateConfirmedFixedState(ItsMode sampledMode, bool sampledGamesRunning)
     {
+        sampledGamesRunning = _settings.AutoDetectGames && sampledGamesRunning;
+
         if (!_hasConfirmedFixedState)
         {
             ConfirmFixedState(sampledMode, sampledGamesRunning);
@@ -1944,6 +1959,8 @@ public sealed class MainWindow : Window
         _syncFanSpeedsCheck.Unchecked += (_, _) => UpdateBooleanSetting("syncFanSpeeds", false);
         _fixedSyncFanSpeedsCheck.Checked += (_, _) => UpdateBooleanSetting("fixedSyncFanSpeeds", true);
         _fixedSyncFanSpeedsCheck.Unchecked += (_, _) => UpdateBooleanSetting("fixedSyncFanSpeeds", false);
+        _autoDetectGamesCheck.Checked += (_, _) => UpdateBooleanSetting("autoDetectGames", true);
+        _autoDetectGamesCheck.Unchecked += (_, _) => UpdateBooleanSetting("autoDetectGames", false);
         _fixedModeCombo.SelectionChanged += (_, _) =>
         {
             if (_loadingSettings || _updatingFixedModeCombo || _fixedModeCombo.SelectedIndex < 0)
@@ -1971,6 +1988,7 @@ public sealed class MainWindow : Window
         _editFanCombo.SelectedIndex = _settings.EditFan == 2 ? 1 : 0;
         _syncFanSpeedsCheck.IsChecked = _settings.SyncFanSpeeds;
         _fixedSyncFanSpeedsCheck.IsChecked = _settings.FixedSyncFanSpeeds;
+        _autoDetectGamesCheck.IsChecked = _settings.AutoDetectGames;
         _effectiveGameMode = _settings.FixedGameModeOverride == FixedGameModeOverride.GameUntilGamesEnd;
         UpdateFixedModeCombo();
         UpdateFixedModeHotkeyButton();
@@ -2017,6 +2035,23 @@ public sealed class MainWindow : Window
                     SaveFixedRpmSettingsFromUi();
                 }
                 break;
+            case "autoDetectGames":
+                _settings.AutoDetectGames = value;
+                if (value)
+                {
+                    _settings.FixedGameModeOverride = FixedGameModeOverride.None;
+                    _settings.ManualGameMode = false;
+                    _overrideGameSeenSinceArmed = false;
+                    _overrideNormalSawNoGamesSinceArmed = false;
+                    _hasConfirmedFixedState = false;
+                    _hasPendingFixedState = false;
+                }
+                else
+                {
+                    SetManualFixedMode(_effectiveGameMode);
+                    return;
+                }
+                break;
         }
         CurveProfileStore.SaveSettings(_settings);
         ApplyLanguage();
@@ -2057,6 +2092,7 @@ public sealed class MainWindow : Window
             "FixedMode" => "\u6a21\u5f0f",
             "FixedModeHotkey" => "\u5feb\u6377\u952e",
             "FixedSyncFanSpeeds" => "\u540c\u6b65\u56fa\u5b9a\u8f6c\u901f",
+            "AutoDetectGames" => "\u81ea\u52a8\u68c0\u6d4b\u6e38\u620f",
             "EditFan" => "\u7f16\u8f91",
             "SyncFanSpeeds" => "\u540c\u6b65\u8f6c\u901f",
             "Language" => "\u8bed\u8a00",
@@ -2133,6 +2169,7 @@ public sealed class MainWindow : Window
             "FixedMode" => "Mode",
             "FixedModeHotkey" => "Hotkey",
             "FixedSyncFanSpeeds" => "Sync fixed speeds",
+            "AutoDetectGames" => "Auto detect games",
             "EditFan" => "Edit",
             "SyncFanSpeeds" => "Sync speeds",
             "Fan1" => "Fan 1",
@@ -2213,6 +2250,7 @@ public sealed class MainWindow : Window
         _refreshButton.Content = T("Refresh");
         _syncFanSpeedsCheck.Content = T("SyncFanSpeeds");
         _fixedSyncFanSpeedsCheck.Content = T("FixedSyncFanSpeeds");
+        _autoDetectGamesCheck.Content = T("AutoDetectGames");
         UpdateFixedModeHotkeyButton();
         _startupCheck.Content = T("Startup");
         _startToTrayCheck.Content = T("StartToTray");
@@ -2285,7 +2323,7 @@ public sealed class MainWindow : Window
 
         foreach (var label in _labels)
             label.Foreground = muted;
-        foreach (var checkBox in new[] { _syncFanSpeedsCheck, _fixedSyncFanSpeedsCheck, _startupCheck, _startToTrayCheck, _minimizeToTrayCheck, _closeToTrayCheck })
+        foreach (var checkBox in new[] { _syncFanSpeedsCheck, _fixedSyncFanSpeedsCheck, _autoDetectGamesCheck, _startupCheck, _startToTrayCheck, _minimizeToTrayCheck, _closeToTrayCheck })
             checkBox.Foreground = muted;
         foreach (var value in new[] { _cpuTempText, _gpuTempText, _vramTempText, _fan1Text, _fan2Text, _targetText })
             value.Foreground = text;
