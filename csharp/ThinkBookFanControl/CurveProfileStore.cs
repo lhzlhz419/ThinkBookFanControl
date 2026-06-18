@@ -100,9 +100,13 @@ public static class CurveProfileStore
             defaults.EditFan = loaded.EditFan == 2 ? 2 : 1;
             defaults.SyncFanSpeeds = loaded.SyncFanSpeeds;
             defaults.ControlStrategy = Enum.IsDefined(loaded.ControlStrategy) ? loaded.ControlStrategy : ControlStrategy.FixedRpm;
-            defaults.FanCurveWarningAccepted = loaded.FanCurveWarningAccepted;
+            defaults.FanCurveWarningAccepted = false;
             defaults.GameExitHoldSeconds = PickAllowed(loaded.GameExitHoldSeconds, [0, 10, 20, 30, 60], defaults.GameExitHoldSeconds);
             defaults.ManualGameMode = loaded.ManualGameMode;
+            defaults.FixedGameModeOverride = Enum.IsDefined(loaded.FixedGameModeOverride)
+                ? loaded.FixedGameModeOverride
+                : (loaded.ManualGameMode ? FixedGameModeOverride.GameUntilGamesEnd : FixedGameModeOverride.None);
+            defaults.FixedModeHotkey = NormalizeHotkey(loaded.FixedModeHotkey);
             defaults.FixedSyncFanSpeeds = !settingsJson.Contains(nameof(AppSettings.FixedSyncFanSpeeds), StringComparison.OrdinalIgnoreCase) || loaded.FixedSyncFanSpeeds;
             defaults.FixedRpm = NormalizeFixedRpmSettings(MigrateLegacyFixedRpm(settingsJson, loaded.FixedRpm ?? defaults.FixedRpm), FallbackMinRpm, FallbackMaxRpm);
             defaults.ResumeFanControlOnNextStart = loaded.ResumeFanControlOnNextStart || loaded.FanControlWasRunning;
@@ -357,6 +361,11 @@ public static class CurveProfileStore
         }
 
         return PickAllowed(value, [1, 2, 3, 5, 10], fallback);
+    }
+
+    private static string NormalizeHotkey(string? value)
+    {
+        return string.IsNullOrWhiteSpace(value) ? "" : value.Trim();
     }
 
     private static List<int> CurveFromAnchors(int[] temps, IReadOnlyList<(int Temp, int Rpm)> anchors)

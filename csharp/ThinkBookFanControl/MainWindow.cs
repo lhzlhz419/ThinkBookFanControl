@@ -11,6 +11,7 @@ using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
+using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Threading;
 using System.Globalization;
@@ -65,15 +66,16 @@ public sealed class MainWindow : Window
     private readonly ComboBox _smoothingCombo = OptionCombo("1", "2", "3", "5", "10");
     private readonly ComboBox _rampDownCombo = OptionCombo("10", "20", "50", "100", "inf");
     private readonly ComboBox _gameExitHoldCombo = OptionCombo("0", "10", "20", "30", "60");
+    private readonly ComboBox _fixedModeCombo = OptionCombo("Normal", "Game");
     private readonly ComboBox _editFanCombo = OptionCombo("Fan 1", "Fan 2");
     private readonly ComboBox _languageCombo = OptionCombo("\u4e2d\u6587", "English");
     private readonly ComboBox _themeCombo = OptionCombo("Light", "Dark");
     private readonly Button _startButton = new() { Content = "Start", MinWidth = 76 };
     private readonly Button _saveButton = new() { MinWidth = 76, Margin = new Thickness(0, 0, 6, 0) };
     private readonly Button _refreshButton = new() { MinWidth = 76, Margin = new Thickness(0, 0, 6, 0) };
+    private readonly Button _fixedModeHotkeyButton = new() { MinWidth = 96, Margin = new Thickness(0, 0, 8, 0) };
     private readonly CheckBox _syncFanSpeedsCheck = new() { VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 10, 0) };
     private readonly CheckBox _fixedSyncFanSpeedsCheck = new() { VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 10, 0) };
-    private readonly CheckBox _manualGameModeCheck = new() { VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 10, 0) };
     private readonly CheckBox _startupCheck = new() { VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(14, 0, 10, 0) };
     private readonly CheckBox _startToTrayCheck = new() { VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 10, 0) };
     private readonly CheckBox _minimizeToTrayCheck = new() { VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 10, 0) };
@@ -87,6 +89,8 @@ public sealed class MainWindow : Window
     private readonly TextBlock _smoothingLabel = Label("");
     private readonly TextBlock _rampDownLabel = Label("");
     private readonly TextBlock _gameExitHoldLabel = Label("");
+    private readonly TextBlock _fixedModeLabel = Label("");
+    private readonly TextBlock _fixedModeHotkeyLabel = Label("");
     private readonly TextBlock _editFanLabel = Label("");
     private readonly TextBlock _languageLabel = Label("");
     private readonly TextBlock _themeLabel = Label("");
@@ -133,7 +137,17 @@ public sealed class MainWindow : Window
     private ItsMode _currentItsMode = ItsMode.Unknown;
     private bool _gamesRunning;
     private bool _effectiveGameMode;
-    private bool _manualGameDetectedSinceArmed;
+    private bool _overrideGameSeenSinceArmed;
+    private bool _overrideNormalSawNoGamesSinceArmed;
+    private bool _updatingFixedModeCombo;
+    private bool _capturingFixedModeHotkey;
+    private bool _fanCurveWarningShownThisRun;
+    private bool _hasConfirmedFixedState;
+    private ItsMode _confirmedItsMode = ItsMode.Unknown;
+    private bool _confirmedGamesRunning;
+    private ItsMode _pendingItsMode = ItsMode.Unknown;
+    private bool _pendingGamesRunning;
+    private bool _hasPendingFixedState;
     private bool _updatingFixedRpmBoxes;
     private DateTimeOffset? _lastGameStopTime;
     private int _fanMinRpm = 1500;
@@ -167,6 +181,7 @@ public sealed class MainWindow : Window
         _languageCombo.Width = 72;
         _themeCombo.Width = 64;
         _settings = CurveProfileStore.LoadSettings();
+        _settings.ControlStrategy = ControlStrategy.FixedRpm;
         _profiles = CurveProfileStore.Load();
         _cpuFan1Curve = [.. _profiles[0].CpuFan1Curve];
         _cpuFan2Curve = [.. _profiles[0].CpuFan2Curve];
@@ -207,6 +222,7 @@ public sealed class MainWindow : Window
         _fixedControlTimer.Start();
 
         StateChanged += (_, _) => OnStateChanged();
+        PreviewKeyDown += OnPreviewKeyDown;
         Closing += OnClosing;
         Closed += (_, _) => OnClosed();
 
@@ -278,7 +294,7 @@ public sealed class MainWindow : Window
         panel.Children.Add(row1);
 
         var row3 = new WrapPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 6, 0, 0) };
-        _saveButton.Click += (_, _) => SaveCurrentProfile();
+        _saveButton.Click += (_, _) => SaveCurrentProfile(requireStopped: true);
         row3.Children.Add(_saveButton);
 
         _refreshButton.Click += async (_, _) => await SampleAsync(force: true);
@@ -306,7 +322,7 @@ public sealed class MainWindow : Window
         AddLabeledControl(controls, _profileLabel, _profileCombo);
         AddLabeledControl(controls, _nameLabel, _nameBox);
         AddLabeledControl(controls, _editFanLabel, _editFanCombo);
-        controls.Children.Add(_syncFanSpeedsCheck);
+        AddStandaloneControl(controls, _syncFanSpeedsCheck);
         AddLabeledControl(controls, _smoothingLabel, _smoothingCombo);
         AddLabeledControl(controls, _rampDownLabel, _rampDownCombo);
         DockPanel.SetDock(controls, Dock.Top);
@@ -338,8 +354,9 @@ public sealed class MainWindow : Window
 
         var options = new WrapPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 0, 0, 14) };
         AddLabeledControl(options, _gameExitHoldLabel, _gameExitHoldCombo);
-        options.Children.Add(_manualGameModeCheck);
-        options.Children.Add(_fixedSyncFanSpeedsCheck);
+        AddStandaloneControl(options, _fixedSyncFanSpeedsCheck);
+        AddLabeledControl(options, _fixedModeLabel, _fixedModeCombo);
+        AddLabeledControl(options, _fixedModeHotkeyLabel, _fixedModeHotkeyButton);
         panel.Children.Add(options);
 
         var grid = new Grid { MaxWidth = 760, HorizontalAlignment = HorizontalAlignment.Left };
@@ -986,8 +1003,14 @@ public sealed class MainWindow : Window
         };
     }
 
-    private void SaveCurrentProfile()
+    private bool SaveCurrentProfile(bool requireStopped = true)
     {
+        if (requireStopped && _running)
+        {
+            ShowStopFirstWarning();
+            return false;
+        }
+
         SaveFixedRpmSettingsFromUi();
         _profiles[_profileIndex] = UiToProfile();
         CurveProfileStore.Save(_profiles);
@@ -996,6 +1019,7 @@ public sealed class MainWindow : Window
         _profileCombo.SelectedIndex = _profileIndex;
         _statusText.Text = T("Saved") + " " + CurveProfileStore.ProfilePath;
         UpdateTrayMenu();
+        return true;
     }
 
     private async Task ToggleRunningAsync()
@@ -1006,7 +1030,7 @@ public sealed class MainWindow : Window
             return;
         }
 
-        SaveCurrentProfile();
+        SaveCurrentProfile(requireStopped: false);
         StartFanControl();
     }
 
@@ -1036,9 +1060,13 @@ public sealed class MainWindow : Window
         _heatSoakExitSamples.Clear();
         _currentItsMode = ItsMode.Unknown;
         _gamesRunning = false;
-        _effectiveGameMode = _settings.ManualGameMode;
-        _manualGameDetectedSinceArmed = false;
+        _effectiveGameMode = _settings.FixedGameModeOverride == FixedGameModeOverride.GameUntilGamesEnd;
+        _overrideGameSeenSinceArmed = false;
+        _overrideNormalSawNoGamesSinceArmed = false;
+        _hasConfirmedFixedState = false;
+        _hasPendingFixedState = false;
         _lastGameStopTime = null;
+        UpdateFixedModeCombo();
         _startButton.Content = T("Stop");
         _statusText.Text = T("ControllerEnabled");
         UpdateTrayMenu();
@@ -1054,6 +1082,10 @@ public sealed class MainWindow : Window
         _queuedTarget = null;
         _gamesRunning = false;
         _effectiveGameMode = false;
+        _settings.FixedGameModeOverride = FixedGameModeOverride.None;
+        _overrideGameSeenSinceArmed = false;
+        _overrideNormalSawNoGamesSinceArmed = false;
+        UpdateFixedModeCombo();
         _lastGameStopTime = null;
         _startButton.IsEnabled = false;
         _startButton.Content = T("Stopping");
@@ -1144,13 +1176,16 @@ public sealed class MainWindow : Window
             var mode = await modeTask;
             var gamesRunning = await gameTask;
 
-            _currentItsMode = mode;
-            UpdateGameState(gamesRunning);
+            if (!UpdateConfirmedFixedState(mode, gamesRunning))
+            {
+                _statusText.Text = $"{T("Running")} | {T("PendingChange")} | {T("CurrentMode")}: {T(ModeKey(_currentItsMode))} | {T("Game")}: {FormatGameState()}";
+                return;
+            }
 
-            var target = GetFixedTarget(mode, _effectiveGameMode);
+            var target = GetFixedTarget(_currentItsMode, _effectiveGameMode);
             _lastTarget = target;
             _targetText.Text = FormatTarget(target);
-            _statusText.Text = $"{T("Running")} | {T("Strategy")}: {T("FixedRpm")} | {T("CurrentMode")}: {T(ModeKey(mode))} | {T("Game")}: {FormatGameState()}";
+            _statusText.Text = $"{T("Running")} | {T("Strategy")}: {T("FixedRpm")} | {T("CurrentMode")}: {T(ModeKey(_currentItsMode))} | {T("Game")}: {FormatGameState()}";
 
             await ApplyFixedTargetAsync(target);
         }
@@ -1168,16 +1203,71 @@ public sealed class MainWindow : Window
         }
     }
 
+    private bool UpdateConfirmedFixedState(ItsMode sampledMode, bool sampledGamesRunning)
+    {
+        if (!_hasConfirmedFixedState)
+        {
+            ConfirmFixedState(sampledMode, sampledGamesRunning);
+            return true;
+        }
+
+        if (sampledMode == _confirmedItsMode && sampledGamesRunning == _confirmedGamesRunning)
+        {
+            _hasPendingFixedState = false;
+            UpdateGameState(sampledGamesRunning);
+            return true;
+        }
+
+        if (_hasPendingFixedState &&
+            sampledMode == _pendingItsMode &&
+            sampledGamesRunning == _pendingGamesRunning)
+        {
+            ConfirmFixedState(sampledMode, sampledGamesRunning);
+            return true;
+        }
+
+        _pendingItsMode = sampledMode;
+        _pendingGamesRunning = sampledGamesRunning;
+        _hasPendingFixedState = true;
+        return false;
+    }
+
+    private void ConfirmFixedState(ItsMode mode, bool gamesRunning)
+    {
+        _confirmedItsMode = mode;
+        _confirmedGamesRunning = gamesRunning;
+        _hasConfirmedFixedState = true;
+        _hasPendingFixedState = false;
+        _currentItsMode = mode;
+        UpdateGameState(gamesRunning);
+    }
+
     private void UpdateGameState(bool gamesRunning)
     {
         var now = DateTimeOffset.Now;
         if (gamesRunning)
         {
             _gamesRunning = true;
-            if (_settings.ManualGameMode)
-                _manualGameDetectedSinceArmed = true;
+            if (_settings.FixedGameModeOverride == FixedGameModeOverride.GameUntilGamesEnd)
+                _overrideGameSeenSinceArmed = true;
+            if (_settings.FixedGameModeOverride == FixedGameModeOverride.NormalUntilGameStarts)
+            {
+                if (_overrideNormalSawNoGamesSinceArmed)
+                {
+                    _settings.FixedGameModeOverride = FixedGameModeOverride.None;
+                    _settings.ManualGameMode = false;
+                    CurveProfileStore.SaveSettings(_settings);
+                }
+                else
+                {
+                    _effectiveGameMode = false;
+                    UpdateFixedModeCombo();
+                    return;
+                }
+            }
             _effectiveGameMode = true;
             _lastGameStopTime = null;
+            UpdateFixedModeCombo();
             return;
         }
 
@@ -1185,23 +1275,34 @@ public sealed class MainWindow : Window
             _lastGameStopTime = now;
 
         _gamesRunning = false;
-        if (_settings.ManualGameMode && !_manualGameDetectedSinceArmed)
+        if (_settings.FixedGameModeOverride == FixedGameModeOverride.GameUntilGamesEnd && !_overrideGameSeenSinceArmed)
         {
             _effectiveGameMode = true;
+            UpdateFixedModeCombo();
             return;
         }
 
-        if (_settings.ManualGameMode && _manualGameDetectedSinceArmed)
+        if (_settings.FixedGameModeOverride == FixedGameModeOverride.GameUntilGamesEnd && _overrideGameSeenSinceArmed)
         {
+            _settings.FixedGameModeOverride = FixedGameModeOverride.None;
             _settings.ManualGameMode = false;
-            _manualGameDetectedSinceArmed = false;
-            _manualGameModeCheck.IsChecked = false;
+            _overrideGameSeenSinceArmed = false;
             CurveProfileStore.SaveSettings(_settings);
+        }
+
+        if (_settings.FixedGameModeOverride == FixedGameModeOverride.NormalUntilGameStarts)
+        {
+            _overrideNormalSawNoGamesSinceArmed = true;
+            _effectiveGameMode = false;
+            _lastGameStopTime = null;
+            UpdateFixedModeCombo();
+            return;
         }
 
         var holdSeconds = Math.Max(0, _settings.GameExitHoldSeconds);
         _effectiveGameMode = _lastGameStopTime is DateTimeOffset stoppedAt &&
                              now - stoppedAt < TimeSpan.FromSeconds(holdSeconds);
+        UpdateFixedModeCombo();
     }
 
     private FanTargets GetFixedTarget(ItsMode mode, bool game)
@@ -1394,6 +1495,132 @@ public sealed class MainWindow : Window
         settings.GeekGameFan2Rpm = settings.GeekGameFan1Rpm;
     }
 
+    private void UpdateFixedModeCombo()
+    {
+        _updatingFixedModeCombo = true;
+        try
+        {
+            _fixedModeCombo.SelectedIndex = _effectiveGameMode ? 1 : 0;
+        }
+        finally
+        {
+            _updatingFixedModeCombo = false;
+        }
+    }
+
+    private void SetManualFixedMode(bool gameMode)
+    {
+        _settings.FixedGameModeOverride = gameMode
+            ? FixedGameModeOverride.GameUntilGamesEnd
+            : FixedGameModeOverride.NormalUntilGameStarts;
+        _settings.ManualGameMode = gameMode;
+        _overrideGameSeenSinceArmed = false;
+        _overrideNormalSawNoGamesSinceArmed = !gameMode && !_confirmedGamesRunning;
+        _effectiveGameMode = gameMode;
+        if (!gameMode)
+            _lastGameStopTime = null;
+        UpdateFixedModeCombo();
+        CurveProfileStore.SaveSettings(_settings);
+    }
+
+    private void ToggleManualFixedMode()
+    {
+        SetManualFixedMode(!_effectiveGameMode);
+    }
+
+    private void UpdateFixedModeHotkeyButton()
+    {
+        _fixedModeHotkeyButton.Content = string.IsNullOrWhiteSpace(_settings.FixedModeHotkey)
+            ? T("None")
+            : _settings.FixedModeHotkey;
+    }
+
+    private void BeginFixedModeHotkeyCapture()
+    {
+        _capturingFixedModeHotkey = true;
+        _fixedModeHotkeyButton.Content = T("PressShortcut");
+        _fixedModeHotkeyButton.Focus();
+    }
+
+    private void OnPreviewKeyDown(object sender, KeyEventArgs args)
+    {
+        if (_capturingFixedModeHotkey)
+        {
+            CaptureFixedModeHotkey(args);
+            return;
+        }
+
+        if (IsFixedModeHotkey(args))
+        {
+            ToggleManualFixedMode();
+            args.Handled = true;
+        }
+    }
+
+    private void CaptureFixedModeHotkey(KeyEventArgs args)
+    {
+        args.Handled = true;
+        var key = RealKey(args);
+        if (key is Key.Escape or Key.Back or Key.Delete)
+        {
+            _settings.FixedModeHotkey = "";
+            _capturingFixedModeHotkey = false;
+            UpdateFixedModeHotkeyButton();
+            CurveProfileStore.SaveSettings(_settings);
+            return;
+        }
+
+        if (IsModifierKey(key))
+            return;
+
+        _settings.FixedModeHotkey = FormatHotkey(Keyboard.Modifiers, key);
+        _capturingFixedModeHotkey = false;
+        UpdateFixedModeHotkeyButton();
+        CurveProfileStore.SaveSettings(_settings);
+    }
+
+    private bool IsFixedModeHotkey(KeyEventArgs args)
+    {
+        if (string.IsNullOrWhiteSpace(_settings.FixedModeHotkey))
+            return false;
+
+        var key = RealKey(args);
+        if (IsModifierKey(key))
+            return false;
+
+        return string.Equals(FormatHotkey(Keyboard.Modifiers, key), _settings.FixedModeHotkey, StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static Key RealKey(KeyEventArgs args)
+    {
+        return args.Key switch
+        {
+            Key.System => args.SystemKey,
+            Key.ImeProcessed => args.ImeProcessedKey,
+            _ => args.Key
+        };
+    }
+
+    private static bool IsModifierKey(Key key)
+    {
+        return key is Key.LeftCtrl or Key.RightCtrl or Key.LeftAlt or Key.RightAlt or Key.LeftShift or Key.RightShift or Key.LWin or Key.RWin;
+    }
+
+    private static string FormatHotkey(ModifierKeys modifiers, Key key)
+    {
+        var parts = new List<string>();
+        if (modifiers.HasFlag(ModifierKeys.Control))
+            parts.Add("Ctrl");
+        if (modifiers.HasFlag(ModifierKeys.Alt))
+            parts.Add("Alt");
+        if (modifiers.HasFlag(ModifierKeys.Shift))
+            parts.Add("Shift");
+        if (modifiers.HasFlag(ModifierKeys.Windows))
+            parts.Add("Win");
+        parts.Add(key.ToString());
+        return string.Join("+", parts);
+    }
+
     private void ApplyStrategyVisibility()
     {
         var fixedMode = _settings.ControlStrategy == ControlStrategy.FixedRpm;
@@ -1416,22 +1643,72 @@ public sealed class MainWindow : Window
             return;
 
         var selectedStrategy = _strategyTabs.SelectedIndex == 1 ? ControlStrategy.FanCurve : ControlStrategy.FixedRpm;
-        if (selectedStrategy == ControlStrategy.FanCurve && !_settings.FanCurveWarningAccepted)
+        if (_running && selectedStrategy != _settings.ControlStrategy)
         {
-            var result = MessageBox.Show(this, T("FanCurveWarning"), T("FanCurveWarningTitle"), MessageBoxButton.OKCancel, MessageBoxImage.Warning);
-            if (result != MessageBoxResult.OK)
+            ShowStopFirstWarning();
+            _loadingSettings = true;
+            _strategyTabs.SelectedIndex = _settings.ControlStrategy == ControlStrategy.FanCurve ? 1 : 0;
+            _loadingSettings = false;
+            return;
+        }
+
+        if (selectedStrategy == ControlStrategy.FanCurve && !_fanCurveWarningShownThisRun)
+        {
+            if (!ShowFanCurveWarningDialog())
             {
                 _loadingSettings = true;
                 _strategyTabs.SelectedIndex = 0;
                 _loadingSettings = false;
                 return;
             }
-            _settings.FanCurveWarningAccepted = true;
+            _fanCurveWarningShownThisRun = true;
         }
 
         _settings.ControlStrategy = selectedStrategy;
         CurveProfileStore.SaveSettings(_settings);
         ApplyStrategyVisibility();
+    }
+
+    private void ShowStopFirstWarning()
+    {
+        MessageBox.Show(this, T("StopFanControlFirst"), T("Warning"), MessageBoxButton.OK, MessageBoxImage.Warning);
+    }
+
+    private bool ShowFanCurveWarningDialog()
+    {
+        var dialog = new Window
+        {
+            Title = T("FanCurveWarningTitle"),
+            Owner = this,
+            Width = 420,
+            SizeToContent = SizeToContent.Height,
+            WindowStartupLocation = WindowStartupLocation.CenterOwner,
+            ResizeMode = ResizeMode.NoResize,
+            ShowInTaskbar = false
+        };
+
+        var panel = new StackPanel { Margin = new Thickness(18) };
+        panel.Children.Add(new TextBlock
+        {
+            Text = T("FanCurveWarning"),
+            TextWrapping = TextWrapping.Wrap,
+            Margin = new Thickness(0, 0, 0, 16)
+        });
+
+        var buttons = new StackPanel
+        {
+            Orientation = Orientation.Horizontal,
+            HorizontalAlignment = HorizontalAlignment.Right
+        };
+        var continueButton = new Button { Content = T("Continue"), MinWidth = 86, Margin = new Thickness(0, 0, 8, 0), IsDefault = true };
+        var cancelButton = new Button { Content = T("Cancel"), MinWidth = 86, IsCancel = true };
+        continueButton.Click += (_, _) => { dialog.DialogResult = true; };
+        cancelButton.Click += (_, _) => { dialog.DialogResult = false; };
+        buttons.Children.Add(continueButton);
+        buttons.Children.Add(cancelButton);
+        panel.Children.Add(buttons);
+        dialog.Content = panel;
+        return dialog.ShowDialog() == true;
     }
 
     private void ResetFanTargetState()
@@ -1667,8 +1944,13 @@ public sealed class MainWindow : Window
         _syncFanSpeedsCheck.Unchecked += (_, _) => UpdateBooleanSetting("syncFanSpeeds", false);
         _fixedSyncFanSpeedsCheck.Checked += (_, _) => UpdateBooleanSetting("fixedSyncFanSpeeds", true);
         _fixedSyncFanSpeedsCheck.Unchecked += (_, _) => UpdateBooleanSetting("fixedSyncFanSpeeds", false);
-        _manualGameModeCheck.Checked += (_, _) => UpdateBooleanSetting("manualGameMode", true);
-        _manualGameModeCheck.Unchecked += (_, _) => UpdateBooleanSetting("manualGameMode", false);
+        _fixedModeCombo.SelectionChanged += (_, _) =>
+        {
+            if (_loadingSettings || _updatingFixedModeCombo || _fixedModeCombo.SelectedIndex < 0)
+                return;
+            SetManualFixedMode(_fixedModeCombo.SelectedIndex == 1);
+        };
+        _fixedModeHotkeyButton.Click += (_, _) => BeginFixedModeHotkeyCapture();
         _startupCheck.Checked += (_, _) => UpdateBooleanSetting("startup", true);
         _startupCheck.Unchecked += (_, _) => UpdateBooleanSetting("startup", false);
         _startToTrayCheck.Checked += (_, _) => UpdateBooleanSetting("startToTray", true);
@@ -1689,7 +1971,9 @@ public sealed class MainWindow : Window
         _editFanCombo.SelectedIndex = _settings.EditFan == 2 ? 1 : 0;
         _syncFanSpeedsCheck.IsChecked = _settings.SyncFanSpeeds;
         _fixedSyncFanSpeedsCheck.IsChecked = _settings.FixedSyncFanSpeeds;
-        _manualGameModeCheck.IsChecked = _settings.ManualGameMode;
+        _effectiveGameMode = _settings.FixedGameModeOverride == FixedGameModeOverride.GameUntilGamesEnd;
+        UpdateFixedModeCombo();
+        UpdateFixedModeHotkeyButton();
         _languageCombo.SelectedIndex = _settings.Language == "en-US" ? 1 : 0;
         _themeCombo.SelectedIndex = _settings.Theme == "dark" ? 1 : 0;
         _startupCheck.IsChecked = _settings.StartWithWindows;
@@ -1733,20 +2017,6 @@ public sealed class MainWindow : Window
                     SaveFixedRpmSettingsFromUi();
                 }
                 break;
-            case "manualGameMode":
-                _settings.ManualGameMode = value;
-                if (value)
-                {
-                    _manualGameDetectedSinceArmed = false;
-                    _effectiveGameMode = true;
-                }
-                else
-                {
-                    _manualGameDetectedSinceArmed = false;
-                    if (!_gamesRunning)
-                        _effectiveGameMode = false;
-                }
-                break;
         }
         CurveProfileStore.SaveSettings(_settings);
         ApplyLanguage();
@@ -1784,7 +2054,8 @@ public sealed class MainWindow : Window
             "TempSmoothing" => "\u6e29\u5ea6\u5e73\u6ed1",
             "RampDown" => "\u964d\u901f\u9650\u5236",
             "GameExitHold" => "\u6e38\u620f\u9000\u51fa\u5ef6\u65f6",
-            "ManualGameMode" => "\u624b\u52a8\u6e38\u620f\u6a21\u5f0f",
+            "FixedMode" => "\u6a21\u5f0f",
+            "FixedModeHotkey" => "\u5feb\u6377\u952e",
             "FixedSyncFanSpeeds" => "\u540c\u6b65\u56fa\u5b9a\u8f6c\u901f",
             "EditFan" => "\u7f16\u8f91",
             "SyncFanSpeeds" => "\u540c\u6b65\u8f6c\u901f",
@@ -1819,6 +2090,10 @@ public sealed class MainWindow : Window
             "FanCurve" => "\u98ce\u6247\u66f2\u7ebf",
             "FanCurveWarningTitle" => "\u98ce\u6247\u66f2\u7ebf\u8b66\u544a",
             "FanCurveWarning" => "\u98ce\u6247\u66f2\u7ebf\u4f1a\u9891\u7e41\u5199\u5165 Lenovo WMI\uff0c\u53ef\u80fd\u5bfc\u81f4 Fn \u4eae\u5ea6\u7b49\u529f\u80fd\u5361\u987f\u3002\u8bf7\u8c28\u614e\u4f7f\u7528\u3002",
+            "Continue" => "\u7ee7\u7eed",
+            "Cancel" => "\u53d6\u6d88",
+            "Warning" => "\u8b66\u544a",
+            "StopFanControlFirst" => "\u8bf7\u5148\u505c\u6b62\u98ce\u6247\u63a7\u5236\uff01",
             "MonitorError" => "\u76d1\u63a7\u9519\u8bef",
             "FanReadError" => "\u98ce\u6247\u8bfb\u53d6\u9519\u8bef",
             "FanWriteError" => "\u98ce\u6247\u5199\u5165\u9519\u8bef",
@@ -1842,6 +2117,9 @@ public sealed class MainWindow : Window
             "FirmwareAuto" => "\u9ed8\u8ba4\u81ea\u52a8",
             "CurrentMode" => "\u5f53\u524d\u6a21\u5f0f",
             "Holding" => "\u5ef6\u65f6",
+            "PendingChange" => "\u7b49\u5f85\u4e8c\u6b21\u786e\u8ba4",
+            "None" => "\u65e0",
+            "PressShortcut" => "\u8bf7\u6309\u5feb\u6377\u952e",
             "FixedRpmNote" => "0 = \u56fa\u4ef6\u9ed8\u8ba4\u81ea\u52a8\u3002\u975e 0 \u8f6c\u901f\u4f1a\u81ea\u52a8\u9650\u5236\u5230\u68c0\u6d4b\u5230\u7684\u98ce\u6247\u8303\u56f4\u3002",
             _ => key
         } : key switch
@@ -1852,7 +2130,8 @@ public sealed class MainWindow : Window
             "TempSmoothing" => "Temp smoothing",
             "RampDown" => "Ramp down",
             "GameExitHold" => "Game hold",
-            "ManualGameMode" => "Manual game mode",
+            "FixedMode" => "Mode",
+            "FixedModeHotkey" => "Hotkey",
             "FixedSyncFanSpeeds" => "Sync fixed speeds",
             "EditFan" => "Edit",
             "SyncFanSpeeds" => "Sync speeds",
@@ -1873,6 +2152,10 @@ public sealed class MainWindow : Window
             "FanCurve" => "Fan curve",
             "FanCurveWarningTitle" => "Fan curve warning",
             "FanCurveWarning" => "Fan curve mode writes Lenovo WMI frequently and may make Fn brightness or similar controls stutter. Use it carefully.",
+            "Continue" => "Continue",
+            "Cancel" => "Cancel",
+            "Warning" => "Warning",
+            "StopFanControlFirst" => "Please stop fan control first!",
             "MonitorError" => "Monitor error",
             "FanReadError" => "Fan read error",
             "FanWriteError" => "Fan write error",
@@ -1896,6 +2179,9 @@ public sealed class MainWindow : Window
             "FirmwareAuto" => "Firmware auto",
             "CurrentMode" => "Current mode",
             "Holding" => "Holding",
+            "PendingChange" => "Waiting for confirmation",
+            "None" => "None",
+            "PressShortcut" => "Press shortcut",
             "FixedRpmNote" => "0 = firmware auto. Non-zero RPM values are clamped to the detected fan range.",
             _ => key
         };
@@ -1918,6 +2204,8 @@ public sealed class MainWindow : Window
         _smoothingLabel.Text = T("TempSmoothing");
         _rampDownLabel.Text = T("RampDown");
         _gameExitHoldLabel.Text = T("GameExitHold");
+        _fixedModeLabel.Text = T("FixedMode");
+        _fixedModeHotkeyLabel.Text = T("FixedModeHotkey");
         _editFanLabel.Text = T("EditFan");
         _languageLabel.Text = T("Language");
         _themeLabel.Text = T("Theme");
@@ -1925,7 +2213,7 @@ public sealed class MainWindow : Window
         _refreshButton.Content = T("Refresh");
         _syncFanSpeedsCheck.Content = T("SyncFanSpeeds");
         _fixedSyncFanSpeedsCheck.Content = T("FixedSyncFanSpeeds");
-        _manualGameModeCheck.Content = T("ManualGameMode");
+        UpdateFixedModeHotkeyButton();
         _startupCheck.Content = T("Startup");
         _startToTrayCheck.Content = T("StartToTray");
         _minimizeToTrayCheck.Content = T("MinimizeToTray");
@@ -1959,6 +2247,7 @@ public sealed class MainWindow : Window
         _loadingSettings = true;
         SetComboItems(_languageCombo, ["\u4e2d\u6587", "English"], IsChinese ? 0 : 1);
         SetComboItems(_themeCombo, [T("Light"), T("Dark")], IsDark ? 1 : 0);
+        SetComboItems(_fixedModeCombo, [T("Normal"), T("Game")], _effectiveGameMode ? 1 : 0);
         SetComboItems(_editFanCombo, [T("Fan1"), T("Fan2")], _settings.EditFan == 2 ? 1 : 0);
         _loadingSettings = false;
         ApplyStrategyVisibility();
@@ -1996,7 +2285,7 @@ public sealed class MainWindow : Window
 
         foreach (var label in _labels)
             label.Foreground = muted;
-        foreach (var checkBox in new[] { _syncFanSpeedsCheck, _fixedSyncFanSpeedsCheck, _manualGameModeCheck, _startupCheck, _startToTrayCheck, _minimizeToTrayCheck, _closeToTrayCheck })
+        foreach (var checkBox in new[] { _syncFanSpeedsCheck, _fixedSyncFanSpeedsCheck, _startupCheck, _startToTrayCheck, _minimizeToTrayCheck, _closeToTrayCheck })
             checkBox.Foreground = muted;
         foreach (var value in new[] { _cpuTempText, _gpuTempText, _vramTempText, _fan1Text, _fan2Text, _targetText })
             value.Foreground = text;
@@ -2030,6 +2319,18 @@ public sealed class MainWindow : Window
             Margin = new Thickness(0, 0, 8, 6)
         };
         group.Children.Add(label);
+        group.Children.Add(control);
+        panel.Children.Add(group);
+    }
+
+    private static void AddStandaloneControl(Panel panel, UIElement control)
+    {
+        var group = new StackPanel
+        {
+            Orientation = Orientation.Horizontal,
+            Margin = new Thickness(0, 0, 8, 6),
+            VerticalAlignment = VerticalAlignment.Center
+        };
         group.Children.Add(control);
         panel.Children.Add(group);
     }

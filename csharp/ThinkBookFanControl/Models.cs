@@ -36,6 +36,13 @@ public enum ItsMode
     Geek
 }
 
+public enum FixedGameModeOverride
+{
+    None,
+    NormalUntilGameStarts,
+    GameUntilGamesEnd
+}
+
 public sealed class FixedRpmSettings
 {
     public int PowerSavingNormalFan1Rpm { get; set; } = 1500;
@@ -81,6 +88,8 @@ public sealed class AppSettings
     public bool FanCurveWarningAccepted { get; set; }
     public double GameExitHoldSeconds { get; set; } = 20;
     public bool ManualGameMode { get; set; }
+    public FixedGameModeOverride FixedGameModeOverride { get; set; }
+    public string FixedModeHotkey { get; set; } = "";
     public bool FixedSyncFanSpeeds { get; set; } = true;
     public FixedRpmSettings FixedRpm { get; set; } = new();
     public bool ResumeFanControlOnNextStart { get; set; }
