@@ -21,6 +21,33 @@ public sealed record TemperatureSnapshot(
 
 public sealed record FanTargets(int Fan1Rpm, int Fan2Rpm);
 
+public enum ControlStrategy
+{
+    FixedRpm,
+    FanCurve
+}
+
+public enum ItsMode
+{
+    Unknown,
+    PowerSaving,
+    Intelligent,
+    Performance,
+    Geek
+}
+
+public sealed class FixedRpmSettings
+{
+    public int PowerSavingNormalRpm { get; set; } = 1500;
+    public int PowerSavingGameRpm { get; set; } = 2500;
+    public int IntelligentNormalRpm { get; set; } = 1800;
+    public int IntelligentGameRpm { get; set; } = 3000;
+    public int PerformanceNormalRpm { get; set; } = 2200;
+    public int PerformanceGameRpm { get; set; } = 3600;
+    public int GeekNormalRpm { get; set; } = 2600;
+    public int GeekGameRpm { get; set; } = 4200;
+}
+
 public sealed class FanProfile
 {
     public string Name { get; set; } = "";
@@ -42,6 +69,10 @@ public sealed class AppSettings
     public int LastProfileIndex { get; set; }
     public int EditFan { get; set; } = 1;
     public bool SyncFanSpeeds { get; set; }
+    public ControlStrategy ControlStrategy { get; set; } = ControlStrategy.FixedRpm;
+    public bool FanCurveWarningAccepted { get; set; }
+    public double GameExitHoldSeconds { get; set; } = 20;
+    public FixedRpmSettings FixedRpm { get; set; } = new();
     public bool ResumeFanControlOnNextStart { get; set; }
     public bool FanControlWasRunning { get; set; }
     public bool StartWithWindows { get; set; }

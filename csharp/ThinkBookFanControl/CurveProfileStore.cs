@@ -98,6 +98,10 @@ public static class CurveProfileStore
             defaults.LastProfileIndex = Math.Max(0, Math.Min(ProfileCount - 1, loaded.LastProfileIndex));
             defaults.EditFan = loaded.EditFan == 2 ? 2 : 1;
             defaults.SyncFanSpeeds = loaded.SyncFanSpeeds;
+            defaults.ControlStrategy = Enum.IsDefined(loaded.ControlStrategy) ? loaded.ControlStrategy : ControlStrategy.FixedRpm;
+            defaults.FanCurveWarningAccepted = loaded.FanCurveWarningAccepted;
+            defaults.GameExitHoldSeconds = PickAllowed(loaded.GameExitHoldSeconds, [0, 10, 20, 30, 60], defaults.GameExitHoldSeconds);
+            defaults.FixedRpm = NormalizeFixedRpmSettings(loaded.FixedRpm ?? defaults.FixedRpm, FallbackMinRpm, FallbackMaxRpm);
             defaults.ResumeFanControlOnNextStart = loaded.ResumeFanControlOnNextStart || loaded.FanControlWasRunning;
             defaults.StartWithWindows = loaded.StartWithWindows;
             defaults.StartToTray = loaded.StartToTray;
@@ -125,6 +129,34 @@ public static class CurveProfileStore
     public static int ClampRpm(double value, int minimum, int maximum)
     {
         return Math.Max(minimum, Math.Min(maximum, SnapRpm(value)));
+    }
+
+    public static int ClampFixedRpm(double value, int minimum, int maximum)
+    {
+        if (Math.Abs(value) < 0.1)
+            return 0;
+        return ClampRpm(value, minimum, maximum);
+    }
+
+    public static FixedRpmSettings NormalizeFixedRpmSettings(FixedRpmSettings settings, int minimum, int maximum)
+    {
+        var result = new FixedRpmSettings
+        {
+            PowerSavingNormalRpm = ClampFixedRpm(settings.PowerSavingNormalRpm, minimum, maximum),
+            PowerSavingGameRpm = ClampFixedRpm(settings.PowerSavingGameRpm, minimum, maximum),
+            IntelligentNormalRpm = ClampFixedRpm(settings.IntelligentNormalRpm, minimum, maximum),
+            IntelligentGameRpm = ClampFixedRpm(settings.IntelligentGameRpm, minimum, maximum),
+            PerformanceNormalRpm = ClampFixedRpm(settings.PerformanceNormalRpm, minimum, maximum),
+            PerformanceGameRpm = ClampFixedRpm(settings.PerformanceGameRpm, minimum, maximum),
+            GeekNormalRpm = ClampFixedRpm(settings.GeekNormalRpm, minimum, maximum),
+            GeekGameRpm = ClampFixedRpm(settings.GeekGameRpm, minimum, maximum),
+        };
+
+        result.PowerSavingGameRpm = EnsureGameAtLeastNormal(result.PowerSavingNormalRpm, result.PowerSavingGameRpm, minimum, maximum);
+        result.IntelligentGameRpm = EnsureGameAtLeastNormal(result.IntelligentNormalRpm, result.IntelligentGameRpm, minimum, maximum);
+        result.PerformanceGameRpm = EnsureGameAtLeastNormal(result.PerformanceNormalRpm, result.PerformanceGameRpm, minimum, maximum);
+        result.GeekGameRpm = EnsureGameAtLeastNormal(result.GeekNormalRpm, result.GeekGameRpm, minimum, maximum);
+        return result;
     }
 
     public static List<int> ClampCurve(IEnumerable<int> values, int minimum, int maximum)
@@ -227,6 +259,13 @@ public static class CurveProfileStore
         return allowed
             .OrderBy(candidate => Math.Abs(candidate - value))
             .FirstOrDefault();
+    }
+
+    private static int EnsureGameAtLeastNormal(int normal, int game, int minimum, int maximum)
+    {
+        if (game == 0 || normal == 0 || game >= normal)
+            return game;
+        return ClampFixedRpm(normal, minimum, maximum);
     }
 
     private static double NormalizeSmoothingSamples(double value, double fallback)

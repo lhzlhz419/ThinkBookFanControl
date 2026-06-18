@@ -39,8 +39,11 @@ public sealed class MainWindow : Window
     private TemperatureReader? _temperatureReader;
     private readonly DispatcherTimer _timer = new();
     private readonly DispatcherTimer _trayMenuTimer = new();
+    private readonly DispatcherTimer _fixedControlTimer = new();
     private readonly List<FanProfile> _profiles;
     private readonly AppSettings _settings;
+    private readonly ItsModeDetector _itsModeDetector = new();
+    private readonly GameProcessDetector _gameProcessDetector = new();
 
     private readonly TextBlock _cpuMetricTitle = new();
     private readonly TextBlock _gpuMetricTitle = new();
@@ -58,9 +61,11 @@ public sealed class MainWindow : Window
 
     private readonly ComboBox _profileCombo = new() { Width = 150 };
     private readonly TextBox _nameBox = new() { Width = 130 };
+    private readonly ComboBox _strategyCombo = OptionCombo("Fixed RPM", "Fan curve");
     private readonly ComboBox _intervalCombo = OptionCombo("1", "2", "5");
     private readonly ComboBox _smoothingCombo = OptionCombo("1", "2", "3", "5", "10");
     private readonly ComboBox _rampDownCombo = OptionCombo("10", "20", "50", "100", "inf");
+    private readonly ComboBox _gameExitHoldCombo = OptionCombo("0", "10", "20", "30", "60");
     private readonly ComboBox _editFanCombo = OptionCombo("Fan 1", "Fan 2");
     private readonly ComboBox _languageCombo = OptionCombo("\u4e2d\u6587", "English");
     private readonly ComboBox _themeCombo = OptionCombo("Light", "Dark");
@@ -77,9 +82,11 @@ public sealed class MainWindow : Window
     private readonly CurveEditor _gpuChart;
     private readonly TextBlock _profileLabel = Label("");
     private readonly TextBlock _nameLabel = Label("");
+    private readonly TextBlock _strategyLabel = Label("");
     private readonly TextBlock _intervalLabel = Label("");
     private readonly TextBlock _smoothingLabel = Label("");
     private readonly TextBlock _rampDownLabel = Label("");
+    private readonly TextBlock _gameExitHoldLabel = Label("");
     private readonly TextBlock _editFanLabel = Label("");
     private readonly TextBlock _languageLabel = Label("");
     private readonly TextBlock _themeLabel = Label("");
@@ -87,6 +94,11 @@ public sealed class MainWindow : Window
     private TabItem? _gpuTab;
     private Grid? _root;
     private TabControl? _tabs;
+    private Border? _fixedRpmPanel;
+    private TextBlock? _fixedRpmHeader;
+    private TextBlock? _fixedRpmNote;
+    private TextBlock? _fixedNormalHeader;
+    private TextBlock? _fixedGameHeader;
     private Border? _bottomBorder;
     private Forms.NotifyIcon? _trayIcon;
     private Forms.ContextMenuStrip? _trayMenu;
@@ -110,11 +122,16 @@ public sealed class MainWindow : Window
     private bool _exitRestoreInProgress;
     private bool _temperatureSampling;
     private bool _fanSnapshotSampling;
+    private bool _fixedControlSampling;
     private bool _fanWriteInProgress;
     private readonly SemaphoreSlim _fanIoLock = new(1, 1);
     private FanTargets? _lastTarget;
     private FanTargets? _lastAppliedTarget;
     private FanTargets? _queuedTarget;
+    private ItsMode _currentItsMode = ItsMode.Unknown;
+    private bool _gamesRunning;
+    private bool _effectiveGameMode;
+    private DateTimeOffset? _lastGameStopTime;
     private int _fanMinRpm = 1500;
     private int _fanMaxRpm = 5500;
     private bool _fanRangeDetected;
@@ -127,6 +144,8 @@ public sealed class MainWindow : Window
     private DateTimeOffset? _highTempSince;
     private bool _heatSoaked;
     private readonly Queue<(DateTimeOffset Timestamp, double TempC)> _heatSoakExitSamples = [];
+    private readonly Dictionary<ItsMode, TextBlock> _fixedModeLabels = [];
+    private readonly Dictionary<(ItsMode Mode, bool Game), TextBox> _fixedRpmBoxes = [];
     private List<int> _cpuFan1Curve;
     private List<int> _cpuFan2Curve;
     private List<int> _gpuFan1Curve;
@@ -140,6 +159,8 @@ public sealed class MainWindow : Window
         MinWidth = 820;
         MinHeight = 620;
         FontFamily = new FontFamily("Segoe UI");
+        _strategyCombo.Width = 88;
+        _gameExitHoldCombo.Width = 58;
         _languageCombo.Width = 72;
         _themeCombo.Width = 64;
         _settings = CurveProfileStore.LoadSettings();
@@ -178,6 +199,10 @@ public sealed class MainWindow : Window
         _trayMenuTimer.Tick += async (_, _) => await RefreshTrayMenuAsync();
         _trayMenuTimer.Start();
 
+        _fixedControlTimer.Interval = TimeSpan.FromSeconds(2);
+        _fixedControlTimer.Tick += async (_, _) => await EvaluateFixedRpmControlAsync();
+        _fixedControlTimer.Start();
+
         StateChanged += (_, _) => OnStateChanged();
         Closing += OnClosing;
         Closed += (_, _) => OnClosed();
@@ -212,14 +237,19 @@ public sealed class MainWindow : Window
         Grid.SetRow(controls, 1);
         root.Children.Add(controls);
 
+        var contentHost = new Grid();
+        _fixedRpmPanel = BuildFixedRpmPanel();
+        contentHost.Children.Add(_fixedRpmPanel);
+
         var tabs = new TabControl { Margin = new Thickness(12, 0, 12, 8) };
         _tabs = tabs;
         _cpuTab = new TabItem { Content = _cpuChart };
         _gpuTab = new TabItem { Content = _gpuChart };
         tabs.Items.Add(_cpuTab);
         tabs.Items.Add(_gpuTab);
-        Grid.SetRow(tabs, 2);
-        root.Children.Add(tabs);
+        contentHost.Children.Add(tabs);
+        Grid.SetRow(contentHost, 2);
+        root.Children.Add(contentHost);
 
         var bottom = new Border { Padding = new Thickness(12, 0, 12, 12), Child = _statusText };
         _bottomBorder = bottom;
@@ -242,10 +272,12 @@ public sealed class MainWindow : Window
         };
         AddLabeledControl(row1, _profileLabel, _profileCombo);
         AddLabeledControl(row1, _nameLabel, _nameBox);
+        AddLabeledControl(row1, _strategyLabel, _strategyCombo);
         AddLabeledControl(row1, _editFanLabel, _editFanCombo);
         row1.Children.Add(_syncFanSpeedsCheck);
         AddLabeledControl(row1, _smoothingLabel, _smoothingCombo);
         AddLabeledControl(row1, _rampDownLabel, _rampDownCombo);
+        AddLabeledControl(row1, _gameExitHoldLabel, _gameExitHoldCombo);
         AddLabeledControl(row1, _intervalLabel, _intervalCombo);
         AddLabeledControl(row1, _languageLabel, _languageCombo);
         AddLabeledControl(row1, _themeLabel, _themeCombo);
@@ -271,6 +303,93 @@ public sealed class MainWindow : Window
         return panel;
     }
 
+    private Border BuildFixedRpmPanel()
+    {
+        var panel = new StackPanel { Margin = new Thickness(12, 0, 12, 8) };
+        _fixedRpmHeader = new TextBlock
+        {
+            Text = "Fixed RPM",
+            FontWeight = FontWeights.SemiBold,
+            Margin = new Thickness(0, 0, 0, 8)
+        };
+        _labels.Add(_fixedRpmHeader);
+        panel.Children.Add(_fixedRpmHeader);
+
+        var grid = new Grid { MaxWidth = 620, HorizontalAlignment = HorizontalAlignment.Left };
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(130) });
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(120) });
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(120) });
+
+        for (var i = 0; i < 5; i++)
+            grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+
+        AddFixedText(grid, "", 0, 0, true);
+        _fixedNormalHeader = AddFixedText(grid, "Normal", 0, 1, true);
+        _fixedGameHeader = AddFixedText(grid, "Game", 0, 2, true);
+
+        AddFixedRpmRow(grid, 1, ItsMode.PowerSaving, "Power saving");
+        AddFixedRpmRow(grid, 2, ItsMode.Intelligent, "Intelligent");
+        AddFixedRpmRow(grid, 3, ItsMode.Performance, "Performance");
+        AddFixedRpmRow(grid, 4, ItsMode.Geek, "Geek");
+
+        panel.Children.Add(grid);
+        _fixedRpmNote = new TextBlock
+        {
+            Text = "0 = firmware auto. Non-zero RPM values are clamped to the detected fan range.",
+            Margin = new Thickness(0, 8, 0, 0)
+        };
+        _labels.Add(_fixedRpmNote);
+        panel.Children.Add(_fixedRpmNote);
+
+        return new Border { Margin = new Thickness(12, 0, 12, 8), Padding = new Thickness(0), Child = panel };
+    }
+
+    private void AddFixedRpmRow(Grid grid, int row, ItsMode mode, string label)
+    {
+        _fixedModeLabels[mode] = AddFixedText(grid, label, row, 0, false);
+        AddFixedRpmBox(grid, row, 1, mode, false);
+        AddFixedRpmBox(grid, row, 2, mode, true);
+    }
+
+    private TextBlock AddFixedText(Grid grid, string text, int row, int column, bool bold)
+    {
+        var block = new TextBlock
+        {
+            Text = text,
+            FontWeight = bold ? FontWeights.SemiBold : FontWeights.Normal,
+            VerticalAlignment = VerticalAlignment.Center,
+            Margin = new Thickness(0, 0, 8, 6)
+        };
+        _labels.Add(block);
+        Grid.SetRow(block, row);
+        Grid.SetColumn(block, column);
+        grid.Children.Add(block);
+        return block;
+    }
+
+    private void AddFixedRpmBox(Grid grid, int row, int column, ItsMode mode, bool game)
+    {
+        var box = new TextBox
+        {
+            Width = 96,
+            Margin = new Thickness(0, 0, 10, 6),
+            Text = GetFixedRpmValue(mode, game).ToString(CultureInfo.InvariantCulture)
+        };
+        box.LostFocus += (_, _) => SaveFixedRpmSettingsFromUi();
+        box.KeyDown += (_, args) =>
+        {
+            if (args.Key == System.Windows.Input.Key.Enter)
+            {
+                SaveFixedRpmSettingsFromUi();
+                args.Handled = true;
+            }
+        };
+        _fixedRpmBoxes[(mode, game)] = box;
+        Grid.SetRow(box, row);
+        Grid.SetColumn(box, column);
+        grid.Children.Add(box);
+    }
+
     private async Task SampleAsync(bool force = false)
     {
         if (_temperatureSampling)
@@ -288,6 +407,20 @@ public sealed class MainWindow : Window
 
             _smoothedCpuTempC = SmoothTemperature(_smoothedCpuTempC, temps.CpuTempC, profile.TemperatureSmoothing);
             _smoothedGpuTempC = SmoothTemperature(_smoothedGpuTempC, temps.GpuTempC, profile.TemperatureSmoothing);
+
+            if (_settings.ControlStrategy == ControlStrategy.FixedRpm)
+            {
+                if (!_running)
+                    ResetFanTargetState();
+
+                UpdateTemperatureUi(temps);
+                _targetText.Text = FormatTarget(_lastTarget);
+                _cpuChart.SetCurrentTemp(temps.CpuTempC);
+                _gpuChart.SetCurrentTemp(temps.GpuTempC);
+                _statusText.Text = $"{(_running ? T("Running") : T("Monitoring"))} | {T("Strategy")}: {T("FixedRpm")} | {T("CurrentMode")}: {T(ModeKey(_currentItsMode))} | {T("Game")}: {FormatGameState()}";
+                UpdateTrayText();
+                return;
+            }
 
             var cpuFan1Target = CurveProfileStore.Interpolate(CurveProfileStore.CpuTemps, _cpuFan1Curve, _smoothedCpuTempC);
             var gpuFan1Target = CurveProfileStore.Interpolate(CurveProfileStore.GpuTemps, _gpuFan1Curve, _smoothedGpuTempC);
@@ -316,21 +449,11 @@ public sealed class MainWindow : Window
             }
             if (!_running)
             {
-                _lastTarget = null;
-                _lastAppliedTarget = null;
-                _lastFan1TargetTime = null;
-                _lastFan2TargetTime = null;
-                _queuedTarget = null;
+                ResetFanTargetState();
             }
 
-            _cpuTempText.Text = FormatTemp(temps.CpuTempC);
-            _gpuTempText.Text = FormatTemp(temps.GpuTempC);
-            _vramTempText.Text = FormatTemp(temps.VramTempC);
-            _lastCpuText = _cpuTempText.Text;
-            _lastGpuText = _gpuTempText.Text;
-            _lastVramText = _vramTempText.Text;
-            UpdateTrayMenuMetrics();
-            _targetText.Text = $"F1 {target.Fan1Rpm} / F2 {target.Fan2Rpm} RPM";
+            UpdateTemperatureUi(temps);
+            _targetText.Text = FormatTarget(target);
             _cpuChart.SetCurrentTemp(temps.CpuTempC);
             _gpuChart.SetCurrentTemp(temps.GpuTempC);
             _statusText.Text = $"{(_running ? T("Running") : T("Monitoring"))} | {T("HeatSoak")}: {(_heatSoaked ? T("On") : T("Off"))} | CPU: {temps.CpuSensor} | GPU: {temps.GpuSensor} | VRAM: {temps.VramSensor}";
@@ -769,6 +892,9 @@ public sealed class MainWindow : Window
         _gpuChart.SetRpmRange(minimum, maximum);
         _cpuChart.SetValues(_cpuFan1Curve, _cpuFan2Curve);
         _gpuChart.SetValues(_gpuFan1Curve, _gpuFan2Curve);
+        _settings.FixedRpm = CurveProfileStore.NormalizeFixedRpmSettings(_settings.FixedRpm, minimum, maximum);
+        RefreshFixedRpmBoxes();
+        CurveProfileStore.SaveSettings(_settings);
     }
 
     private void ChangeProfile(int index)
@@ -822,8 +948,10 @@ public sealed class MainWindow : Window
 
     private void SaveCurrentProfile()
     {
+        SaveFixedRpmSettingsFromUi();
         _profiles[_profileIndex] = UiToProfile();
         CurveProfileStore.Save(_profiles);
+        CurveProfileStore.SaveSettings(_settings);
         _profileCombo.ItemsSource = ProfileLabels();
         _profileCombo.SelectedIndex = _profileIndex;
         _statusText.Text = T("Saved") + " " + CurveProfileStore.ProfilePath;
@@ -866,6 +994,10 @@ public sealed class MainWindow : Window
         _highTempSince = null;
         _heatSoaked = false;
         _heatSoakExitSamples.Clear();
+        _currentItsMode = ItsMode.Unknown;
+        _gamesRunning = false;
+        _effectiveGameMode = false;
+        _lastGameStopTime = null;
         _startButton.Content = T("Stop");
         _statusText.Text = T("ControllerEnabled");
         UpdateTrayMenu();
@@ -879,6 +1011,9 @@ public sealed class MainWindow : Window
         _lastFan1TargetTime = null;
         _lastFan2TargetTime = null;
         _queuedTarget = null;
+        _gamesRunning = false;
+        _effectiveGameMode = false;
+        _lastGameStopTime = null;
         _startButton.IsEnabled = false;
         _startButton.Content = T("Stopping");
         _statusText.Text = T("RestoringAuto");
@@ -905,6 +1040,7 @@ public sealed class MainWindow : Window
     {
         _timer.Stop();
         _trayMenuTimer.Stop();
+        _fixedControlTimer.Stop();
         if (_running)
         {
             try
@@ -948,7 +1084,254 @@ public sealed class MainWindow : Window
         _lastAppliedTarget = null;
         _lastFan1TargetTime = null;
         _lastFan2TargetTime = null;
+        _gamesRunning = false;
+        _effectiveGameMode = false;
+        _lastGameStopTime = null;
         await RestoreAutoWithLockAsync();
+    }
+
+    private async Task EvaluateFixedRpmControlAsync()
+    {
+        if (_fixedControlSampling || !_running || _settings.ControlStrategy != ControlStrategy.FixedRpm)
+            return;
+
+        _fixedControlSampling = true;
+        try
+        {
+            var modeTask = Task.Run(() => _itsModeDetector.ReadMode());
+            var gameTask = Task.Run(() => _gameProcessDetector.AreGamesRunning());
+            var mode = await modeTask;
+            var gamesRunning = await gameTask;
+
+            _currentItsMode = mode;
+            UpdateGameState(gamesRunning);
+
+            var target = GetFixedTarget(mode, _effectiveGameMode);
+            _lastTarget = target;
+            _targetText.Text = FormatTarget(target);
+            _statusText.Text = $"{T("Running")} | {T("Strategy")}: {T("FixedRpm")} | {T("CurrentMode")}: {T(ModeKey(mode))} | {T("Game")}: {FormatGameState()}";
+
+            await ApplyFixedTargetAsync(target);
+        }
+        catch (Exception ex)
+        {
+            _running = false;
+            ResetFanTargetState();
+            _startButton.Content = T("Start");
+            _statusText.Text = T("FanWriteError") + ": " + ex.GetType().Name + ": " + ex.Message;
+            UpdateTrayMenu();
+        }
+        finally
+        {
+            _fixedControlSampling = false;
+        }
+    }
+
+    private void UpdateGameState(bool gamesRunning)
+    {
+        var now = DateTimeOffset.Now;
+        if (gamesRunning)
+        {
+            _gamesRunning = true;
+            _effectiveGameMode = true;
+            _lastGameStopTime = null;
+            return;
+        }
+
+        if (_gamesRunning)
+            _lastGameStopTime = now;
+
+        _gamesRunning = false;
+        var holdSeconds = Math.Max(0, _settings.GameExitHoldSeconds);
+        _effectiveGameMode = _lastGameStopTime is DateTimeOffset stoppedAt &&
+                             now - stoppedAt < TimeSpan.FromSeconds(holdSeconds);
+    }
+
+    private FanTargets GetFixedTarget(ItsMode mode, bool game)
+    {
+        var effectiveMode = mode == ItsMode.Unknown ? ItsMode.Intelligent : mode;
+        var rpm = CurveProfileStore.ClampFixedRpm(GetFixedRpmValue(effectiveMode, game), _fanMinRpm, _fanMaxRpm);
+        return new FanTargets(rpm, rpm);
+    }
+
+    private async Task ApplyFixedTargetAsync(FanTargets target)
+    {
+        if (target == _lastAppliedTarget)
+            return;
+
+        await _fanIoLock.WaitAsync();
+        try
+        {
+            await Task.Run(() =>
+            {
+                if (target.Fan1Rpm == 0 && target.Fan2Rpm == 0)
+                    _fanController.RestoreAuto();
+                else
+                    _fanController.Apply(target.Fan1Rpm, target.Fan2Rpm);
+            });
+            _lastAppliedTarget = target;
+            _lastFanWriteTime = DateTimeOffset.Now;
+        }
+        finally
+        {
+            _fanIoLock.Release();
+        }
+    }
+
+    private int GetFixedRpmValue(ItsMode mode, bool game)
+    {
+        var settings = _settings.FixedRpm;
+        return (mode, game) switch
+        {
+            (ItsMode.PowerSaving, false) => settings.PowerSavingNormalRpm,
+            (ItsMode.PowerSaving, true) => settings.PowerSavingGameRpm,
+            (ItsMode.Intelligent, false) => settings.IntelligentNormalRpm,
+            (ItsMode.Intelligent, true) => settings.IntelligentGameRpm,
+            (ItsMode.Performance, false) => settings.PerformanceNormalRpm,
+            (ItsMode.Performance, true) => settings.PerformanceGameRpm,
+            (ItsMode.Geek, false) => settings.GeekNormalRpm,
+            (ItsMode.Geek, true) => settings.GeekGameRpm,
+            _ => game ? settings.IntelligentGameRpm : settings.IntelligentNormalRpm
+        };
+    }
+
+    private void SetFixedRpmValue(FixedRpmSettings settings, ItsMode mode, bool game, int value)
+    {
+        switch (mode, game)
+        {
+            case (ItsMode.PowerSaving, false):
+                settings.PowerSavingNormalRpm = value;
+                break;
+            case (ItsMode.PowerSaving, true):
+                settings.PowerSavingGameRpm = value;
+                break;
+            case (ItsMode.Intelligent, false):
+                settings.IntelligentNormalRpm = value;
+                break;
+            case (ItsMode.Intelligent, true):
+                settings.IntelligentGameRpm = value;
+                break;
+            case (ItsMode.Performance, false):
+                settings.PerformanceNormalRpm = value;
+                break;
+            case (ItsMode.Performance, true):
+                settings.PerformanceGameRpm = value;
+                break;
+            case (ItsMode.Geek, false):
+                settings.GeekNormalRpm = value;
+                break;
+            case (ItsMode.Geek, true):
+                settings.GeekGameRpm = value;
+                break;
+        }
+    }
+
+    private void SaveFixedRpmSettingsFromUi()
+    {
+        if (_loadingSettings)
+            return;
+
+        var settings = new FixedRpmSettings();
+        foreach (var mode in new[] { ItsMode.PowerSaving, ItsMode.Intelligent, ItsMode.Performance, ItsMode.Geek })
+        {
+            SetFixedRpmValue(settings, mode, false, ParseFixedRpmBox(mode, false));
+            SetFixedRpmValue(settings, mode, true, ParseFixedRpmBox(mode, true));
+        }
+
+        _settings.FixedRpm = CurveProfileStore.NormalizeFixedRpmSettings(settings, _fanMinRpm, _fanMaxRpm);
+        RefreshFixedRpmBoxes();
+        CurveProfileStore.SaveSettings(_settings);
+    }
+
+    private int ParseFixedRpmBox(ItsMode mode, bool game)
+    {
+        if (_fixedRpmBoxes.TryGetValue((mode, game), out var box) &&
+            int.TryParse(box.Text.Trim(), NumberStyles.Integer, CultureInfo.InvariantCulture, out var value))
+        {
+            return value;
+        }
+
+        return GetFixedRpmValue(mode, game);
+    }
+
+    private void RefreshFixedRpmBoxes()
+    {
+        foreach (var ((mode, game), box) in _fixedRpmBoxes)
+            box.Text = GetFixedRpmValue(mode, game).ToString(CultureInfo.InvariantCulture);
+    }
+
+    private void ApplyStrategyVisibility()
+    {
+        var fixedMode = _settings.ControlStrategy == ControlStrategy.FixedRpm;
+        if (_fixedRpmPanel is not null)
+            _fixedRpmPanel.Visibility = fixedMode ? Visibility.Visible : Visibility.Collapsed;
+        if (_tabs is not null)
+            _tabs.Visibility = fixedMode ? Visibility.Collapsed : Visibility.Visible;
+
+        _editFanCombo.IsEnabled = !fixedMode;
+        _syncFanSpeedsCheck.IsEnabled = !fixedMode;
+        _smoothingCombo.IsEnabled = !fixedMode;
+        _rampDownCombo.IsEnabled = !fixedMode;
+        _gameExitHoldCombo.IsEnabled = fixedMode;
+
+        if (fixedMode)
+        {
+            _queuedTarget = null;
+            _lastFan1TargetTime = null;
+            _lastFan2TargetTime = null;
+        }
+    }
+
+    private void ResetFanTargetState()
+    {
+        _lastTarget = null;
+        _lastAppliedTarget = null;
+        _lastFan1TargetTime = null;
+        _lastFan2TargetTime = null;
+        _queuedTarget = null;
+    }
+
+    private void UpdateTemperatureUi(TemperatureSnapshot temps)
+    {
+        _cpuTempText.Text = FormatTemp(temps.CpuTempC);
+        _gpuTempText.Text = FormatTemp(temps.GpuTempC);
+        _vramTempText.Text = FormatTemp(temps.VramTempC);
+        _lastCpuText = _cpuTempText.Text;
+        _lastGpuText = _gpuTempText.Text;
+        _lastVramText = _vramTempText.Text;
+        UpdateTrayMenuMetrics();
+    }
+
+    private string FormatTarget(FanTargets? target)
+    {
+        if (target is null)
+            return "--";
+
+        if (target.Fan1Rpm == 0 && target.Fan2Rpm == 0)
+            return T("FirmwareAuto");
+
+        return $"F1 {target.Fan1Rpm} / F2 {target.Fan2Rpm} RPM";
+    }
+
+    private string FormatGameState()
+    {
+        if (_gamesRunning)
+            return T("On");
+        if (_effectiveGameMode)
+            return T("Holding");
+        return T("Off");
+    }
+
+    private static string ModeKey(ItsMode mode)
+    {
+        return mode switch
+        {
+            ItsMode.PowerSaving => "PowerSaving",
+            ItsMode.Intelligent => "Intelligent",
+            ItsMode.Performance => "Performance",
+            ItsMode.Geek => "Geek",
+            _ => "Unknown"
+        };
     }
 
     private void SetResumeFanControlOnNextStart(bool value)
@@ -1111,6 +1494,38 @@ public sealed class MainWindow : Window
             SyncTimerIntervals();
         };
 
+        _strategyCombo.SelectionChanged += (_, _) =>
+        {
+            if (_loadingSettings)
+                return;
+
+            var selectedStrategy = _strategyCombo.SelectedIndex == 1 ? ControlStrategy.FanCurve : ControlStrategy.FixedRpm;
+            if (selectedStrategy == ControlStrategy.FanCurve && !_settings.FanCurveWarningAccepted)
+            {
+                var result = MessageBox.Show(this, T("FanCurveWarning"), T("FanCurveWarningTitle"), MessageBoxButton.OKCancel, MessageBoxImage.Warning);
+                if (result != MessageBoxResult.OK)
+                {
+                    _loadingSettings = true;
+                    _strategyCombo.SelectedIndex = 0;
+                    _loadingSettings = false;
+                    return;
+                }
+                _settings.FanCurveWarningAccepted = true;
+            }
+
+            _settings.ControlStrategy = selectedStrategy;
+            CurveProfileStore.SaveSettings(_settings);
+            ApplyStrategyVisibility();
+        };
+
+        _gameExitHoldCombo.SelectionChanged += (_, _) =>
+        {
+            if (_loadingSettings)
+                return;
+            _settings.GameExitHoldSeconds = SelectedNumber(_gameExitHoldCombo, 20);
+            CurveProfileStore.SaveSettings(_settings);
+        };
+
         _editFanCombo.SelectionChanged += (_, _) =>
         {
             if (_loadingSettings)
@@ -1136,6 +1551,8 @@ public sealed class MainWindow : Window
     {
         _loadingSettings = true;
         SelectComboValue(_intervalCombo, _settings.IntervalSeconds);
+        _strategyCombo.SelectedIndex = _settings.ControlStrategy == ControlStrategy.FanCurve ? 1 : 0;
+        SelectComboValue(_gameExitHoldCombo, _settings.GameExitHoldSeconds);
         _editFanCombo.SelectedIndex = _settings.EditFan == 2 ? 1 : 0;
         _syncFanSpeedsCheck.IsChecked = _settings.SyncFanSpeeds;
         _languageCombo.SelectedIndex = _settings.Language == "en-US" ? 1 : 0;
@@ -1144,7 +1561,9 @@ public sealed class MainWindow : Window
         _startToTrayCheck.IsChecked = _settings.StartToTray;
         _minimizeToTrayCheck.IsChecked = _settings.MinimizeToTray;
         _closeToTrayCheck.IsChecked = _settings.CloseToTray;
+        RefreshFixedRpmBoxes();
         _loadingSettings = false;
+        ApplyStrategyVisibility();
     }
 
     private void UpdateBooleanSetting(string setting, bool value)
@@ -1203,9 +1622,12 @@ public sealed class MainWindow : Window
             "AppTitle" => "ThinkBook \u98ce\u6247\u63a7\u5236",
             "Profile" => "\u65b9\u6848",
             "Name" => "\u540d\u79f0",
+            "Strategy" => "\u63a7\u5236\u65b9\u5f0f",
+            "FixedRpm" => "\u56fa\u5b9a\u8f6c\u901f",
             "Interval" => "\u5237\u65b0\u95f4\u9694",
             "TempSmoothing" => "\u6e29\u5ea6\u5e73\u6ed1",
             "RampDown" => "\u964d\u901f\u9650\u5236",
+            "GameExitHold" => "\u6e38\u620f\u9000\u51fa\u5ef6\u65f6",
             "EditFan" => "\u7f16\u8f91",
             "SyncFanSpeeds" => "\u540c\u6b65\u8f6c\u901f",
             "Language" => "\u8bed\u8a00",
@@ -1237,6 +1659,8 @@ public sealed class MainWindow : Window
             "RestoreAutoFailed" => "\u6062\u590d\u81ea\u52a8\u5931\u8d25",
             "StopBeforeSwitch" => "\u5207\u6362\u65b9\u6848\u524d\u8bf7\u5148\u505c\u6b62\u63a7\u5236\u5668\u3002",
             "FanCurve" => "\u98ce\u6247\u66f2\u7ebf",
+            "FanCurveWarningTitle" => "\u98ce\u6247\u66f2\u7ebf\u8b66\u544a",
+            "FanCurveWarning" => "\u98ce\u6247\u66f2\u7ebf\u4f1a\u9891\u7e41\u5199\u5165 Lenovo WMI\uff0c\u53ef\u80fd\u5bfc\u81f4 Fn \u4eae\u5ea6\u7b49\u529f\u80fd\u5361\u987f\u3002\u8bf7\u8c28\u614e\u4f7f\u7528\u3002",
             "MonitorError" => "\u76d1\u63a7\u9519\u8bef",
             "FanReadError" => "\u98ce\u6247\u8bfb\u53d6\u9519\u8bef",
             "FanWriteError" => "\u98ce\u6247\u5199\u5165\u9519\u8bef",
@@ -1246,12 +1670,26 @@ public sealed class MainWindow : Window
             "CloseToTray" => "\u5173\u95ed\u65f6\u6700\u5c0f\u5316",
             "ShowWindow" => "\u663e\u793a\u7a97\u53e3",
             "Exit" => "\u9000\u51fa",
+            "Normal" => "\u5e73\u65f6",
+            "Game" => "\u6e38\u620f",
+            "PowerSaving" => "\u7701\u7535",
+            "Intelligent" => "\u667a\u80fd",
+            "Performance" => "\u6027\u80fd",
+            "Geek" => "\u6781\u5ba2",
+            "Unknown" => "\u672a\u77e5",
+            "FirmwareAuto" => "\u9ed8\u8ba4\u81ea\u52a8",
+            "CurrentMode" => "\u5f53\u524d\u6a21\u5f0f",
+            "Holding" => "\u5ef6\u65f6",
+            "FixedRpmNote" => "0 = \u56fa\u4ef6\u9ed8\u8ba4\u81ea\u52a8\u3002\u975e 0 \u8f6c\u901f\u4f1a\u81ea\u52a8\u9650\u5236\u5230\u68c0\u6d4b\u5230\u7684\u98ce\u6247\u8303\u56f4\u3002",
             _ => key
         } : key switch
         {
             "AppTitle" => "ThinkBook Fan Control",
+            "Strategy" => "Mode",
+            "FixedRpm" => "Fixed RPM",
             "TempSmoothing" => "Temp smoothing",
             "RampDown" => "Ramp down",
+            "GameExitHold" => "Game hold",
             "EditFan" => "Edit",
             "SyncFanSpeeds" => "Sync speeds",
             "Fan1" => "Fan 1",
@@ -1269,6 +1707,8 @@ public sealed class MainWindow : Window
             "RestoreAutoFailed" => "Restore auto failed",
             "StopBeforeSwitch" => "Stop the controller before switching profiles.",
             "FanCurve" => "Fan curve",
+            "FanCurveWarningTitle" => "Fan curve warning",
+            "FanCurveWarning" => "Fan curve mode writes Lenovo WMI frequently and may make Fn brightness or similar controls stutter. Use it carefully.",
             "MonitorError" => "Monitor error",
             "FanReadError" => "Fan read error",
             "FanWriteError" => "Fan write error",
@@ -1278,6 +1718,17 @@ public sealed class MainWindow : Window
             "CloseToTray" => "Close to tray",
             "ShowWindow" => "Show window",
             "Exit" => "Exit",
+            "Normal" => "Normal",
+            "Game" => "Game",
+            "PowerSaving" => "Power saving",
+            "Intelligent" => "Intelligent",
+            "Performance" => "Performance",
+            "Geek" => "Geek",
+            "Unknown" => "Unknown",
+            "FirmwareAuto" => "Firmware auto",
+            "CurrentMode" => "Current mode",
+            "Holding" => "Holding",
+            "FixedRpmNote" => "0 = firmware auto. Non-zero RPM values are clamped to the detected fan range.",
             _ => key
         };
     }
@@ -1295,9 +1746,11 @@ public sealed class MainWindow : Window
         _targetMetricTitle.Text = T("Target");
         _profileLabel.Text = T("Profile");
         _nameLabel.Text = T("Name");
+        _strategyLabel.Text = T("Strategy");
         _intervalLabel.Text = T("Interval");
         _smoothingLabel.Text = T("TempSmoothing");
         _rampDownLabel.Text = T("RampDown");
+        _gameExitHoldLabel.Text = T("GameExitHold");
         _editFanLabel.Text = T("EditFan");
         _languageLabel.Text = T("Language");
         _themeLabel.Text = T("Theme");
@@ -1311,6 +1764,16 @@ public sealed class MainWindow : Window
         _startButton.Content = _running ? T("Stop") : T("Start");
         _cpuTab!.Header = T("CpuCurve");
         _gpuTab!.Header = T("GpuCurve");
+        if (_fixedRpmHeader is not null)
+            _fixedRpmHeader.Text = T("FixedRpm");
+        if (_fixedNormalHeader is not null)
+            _fixedNormalHeader.Text = T("Normal");
+        if (_fixedGameHeader is not null)
+            _fixedGameHeader.Text = T("Game");
+        if (_fixedRpmNote is not null)
+            _fixedRpmNote.Text = T("FixedRpmNote");
+        foreach (var (mode, label) in _fixedModeLabels)
+            label.Text = T(ModeKey(mode));
         _cpuChart.SetLabels(T("CpuCurve"), T("TemperatureAxis"));
         _gpuChart.SetLabels(T("GpuCurve"), T("TemperatureAxis"));
         _cpuChart.SetFontFamily(fontFamilyName);
@@ -1321,8 +1784,10 @@ public sealed class MainWindow : Window
         _loadingSettings = true;
         SetComboItems(_languageCombo, ["\u4e2d\u6587", "English"], IsChinese ? 0 : 1);
         SetComboItems(_themeCombo, [T("Light"), T("Dark")], IsDark ? 1 : 0);
+        SetComboItems(_strategyCombo, [T("FixedRpm"), T("FanCurve")], _settings.ControlStrategy == ControlStrategy.FanCurve ? 1 : 0);
         SetComboItems(_editFanCombo, [T("Fan1"), T("Fan2")], _settings.EditFan == 2 ? 1 : 0);
         _loadingSettings = false;
+        ApplyStrategyVisibility();
         UpdateTrayMenu();
     }
 
