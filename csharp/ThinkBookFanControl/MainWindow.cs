@@ -5,6 +5,7 @@ using System.IO;
 using System.Linq;
 using System.Security;
 using System.Security.Principal;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -12,6 +13,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Input;
+using System.Windows.Interop;
 using System.Windows.Media;
 using System.Windows.Threading;
 using System.Globalization;
@@ -35,6 +37,13 @@ public sealed class MainWindow : Window
     private static readonly TimeSpan FanWriteUrgentMinInterval = TimeSpan.FromMilliseconds(1500);
     private const int FanWriteMinDeltaRpm = 300;
     private const int FanWriteUrgentDeltaRpm = 800;
+    private const int FixedModeHotkeyId = 0x54424643;
+    private const int WmHotkey = 0x0312;
+    private const uint ModAlt = 0x0001;
+    private const uint ModControl = 0x0002;
+    private const uint ModShift = 0x0004;
+    private const uint ModWin = 0x0008;
+    private const uint ModNoRepeat = 0x4000;
 
     private readonly FanController _fanController = new();
     private TemperatureReader? _temperatureReader;
@@ -142,6 +151,8 @@ public sealed class MainWindow : Window
     private bool _overrideNormalSawNoGamesSinceArmed;
     private bool _updatingFixedModeCombo;
     private bool _capturingFixedModeHotkey;
+    private HwndSource? _hotkeySource;
+    private bool _globalFixedModeHotkeyRegistered;
     private bool _fanCurveWarningShownThisRun;
     private bool _hasConfirmedFixedState;
     private ItsMode _confirmedItsMode = ItsMode.Unknown;
@@ -224,6 +235,7 @@ public sealed class MainWindow : Window
         _fixedControlTimer.Start();
 
         StateChanged += (_, _) => OnStateChanged();
+        SourceInitialized += (_, _) => InitializeGlobalHotkey();
         PreviewKeyDown += OnPreviewKeyDown;
         Closing += OnClosing;
         Closed += (_, _) => OnClosed();
@@ -1157,6 +1169,8 @@ public sealed class MainWindow : Window
         _timer.Stop();
         _trayMenuTimer.Stop();
         _fixedControlTimer.Stop();
+        UnregisterFixedModeHotkey();
+        _hotkeySource?.RemoveHook(WndProc);
         if (_running)
         {
             try
@@ -1592,13 +1606,6 @@ public sealed class MainWindow : Window
         if (_capturingFixedModeHotkey)
         {
             CaptureFixedModeHotkey(args);
-            return;
-        }
-
-        if (IsFixedModeHotkey(args))
-        {
-            ToggleManualFixedMode();
-            args.Handled = true;
         }
     }
 
@@ -1611,6 +1618,7 @@ public sealed class MainWindow : Window
             _settings.FixedModeHotkey = "";
             _capturingFixedModeHotkey = false;
             UpdateFixedModeHotkeyButton();
+            RegisterFixedModeHotkey();
             CurveProfileStore.SaveSettings(_settings);
             return;
         }
@@ -1618,22 +1626,18 @@ public sealed class MainWindow : Window
         if (IsModifierKey(key))
             return;
 
-        _settings.FixedModeHotkey = FormatHotkey(Keyboard.Modifiers, key);
+        var hotkey = FormatHotkey(Keyboard.Modifiers, key);
+        if (!IsAllowedGlobalHotkey(Keyboard.Modifiers, key))
+        {
+            _statusText.Text = T("HotkeyNeedsModifier");
+            return;
+        }
+
+        _settings.FixedModeHotkey = hotkey;
         _capturingFixedModeHotkey = false;
         UpdateFixedModeHotkeyButton();
+        RegisterFixedModeHotkey();
         CurveProfileStore.SaveSettings(_settings);
-    }
-
-    private bool IsFixedModeHotkey(KeyEventArgs args)
-    {
-        if (string.IsNullOrWhiteSpace(_settings.FixedModeHotkey))
-            return false;
-
-        var key = RealKey(args);
-        if (IsModifierKey(key))
-            return false;
-
-        return string.Equals(FormatHotkey(Keyboard.Modifiers, key), _settings.FixedModeHotkey, StringComparison.OrdinalIgnoreCase);
     }
 
     private static Key RealKey(KeyEventArgs args)
@@ -1665,6 +1669,118 @@ public sealed class MainWindow : Window
         parts.Add(key.ToString());
         return string.Join("+", parts);
     }
+
+    private void InitializeGlobalHotkey()
+    {
+        _hotkeySource = HwndSource.FromHwnd(new WindowInteropHelper(this).Handle);
+        _hotkeySource?.AddHook(WndProc);
+        RegisterFixedModeHotkey();
+    }
+
+    private void RegisterFixedModeHotkey()
+    {
+        if (_hotkeySource is null)
+            return;
+
+        UnregisterFixedModeHotkey();
+        if (string.IsNullOrWhiteSpace(_settings.FixedModeHotkey))
+            return;
+
+        if (!TryParseHotkey(_settings.FixedModeHotkey, out var modifiers, out var key))
+        {
+            _statusText.Text = T("HotkeyInvalid");
+            return;
+        }
+
+        var virtualKey = KeyInterop.VirtualKeyFromKey(key);
+        if (virtualKey == 0 || !RegisterHotKey(_hotkeySource.Handle, FixedModeHotkeyId, modifiers | ModNoRepeat, (uint)virtualKey))
+        {
+            _statusText.Text = $"{T("HotkeyRegisterFailed")}: {_settings.FixedModeHotkey}";
+            return;
+        }
+
+        _globalFixedModeHotkeyRegistered = true;
+    }
+
+    private void UnregisterFixedModeHotkey()
+    {
+        if (!_globalFixedModeHotkeyRegistered || _hotkeySource is null)
+            return;
+
+        UnregisterHotKey(_hotkeySource.Handle, FixedModeHotkeyId);
+        _globalFixedModeHotkeyRegistered = false;
+    }
+
+    private IntPtr WndProc(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
+    {
+        if (msg == WmHotkey && wParam.ToInt32() == FixedModeHotkeyId)
+        {
+            ToggleManualFixedMode();
+            handled = true;
+        }
+
+        return IntPtr.Zero;
+    }
+
+    private static bool TryParseHotkey(string text, out uint modifiers, out Key key)
+    {
+        modifiers = 0;
+        key = Key.None;
+        if (string.IsNullOrWhiteSpace(text))
+            return false;
+
+        foreach (var part in text.Split('+', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+        {
+            switch (part.ToLowerInvariant())
+            {
+                case "ctrl":
+                case "control":
+                    modifiers |= ModControl;
+                    break;
+                case "alt":
+                    modifiers |= ModAlt;
+                    break;
+                case "shift":
+                    modifiers |= ModShift;
+                    break;
+                case "win":
+                case "windows":
+                    modifiers |= ModWin;
+                    break;
+                default:
+                    if (!Enum.TryParse(part, ignoreCase: true, out key))
+                        return false;
+                    break;
+            }
+        }
+
+        return key != Key.None && IsAllowedGlobalHotkey(ToWpfModifiers(modifiers), key);
+    }
+
+    private static ModifierKeys ToWpfModifiers(uint modifiers)
+    {
+        var result = ModifierKeys.None;
+        if ((modifiers & ModControl) != 0)
+            result |= ModifierKeys.Control;
+        if ((modifiers & ModAlt) != 0)
+            result |= ModifierKeys.Alt;
+        if ((modifiers & ModShift) != 0)
+            result |= ModifierKeys.Shift;
+        if ((modifiers & ModWin) != 0)
+            result |= ModifierKeys.Windows;
+        return result;
+    }
+
+    private static bool IsAllowedGlobalHotkey(ModifierKeys modifiers, Key key)
+    {
+        return modifiers != ModifierKeys.None || key is >= Key.F1 and <= Key.F24;
+    }
+
+    [DllImport("user32.dll", SetLastError = true)]
+    private static extern bool RegisterHotKey(IntPtr hWnd, int id, uint fsModifiers, uint vk);
+
+    [DllImport("user32.dll", SetLastError = true)]
+    private static extern bool UnregisterHotKey(IntPtr hWnd, int id);
 
     private void ApplyStrategyVisibility()
     {
@@ -2186,6 +2302,9 @@ public sealed class MainWindow : Window
             "PendingChange" => "\u7b49\u5f85\u4e8c\u6b21\u786e\u8ba4",
             "None" => "\u65e0",
             "PressShortcut" => "\u8bf7\u6309\u5feb\u6377\u952e",
+            "HotkeyNeedsModifier" => "\u5168\u5c40\u5feb\u6377\u952e\u9700\u8981 Ctrl/Alt/Shift/Win \u7ec4\u5408\uff0c\u6216\u4f7f\u7528 F1-F24\u3002",
+            "HotkeyInvalid" => "\u5feb\u6377\u952e\u65e0\u6548",
+            "HotkeyRegisterFailed" => "\u5168\u5c40\u5feb\u6377\u952e\u6ce8\u518c\u5931\u8d25",
             "FixedRpmNote" => "0 = \u56fa\u4ef6\u9ed8\u8ba4\u81ea\u52a8\u3002\u975e 0 \u8f6c\u901f\u4f1a\u81ea\u52a8\u9650\u5236\u5230\u68c0\u6d4b\u5230\u7684\u98ce\u6247\u8303\u56f4\u3002",
             _ => key
         } : key switch
@@ -2249,6 +2368,9 @@ public sealed class MainWindow : Window
             "PendingChange" => "Waiting for confirmation",
             "None" => "None",
             "PressShortcut" => "Press shortcut",
+            "HotkeyNeedsModifier" => "Global hotkeys need Ctrl/Alt/Shift/Win, or use F1-F24.",
+            "HotkeyInvalid" => "Invalid hotkey",
+            "HotkeyRegisterFailed" => "Global hotkey registration failed",
             "FixedRpmNote" => "0 = firmware auto. Non-zero RPM values are clamped to the detected fan range.",
             _ => key
         };
