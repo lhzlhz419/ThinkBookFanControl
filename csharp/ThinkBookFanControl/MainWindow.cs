@@ -730,7 +730,24 @@ public sealed class MainWindow : Window
         toggleItem.Click += (_, _) => Dispatcher.BeginInvoke(new Action(async () => await ToggleRunningAsync()));
         _trayMenu.Items.Add(toggleItem);
 
+        var strategyMenu = new Forms.ToolStripMenuItem(T("Strategy"));
+        var fixedRpmItem = new Forms.ToolStripMenuItem(T("FixedRpm"))
+        {
+            Checked = _settings.ControlStrategy == ControlStrategy.FixedRpm
+        };
+        fixedRpmItem.Click += (_, _) => Dispatcher.BeginInvoke(new Action(() => TryChangeControlStrategy(ControlStrategy.FixedRpm)));
+        strategyMenu.DropDownItems.Add(fixedRpmItem);
+
+        var fanCurveItem = new Forms.ToolStripMenuItem(T("FanCurve"))
+        {
+            Checked = _settings.ControlStrategy == ControlStrategy.FanCurve
+        };
+        fanCurveItem.Click += (_, _) => Dispatcher.BeginInvoke(new Action(() => TryChangeControlStrategy(ControlStrategy.FanCurve)));
+        strategyMenu.DropDownItems.Add(fanCurveItem);
+        _trayMenu.Items.Add(strategyMenu);
+
         var profilesMenu = new Forms.ToolStripMenuItem(T("Profile"));
+        profilesMenu.Enabled = _settings.ControlStrategy == ControlStrategy.FanCurve;
         for (var i = 0; i < _profiles.Count; i++)
         {
             var index = i;
@@ -1804,23 +1821,27 @@ public sealed class MainWindow : Window
             return;
 
         var selectedStrategy = _strategyTabs.SelectedIndex == 1 ? ControlStrategy.FanCurve : ControlStrategy.FixedRpm;
+        if (TryChangeControlStrategy(selectedStrategy))
+            return;
+
+        _loadingSettings = true;
+        _strategyTabs.SelectedIndex = _settings.ControlStrategy == ControlStrategy.FanCurve ? 1 : 0;
+        _loadingSettings = false;
+    }
+
+    private bool TryChangeControlStrategy(ControlStrategy selectedStrategy)
+    {
         if (_running && selectedStrategy != _settings.ControlStrategy)
         {
             ShowStopFirstWarning();
-            _loadingSettings = true;
-            _strategyTabs.SelectedIndex = _settings.ControlStrategy == ControlStrategy.FanCurve ? 1 : 0;
-            _loadingSettings = false;
-            return;
+            return false;
         }
 
         if (selectedStrategy == ControlStrategy.FanCurve && !_fanCurveWarningShownThisRun)
         {
             if (!ShowFanCurveWarningDialog())
             {
-                _loadingSettings = true;
-                _strategyTabs.SelectedIndex = 0;
-                _loadingSettings = false;
-                return;
+                return false;
             }
             _fanCurveWarningShownThisRun = true;
         }
@@ -1828,6 +1849,8 @@ public sealed class MainWindow : Window
         _settings.ControlStrategy = selectedStrategy;
         CurveProfileStore.SaveSettings(_settings);
         ApplyStrategyVisibility();
+        UpdateTrayMenu();
+        return true;
     }
 
     private void ShowStopFirstWarning()
