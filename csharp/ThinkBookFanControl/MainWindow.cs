@@ -82,6 +82,8 @@ public sealed class MainWindow : Window
     private readonly Button _startButton = new() { Content = "Start", MinWidth = 76 };
     private readonly Button _saveButton = new() { MinWidth = 76, Margin = new Thickness(0, 0, 6, 0) };
     private readonly Button _refreshButton = new() { MinWidth = 76, Margin = new Thickness(0, 0, 6, 0) };
+    private readonly Button _powerSettingsButton = new() { MinWidth = 96, Margin = new Thickness(0, 0, 6, 0) };
+    private readonly Button _otherSettingsButton = new() { MinWidth = 96 };
     private readonly Button _fixedModeHotkeyButton = new() { MinWidth = 96, Margin = new Thickness(0, 0, 8, 0) };
     private readonly CheckBox _syncFanSpeedsCheck = new() { VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 10, 0) };
     private readonly CheckBox _fixedSyncFanSpeedsCheck = new() { VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 10, 0) };
@@ -307,19 +309,51 @@ public sealed class MainWindow : Window
         row1.Children.Add(_closeToTrayCheck);
         panel.Children.Add(row1);
 
-        var row3 = new WrapPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 6, 0, 0) };
+        var row3 = new Grid { Margin = new Thickness(0, 6, 0, 0) };
+        row3.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        row3.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+
+        var primaryActions = new StackPanel { Orientation = Orientation.Horizontal };
         _saveButton.Click += (_, _) => SaveCurrentProfile(requireStopped: true);
-        row3.Children.Add(_saveButton);
+        primaryActions.Children.Add(_saveButton);
 
         _refreshButton.Click += async (_, _) => await SampleAsync(force: true);
-        row3.Children.Add(_refreshButton);
+        primaryActions.Children.Add(_refreshButton);
 
         _startButton.Click += async (_, _) => await ToggleRunningAsync();
         _startButton.Margin = new Thickness(0, 0, 6, 0);
-        row3.Children.Add(_startButton);
+        primaryActions.Children.Add(_startButton);
+        row3.Children.Add(primaryActions);
+
+        var settingsActions = new StackPanel { Orientation = Orientation.Horizontal };
+        _powerSettingsButton.Click += (_, _) => ShowPowerSettingsWindow();
+        settingsActions.Children.Add(_powerSettingsButton);
+
+        _otherSettingsButton.Click += (_, _) => ShowOtherSettingsWindow();
+        settingsActions.Children.Add(_otherSettingsButton);
+        Grid.SetColumn(settingsActions, 1);
+        row3.Children.Add(settingsActions);
         panel.Children.Add(row3);
 
         return panel;
+    }
+
+    private void ShowPowerSettingsWindow()
+    {
+        var window = new PowerSettingsWindow(T, IsDark, FontFamily, FontSize)
+        {
+            Owner = this
+        };
+        window.ShowDialog();
+    }
+
+    private void ShowOtherSettingsWindow()
+    {
+        var window = new OtherSettingsWindow(T, IsDark, FontFamily, FontSize)
+        {
+            Owner = this
+        };
+        window.ShowDialog();
     }
 
     private UIElement BuildFanCurvePanel()
@@ -2276,6 +2310,8 @@ public sealed class MainWindow : Window
             "TemperatureAxis" => "\u6e29\u5ea6 (\u00B0C)",
             "Save" => "\u4fdd\u5b58",
             "Refresh" => "\u5237\u65b0",
+            "PowerSettings" => "\u529f\u8017\u8bbe\u7f6e",
+            "OtherSettings" => "\u5176\u5b83\u8bbe\u7f6e",
             "Start" => "\u542f\u52a8",
             "Stop" => "\u505c\u6b62",
             "Idle" => "\u7a7a\u95f2",
@@ -2283,8 +2319,13 @@ public sealed class MainWindow : Window
             "Running" => "\u8fd0\u884c\u4e2d",
             "Monitoring" => "\u76d1\u63a7\u4e2d",
             "HeatSoak" => "\u70ed\u6d78",
+            "Auto" => "\u81ea\u52a8",
+            "Low" => "\u4f4e",
+            "High" => "\u9ad8",
             "On" => "\u5f00",
             "Off" => "\u5173",
+            "NotSupported" => "\u4e0d\u652f\u6301",
+            "Close" => "\u5173\u95ed",
             "Saved" => "\u5df2\u4fdd\u5b58",
             "ControllerEnabled" => "\u98ce\u6247\u63a7\u5236\u5df2\u542f\u7528",
             "ControllerResumed" => "\u5df2\u6062\u590d\u4e0a\u6b21\u672a\u505c\u6b62\u7684\u98ce\u6247\u63a7\u5236",
@@ -2329,6 +2370,26 @@ public sealed class MainWindow : Window
             "HotkeyInvalid" => "\u5feb\u6377\u952e\u65e0\u6548",
             "HotkeyRegisterFailed" => "\u5168\u5c40\u5feb\u6377\u952e\u6ce8\u518c\u5931\u8d25",
             "FixedRpmNote" => "0 = \u56fa\u4ef6\u9ed8\u8ba4\u81ea\u52a8\u3002\u975e 0 \u8f6c\u901f\u4f1a\u81ea\u52a8\u9650\u5236\u5230\u68c0\u6d4b\u5230\u7684\u98ce\u6247\u8303\u56f4\u3002",
+            "KeyboardBacklightBrightness" => "\u952e\u76d8\u80cc\u5149\u4eae\u5ea6",
+            "KeyboardBacklightOff" => "\u5173\u95ed",
+            "KeyboardBacklightAutoOff" => "30 \u79d2\u5185\u65e0\u952e\u76d8\u6216\u89e6\u6478\u677f\u64cd\u4f5c\u81ea\u52a8\u5173\u95ed\u952e\u76d8\u80cc\u5149",
+            "OK" => "\u786e\u5b9a",
+            "CpuPl1" => "CPU PL1",
+            "CpuPl2" => "CPU PL2",
+            "CpuTemperatureLimit" => "CPU \u6e29\u5ea6\u5899",
+            "CpuTurboTimeLimit" => "CPU Turbo Time Limit",
+            "GpuPowerBoost" => "GPU Power Boost",
+            "GpuConfigurableTgp" => "GPU Configurable TGP",
+            "GpuTemperatureLimit" => "GPU \u6e29\u5ea6\u5899",
+            "GpuToCpuDynamicBoost" => "GPU To CPU Dynamic Boost",
+            "PowerSettingsReadFailedFormat" => "\u8bfb\u53d6\u529f\u8017\u8bbe\u7f6e\u5931\u8d25\uff1a{0}",
+            "PowerSettingsWriteFailedFormat" => "\u5199\u5165\u529f\u8017\u8bbe\u7f6e\u5931\u8d25\uff1a{0}",
+            "PowerSettingRangeFormat" => "\u201c{0}\u201d\u5fc5\u987b\u662f {1} \u5230 {2} \u4e4b\u95f4\u7684\u6574\u6570\u3002",
+            "PowerSettingsTurboRequired" => "\u8bf7\u9009\u62e9 CPU Turbo Time Limit\u3002",
+            "ReadingSettings" => "\u6b63\u5728\u8bfb\u53d6\u5f53\u524d\u72b6\u6001...",
+            "SettingsReadFailedFormat" => "\u8bfb\u53d6\u5931\u8d25\uff1a{0}",
+            "SettingWriteFailedFormat" => "\u5199\u5165\u5931\u8d25\uff1a{0}",
+            "UnknownEcValueFormat" => "\u672a\u77e5 0x{0:X2}",
             _ => key
         } : key switch
         {
@@ -2349,9 +2410,16 @@ public sealed class MainWindow : Window
             "CpuCurve" => "CPU Curve",
             "GpuCurve" => "GPU Curve",
             "TemperatureAxis" => "Temperature (\u00B0C)",
+            "PowerSettings" => "Power settings",
+            "OtherSettings" => "Other settings",
             "Idle" => "Idle",
             "Stopping" => "Stopping...",
             "HeatSoak" => "Heat soak",
+            "Auto" => "Auto",
+            "Low" => "Low",
+            "High" => "High",
+            "NotSupported" => "Not supported",
+            "Close" => "Close",
             "ControllerEnabled" => "Controller enabled",
             "ControllerResumed" => "Resumed previously active fan control",
             "RestoringAuto" => "Restoring automatic fan control...",
@@ -2395,6 +2463,26 @@ public sealed class MainWindow : Window
             "HotkeyInvalid" => "Invalid hotkey",
             "HotkeyRegisterFailed" => "Global hotkey registration failed",
             "FixedRpmNote" => "0 = firmware auto. Non-zero RPM values are clamped to the detected fan range.",
+            "KeyboardBacklightBrightness" => "Keyboard backlight brightness",
+            "KeyboardBacklightOff" => "Off",
+            "KeyboardBacklightAutoOff" => "Auto-off after 30 seconds without keyboard or touchpad input",
+            "OK" => "OK",
+            "CpuPl1" => "CPU PL1",
+            "CpuPl2" => "CPU PL2",
+            "CpuTemperatureLimit" => "CPU temperature limit",
+            "CpuTurboTimeLimit" => "CPU Turbo Time Limit",
+            "GpuPowerBoost" => "GPU Power Boost",
+            "GpuConfigurableTgp" => "GPU Configurable TGP",
+            "GpuTemperatureLimit" => "GPU temperature limit",
+            "GpuToCpuDynamicBoost" => "GPU To CPU Dynamic Boost",
+            "PowerSettingsReadFailedFormat" => "Failed to read power settings: {0}",
+            "PowerSettingsWriteFailedFormat" => "Failed to write power settings: {0}",
+            "PowerSettingRangeFormat" => "\"{0}\" must be an integer from {1} to {2}.",
+            "PowerSettingsTurboRequired" => "Select a CPU Turbo Time Limit.",
+            "ReadingSettings" => "Reading current state...",
+            "SettingsReadFailedFormat" => "Read failed: {0}",
+            "SettingWriteFailedFormat" => "Write failed: {0}",
+            "UnknownEcValueFormat" => "Unknown 0x{0:X2}",
             _ => key
         };
     }
@@ -2423,6 +2511,8 @@ public sealed class MainWindow : Window
         _themeLabel.Text = T("Theme");
         _saveButton.Content = T("Save");
         _refreshButton.Content = T("Refresh");
+        _powerSettingsButton.Content = T("PowerSettings");
+        _otherSettingsButton.Content = T("OtherSettings");
         _syncFanSpeedsCheck.Content = T("SyncFanSpeeds");
         _fixedSyncFanSpeedsCheck.Content = T("FixedSyncFanSpeeds");
         _autoDetectGamesCheck.Content = T("AutoDetectGames");
