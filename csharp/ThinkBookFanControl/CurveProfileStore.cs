@@ -100,7 +100,7 @@ public static class CurveProfileStore
             defaults.EditFan = loaded.EditFan == 2 ? 2 : 1;
             defaults.SyncFanSpeeds = loaded.SyncFanSpeeds;
             defaults.ControlStrategy = Enum.IsDefined(loaded.ControlStrategy) ? loaded.ControlStrategy : ControlStrategy.FixedRpm;
-            defaults.FanCurveWarningAccepted = false;
+            defaults.FanCurveWarningAccepted = loaded.FanCurveWarningAccepted;
             defaults.GameExitHoldSeconds = PickAllowed(loaded.GameExitHoldSeconds, [0, 10, 20, 30, 60], defaults.GameExitHoldSeconds);
             defaults.ManualGameMode = loaded.ManualGameMode;
             defaults.FixedGameModeOverride = Enum.IsDefined(loaded.FixedGameModeOverride)

@@ -15,6 +15,8 @@ public sealed record TemperatureSnapshot(
     double? CpuTempC,
     double? GpuTempC,
     double? VramTempC,
+    double? CpuPowerW,
+    double? GpuPowerW,
     string CpuSensor,
     string GpuSensor,
     string VramSensor);

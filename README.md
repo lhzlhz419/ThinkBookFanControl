@@ -36,6 +36,9 @@ LibreHardwareMonitor and controls the two fans through Lenovo WMI methods.
 
 - CPU/GPU/VRAM temperature display.
 - Fan 1/Fan 2 RPM display.
+- A Full speed switch that pauses the active controller, clears both manual
+  targets to `0`, then sets WMI feature `0x04020000` to `1`. Turning it off
+  restores the controller's previous running/stopped state.
 - Separate CPU and GPU fan curves.
 - Separate Fan 1 and Fan 2 curves inside each CPU/GPU chart.
 - Optional synchronized point dragging for both fan curves.
@@ -49,6 +52,9 @@ LibreHardwareMonitor and controls the two fans through Lenovo WMI methods.
 This tool writes directly to Lenovo firmware/WMI fan-control methods. It has
 only been developed against the hardware path above. Use it only with active
 temperature monitoring and verify that `Stop` restores automatic fan control.
+
+Full speed is a global `FNST` override for both fans. On exit, the app clears
+feature `0x04020000` before writing both manual fan targets back to `0`.
 
 Administrator permission is required at runtime.
 

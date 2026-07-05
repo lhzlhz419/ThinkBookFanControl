@@ -50,10 +50,13 @@ public sealed class MainWindow : Window
     private readonly DispatcherTimer _timer = new();
     private readonly DispatcherTimer _trayMenuTimer = new();
     private readonly DispatcherTimer _fixedControlTimer = new();
+    private readonly DispatcherTimer _itsModeTimer = new();
     private readonly List<FanProfile> _profiles;
     private readonly AppSettings _settings;
     private readonly ItsModeDetector _itsModeDetector = new();
     private readonly GameProcessDetector _gameProcessDetector = new();
+    private static readonly ItsMode[] SwitchableItsModes =
+        [ItsMode.Intelligent, ItsMode.PowerSaving, ItsMode.Performance, ItsMode.Geek];
 
     private readonly TextBlock _cpuMetricTitle = new();
     private readonly TextBlock _gpuMetricTitle = new();
@@ -62,7 +65,9 @@ public sealed class MainWindow : Window
     private readonly TextBlock _fan2MetricTitle = new();
     private readonly TextBlock _targetMetricTitle = new();
     private readonly TextBlock _cpuTempText = MetricValue();
+    private readonly TextBlock _cpuPowerText = MetricValue();
     private readonly TextBlock _gpuTempText = MetricValue();
+    private readonly TextBlock _gpuPowerText = MetricValue();
     private readonly TextBlock _vramTempText = MetricValue();
     private readonly TextBlock _fan1Text = MetricValue();
     private readonly TextBlock _fan2Text = MetricValue();
@@ -79,12 +84,16 @@ public sealed class MainWindow : Window
     private readonly ComboBox _editFanCombo = OptionCombo("Fan 1", "Fan 2");
     private readonly ComboBox _languageCombo = OptionCombo("\u4e2d\u6587", "English");
     private readonly ComboBox _themeCombo = OptionCombo("Light", "Dark");
+    private readonly ComboBox _itsModeCombo = OptionCombo("Auto", "Cool", "Performance", "Geek");
     private readonly Button _startButton = new() { Content = "Start", MinWidth = 76 };
     private readonly Button _saveButton = new() { MinWidth = 76, Margin = new Thickness(0, 0, 6, 0) };
     private readonly Button _refreshButton = new() { MinWidth = 76, Margin = new Thickness(0, 0, 6, 0) };
     private readonly Button _powerSettingsButton = new() { MinWidth = 96, Margin = new Thickness(0, 0, 6, 0) };
+    private readonly Button _displaySettingsButton = new() { MinWidth = 96, Margin = new Thickness(0, 0, 6, 0) };
+    private readonly Button _soundSettingsButton = new() { MinWidth = 96, Margin = new Thickness(0, 0, 6, 0) };
     private readonly Button _otherSettingsButton = new() { MinWidth = 96 };
     private readonly Button _fixedModeHotkeyButton = new() { MinWidth = 96, Margin = new Thickness(0, 0, 8, 0) };
+    private readonly CheckBox _fullSpeedCheck = new() { VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 10, 0) };
     private readonly CheckBox _syncFanSpeedsCheck = new() { VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 10, 0) };
     private readonly CheckBox _fixedSyncFanSpeedsCheck = new() { VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 10, 0) };
     private readonly CheckBox _autoDetectGamesCheck = new() { VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 10, 0) };
@@ -142,6 +151,9 @@ public sealed class MainWindow : Window
     private bool _fanSnapshotSampling;
     private bool _fixedControlSampling;
     private bool _fanWriteInProgress;
+    private bool _fullSpeedEnabled;
+    private bool _fullSpeedSwitching;
+    private bool _resumeFanControlAfterFullSpeed;
     private readonly SemaphoreSlim _fanIoLock = new(1, 1);
     private FanTargets? _lastTarget;
     private FanTargets? _lastAppliedTarget;
@@ -163,6 +175,10 @@ public sealed class MainWindow : Window
     private bool _pendingGamesRunning;
     private bool _hasPendingFixedState;
     private bool _updatingFixedRpmBoxes;
+    private bool _updatingItsModeCombo;
+    private bool _refreshingItsMode;
+    private bool _switchingItsMode;
+    private ItsMode _displayedItsMode = ItsMode.Unknown;
     private DateTimeOffset? _lastGameStopTime;
     private int _fanMinRpm = 1500;
     private int _fanMaxRpm = 5500;
@@ -195,8 +211,10 @@ public sealed class MainWindow : Window
         _gameExitHoldCombo.Width = 58;
         _languageCombo.Width = 72;
         _themeCombo.Width = 64;
+        _itsModeCombo.Width = 112;
+        _itsModeCombo.IsEnabled = false;
+        _itsModeCombo.VerticalAlignment = VerticalAlignment.Center;
         _settings = CurveProfileStore.LoadSettings();
-        _settings.ControlStrategy = ControlStrategy.FixedRpm;
         _profiles = CurveProfileStore.Load();
         _cpuFan1Curve = [.. _profiles[0].CpuFan1Curve];
         _cpuFan2Curve = [.. _profiles[0].CpuFan2Curve];
@@ -236,11 +254,17 @@ public sealed class MainWindow : Window
         _fixedControlTimer.Tick += async (_, _) => await EvaluateFixedRpmControlAsync();
         _fixedControlTimer.Start();
 
+        _itsModeCombo.SelectionChanged += OnItsModeSelectionChanged;
+        _itsModeTimer.Interval = TimeSpan.FromSeconds(1);
+        _itsModeTimer.Tick += async (_, _) => await RefreshItsModeAsync();
+        _itsModeTimer.Start();
+
         StateChanged += (_, _) => OnStateChanged();
         SourceInitialized += (_, _) => InitializeGlobalHotkey();
         PreviewKeyDown += OnPreviewKeyDown;
         Closing += OnClosing;
         Closed += (_, _) => OnClosed();
+        Loaded += async (_, _) => await RefreshItsModeAsync();
 
         if (startToTrayRequested && _settings.StartWithWindows && _settings.StartToTray)
             Loaded += (_, _) => HideWindowToTray();
@@ -259,8 +283,8 @@ public sealed class MainWindow : Window
         root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
 
         var metrics = new UniformGrid { Columns = 6, Margin = new Thickness(12, 10, 12, 8) };
-        metrics.Children.Add(Metric(_cpuMetricTitle, _cpuTempText));
-        metrics.Children.Add(Metric(_gpuMetricTitle, _gpuTempText));
+        metrics.Children.Add(Metric(_cpuMetricTitle, MetricPair(_cpuTempText, _cpuPowerText)));
+        metrics.Children.Add(Metric(_gpuMetricTitle, MetricPair(_gpuTempText, _gpuPowerText)));
         metrics.Children.Add(Metric(_vramMetricTitle, _vramTempText));
         metrics.Children.Add(Metric(_fan1MetricTitle, _fan1Text));
         metrics.Children.Add(Metric(_fan2MetricTitle, _fan2Text));
@@ -323,11 +347,22 @@ public sealed class MainWindow : Window
         _startButton.Click += async (_, _) => await ToggleRunningAsync();
         _startButton.Margin = new Thickness(0, 0, 6, 0);
         primaryActions.Children.Add(_startButton);
+
+        _fullSpeedCheck.Click += async (_, _) => await ToggleFullSpeedAsync();
+        primaryActions.Children.Add(_fullSpeedCheck);
         row3.Children.Add(primaryActions);
 
         var settingsActions = new StackPanel { Orientation = Orientation.Horizontal };
+        settingsActions.Children.Add(_itsModeCombo);
+
         _powerSettingsButton.Click += (_, _) => ShowPowerSettingsWindow();
         settingsActions.Children.Add(_powerSettingsButton);
+
+        _displaySettingsButton.Click += (_, _) => ShowDisplaySettingsWindow();
+        settingsActions.Children.Add(_displaySettingsButton);
+
+        _soundSettingsButton.Click += (_, _) => ShowSoundSettingsWindow();
+        settingsActions.Children.Add(_soundSettingsButton);
 
         _otherSettingsButton.Click += (_, _) => ShowOtherSettingsWindow();
         settingsActions.Children.Add(_otherSettingsButton);
@@ -340,7 +375,7 @@ public sealed class MainWindow : Window
 
     private void ShowPowerSettingsWindow()
     {
-        var window = new PowerSettingsWindow(T, IsDark, FontFamily, FontSize)
+        var window = new PowerSettingsWindow(T, SelectedItsMode, IsDark, FontFamily, FontSize)
         {
             Owner = this
         };
@@ -349,7 +384,40 @@ public sealed class MainWindow : Window
 
     private void ShowOtherSettingsWindow()
     {
-        var window = new OtherSettingsWindow(T, IsDark, FontFamily, FontSize)
+        var window = new OtherSettingsWindow(
+            T,
+            IsDark,
+            FontFamily,
+            FontSize,
+            GetSettingsRefreshInterval)
+        {
+            Owner = this
+        };
+        window.ShowDialog();
+    }
+
+    private void ShowDisplaySettingsWindow()
+    {
+        var window = new DisplaySettingsWindow(
+            T,
+            IsDark,
+            FontFamily,
+            FontSize,
+            GetSettingsRefreshInterval)
+        {
+            Owner = this
+        };
+        window.ShowDialog();
+    }
+
+    private void ShowSoundSettingsWindow()
+    {
+        var window = new SoundSettingsWindow(
+            T,
+            IsDark,
+            FontFamily,
+            FontSize,
+            GetSettingsRefreshInterval)
         {
             Owner = this
         };
@@ -429,8 +497,8 @@ public sealed class MainWindow : Window
         _fixedColumnLabels[(true, 1)] = AddFixedText(grid, "Game F1", 0, 3, true);
         _fixedColumnLabels[(true, 2)] = AddFixedText(grid, "Game F2", 0, 4, true);
 
-        AddFixedRpmRow(grid, 1, ItsMode.PowerSaving, "Power saving");
-        AddFixedRpmRow(grid, 2, ItsMode.Intelligent, "Intelligent");
+        AddFixedRpmRow(grid, 1, ItsMode.PowerSaving, "Cool");
+        AddFixedRpmRow(grid, 2, ItsMode.Intelligent, "Auto");
         AddFixedRpmRow(grid, 3, ItsMode.Performance, "Performance");
         AddFixedRpmRow(grid, 4, ItsMode.Geek, "Geek");
 
@@ -525,6 +593,17 @@ public sealed class MainWindow : Window
             _smoothedCpuTempC = SmoothTemperature(_smoothedCpuTempC, temps.CpuTempC, profile.TemperatureSmoothing);
             _smoothedGpuTempC = SmoothTemperature(_smoothedGpuTempC, temps.GpuTempC, profile.TemperatureSmoothing);
 
+            if (_fullSpeedEnabled)
+            {
+                UpdateTemperatureUi(temps);
+                _targetText.Text = T("FullSpeed");
+                _cpuChart.SetCurrentTemp(temps.CpuTempC);
+                _gpuChart.SetCurrentTemp(temps.GpuTempC);
+                _statusText.Text = T("FullSpeedEnabled");
+                UpdateTrayText();
+                return;
+            }
+
             if (_settings.ControlStrategy == ControlStrategy.FixedRpm)
             {
                 if (!_running)
@@ -534,7 +613,7 @@ public sealed class MainWindow : Window
                 _targetText.Text = FormatTarget(_lastTarget);
                 _cpuChart.SetCurrentTemp(temps.CpuTempC);
                 _gpuChart.SetCurrentTemp(temps.GpuTempC);
-                _statusText.Text = $"{(_running ? T("Running") : T("Monitoring"))} | {T("Strategy")}: {T("FixedRpm")} | {T("CurrentMode")}: {T(ModeKey(_currentItsMode))} | {T("Game")}: {FormatGameState()}";
+                _statusText.Text = $"{(_running ? T("Running") : T("Monitoring"))} | {T("Strategy")}: {T("FixedRpm")} | {T("Game")}: {FormatGameState()}";
                 UpdateTrayText();
                 return;
             }
@@ -693,6 +772,9 @@ public sealed class MainWindow : Window
                 await _fanIoLock.WaitAsync();
                 try
                 {
+                    if (!_running || _fullSpeedEnabled || _fullSpeedSwitching)
+                        break;
+
                     await Task.Run(() => _fanController.Apply(target.Fan1Rpm, target.Fan2Rpm));
                     _lastAppliedTarget = target;
                     _lastFanWriteTime = DateTimeOffset.Now;
@@ -760,7 +842,10 @@ public sealed class MainWindow : Window
         _trayMenu.Items.Add(_trayFanItem);
         _trayMenu.Items.Add(new Forms.ToolStripSeparator());
 
-        var toggleItem = new Forms.ToolStripMenuItem(_running ? T("Stop") : T("Start"));
+        var toggleItem = new Forms.ToolStripMenuItem(_running ? T("Stop") : T("Start"))
+        {
+            Enabled = !_fullSpeedEnabled && !_fullSpeedSwitching
+        };
         toggleItem.Click += (_, _) => Dispatcher.BeginInvoke(new Action(async () => await ToggleRunningAsync()));
         _trayMenu.Items.Add(toggleItem);
 
@@ -883,7 +968,13 @@ public sealed class MainWindow : Window
             return;
         }
 
-        if (_closingAfterRestore || !_running)
+        if (_fullSpeedSwitching)
+        {
+            e.Cancel = true;
+            return;
+        }
+
+        if (_closingAfterRestore || (!_running && !_fullSpeedEnabled))
             return;
 
         e.Cancel = true;
@@ -892,7 +983,9 @@ public sealed class MainWindow : Window
 
         _exitRestoreInProgress = true;
         _exitRequested = true;
+        var wasRunning = _running;
         _startButton.IsEnabled = false;
+        _fullSpeedCheck.IsEnabled = false;
         _startButton.Content = T("Stopping");
         _statusText.Text = T("RestoringAuto");
         try
@@ -903,11 +996,13 @@ public sealed class MainWindow : Window
         }
         catch (Exception ex)
         {
-            _running = true;
+            _running = wasRunning;
             _exitRequested = false;
             _exitRestoreInProgress = false;
-            _startButton.IsEnabled = true;
-            _startButton.Content = T("Stop");
+            _startButton.IsEnabled = !_fullSpeedEnabled;
+            _fullSpeedCheck.IsEnabled = true;
+            _fullSpeedCheck.IsChecked = _fullSpeedEnabled;
+            _startButton.Content = _running ? T("Stop") : T("Start");
             MessageBox.Show(this, ex.Message, T("RestoreAutoFailed"), MessageBoxButton.OK, MessageBoxImage.Error);
         }
     }
@@ -1130,6 +1225,9 @@ public sealed class MainWindow : Window
 
     private async Task ToggleRunningAsync()
     {
+        if (_fullSpeedEnabled || _fullSpeedSwitching)
+            return;
+
         if (_running)
         {
             await RestoreAutoAsync();
@@ -1138,6 +1236,107 @@ public sealed class MainWindow : Window
 
         SaveCurrentProfile(requireStopped: false);
         StartFanControl();
+    }
+
+    private async Task ToggleFullSpeedAsync()
+    {
+        if (_fullSpeedSwitching)
+        {
+            _fullSpeedCheck.IsChecked = _fullSpeedEnabled;
+            return;
+        }
+
+        var enable = _fullSpeedCheck.IsChecked == true;
+        var wasRunning = _running;
+        _fullSpeedSwitching = true;
+        _fullSpeedCheck.IsEnabled = false;
+        _startButton.IsEnabled = false;
+
+        try
+        {
+            if (enable)
+            {
+                _resumeFanControlAfterFullSpeed = wasRunning;
+                SuspendFanControlForFullSpeed();
+                _statusText.Text = T("EnablingFullSpeed");
+
+                // D1 manual mode makes the EC skip its normal FNST output path,
+                // so both manual targets must be cleared before FNST is set.
+                await RestoreAutoWithLockAsync();
+                await SetFullSpeedWithLockAsync(true);
+                _fullSpeedEnabled = true;
+                SetResumeFanControlOnNextStart(false);
+                _targetText.Text = T("FullSpeed");
+                _statusText.Text = T("FullSpeedEnabled");
+            }
+            else
+            {
+                _statusText.Text = T("DisablingFullSpeed");
+                await SetFullSpeedWithLockAsync(false);
+                _fullSpeedEnabled = false;
+                _targetText.Text = "--";
+
+                var shouldResume = _resumeFanControlAfterFullSpeed;
+                _resumeFanControlAfterFullSpeed = false;
+                if (shouldResume)
+                {
+                    StartFanControl();
+                }
+                else
+                {
+                    SetResumeFanControlOnNextStart(false);
+                    _statusText.Text = T("AutoRestored");
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            if (enable)
+            {
+                try
+                {
+                    await SetFullSpeedWithLockAsync(false);
+                }
+                catch
+                {
+                    // Preserve the original failure for the user.
+                }
+
+                _fullSpeedEnabled = false;
+                _fullSpeedCheck.IsChecked = false;
+                if (wasRunning)
+                    StartFanControl();
+                else
+                    SetResumeFanControlOnNextStart(false);
+            }
+            else
+            {
+                _fullSpeedCheck.IsChecked = _fullSpeedEnabled;
+            }
+
+            _statusText.Text = T("FullSpeedFailed") + ": " + ex.GetType().Name + ": " + ex.Message;
+            MessageBox.Show(this, ex.Message, T("FullSpeedFailed"), MessageBoxButton.OK, MessageBoxImage.Error);
+        }
+        finally
+        {
+            _fullSpeedSwitching = false;
+            _fullSpeedCheck.IsEnabled = true;
+            _startButton.IsEnabled = !_fullSpeedEnabled;
+            _startButton.Content = _running ? T("Stop") : T("Start");
+            UpdateTrayMenu();
+        }
+    }
+
+    private void SuspendFanControlForFullSpeed()
+    {
+        _running = false;
+        ResetFanTargetState();
+        _gamesRunning = false;
+        _effectiveGameMode = false;
+        _lastGameStopTime = null;
+        _startButton.Content = T("Start");
+        UpdateFixedModeCombo();
+        UpdateTrayMenu();
     }
 
     private async Task ResumeFanControlAsync()
@@ -1220,16 +1419,36 @@ public sealed class MainWindow : Window
         _timer.Stop();
         _trayMenuTimer.Stop();
         _fixedControlTimer.Stop();
+        _itsModeTimer.Stop();
         UnregisterFixedModeHotkey();
         _hotkeySource?.RemoveHook(WndProc);
-        if (_running)
+        if (_running || _fullSpeedEnabled)
         {
             try
             {
                 _fanIoLock.Wait();
                 try
                 {
-                    _fanController.RestoreAuto();
+                    if (_fullSpeedEnabled)
+                    {
+                        try
+                        {
+                            _fanController.SetFullSpeed(false);
+                        }
+                        catch
+                        {
+                            // Still attempt to clear D1 manual targets below.
+                        }
+                    }
+
+                    try
+                    {
+                        _fanController.RestoreAuto();
+                    }
+                    catch
+                    {
+                        // The window is already closing; this is a last resort.
+                    }
                 }
                 finally { _fanIoLock.Release(); }
             }
@@ -1268,6 +1487,15 @@ public sealed class MainWindow : Window
         _gamesRunning = false;
         _effectiveGameMode = false;
         _lastGameStopTime = null;
+
+        if (_fullSpeedEnabled)
+        {
+            await SetFullSpeedWithLockAsync(false);
+            _fullSpeedEnabled = false;
+            _fullSpeedCheck.IsChecked = false;
+            _resumeFanControlAfterFullSpeed = false;
+        }
+
         await RestoreAutoWithLockAsync();
     }
 
@@ -1279,21 +1507,20 @@ public sealed class MainWindow : Window
         _fixedControlSampling = true;
         try
         {
-            var modeTask = Task.Run(() => _itsModeDetector.ReadMode());
+            var mode = SelectedItsMode();
             var gameTask = Task.Run(() => _gameProcessDetector.AreGamesRunning());
-            var mode = await modeTask;
             var gamesRunning = await gameTask;
 
             if (!UpdateConfirmedFixedState(mode, gamesRunning))
             {
-                _statusText.Text = $"{T("Running")} | {T("PendingChange")} | {T("CurrentMode")}: {T(ModeKey(_currentItsMode))} | {T("Game")}: {FormatGameState()}";
+                _statusText.Text = $"{T("Running")} | {T("PendingChange")} | {T("Game")}: {FormatGameState()}";
                 return;
             }
 
             var target = GetFixedTarget(_currentItsMode, _effectiveGameMode);
             _lastTarget = target;
             _targetText.Text = FormatTarget(target);
-            _statusText.Text = $"{T("Running")} | {T("Strategy")}: {T("FixedRpm")} | {T("CurrentMode")}: {T(ModeKey(_currentItsMode))} | {T("Game")}: {FormatGameState()}";
+            _statusText.Text = $"{T("Running")} | {T("Strategy")}: {T("FixedRpm")} | {T("Game")}: {FormatGameState()}";
 
             await ApplyFixedTargetAsync(target);
         }
@@ -1431,6 +1658,9 @@ public sealed class MainWindow : Window
         await _fanIoLock.WaitAsync();
         try
         {
+            if (!_running || _fullSpeedEnabled || _fullSpeedSwitching)
+                return;
+
             await Task.Run(() =>
             {
                 if (target.Fan1Rpm == 0 && target.Fan2Rpm == 0)
@@ -1865,18 +2095,23 @@ public sealed class MainWindow : Window
 
     private bool TryChangeControlStrategy(ControlStrategy selectedStrategy)
     {
-        if (_running && selectedStrategy != _settings.ControlStrategy)
+        var strategyChanged = selectedStrategy != _settings.ControlStrategy;
+        if (_running && strategyChanged)
         {
             ShowStopFirstWarning();
             return false;
         }
 
-        if (selectedStrategy == ControlStrategy.FanCurve && !_fanCurveWarningShownThisRun)
+        if (strategyChanged &&
+            selectedStrategy == ControlStrategy.FanCurve &&
+            !_settings.FanCurveWarningAccepted &&
+            !_fanCurveWarningShownThisRun)
         {
             if (!ShowFanCurveWarningDialog())
             {
                 return false;
             }
+            _settings.FanCurveWarningAccepted = true;
             _fanCurveWarningShownThisRun = true;
         }
 
@@ -1941,7 +2176,9 @@ public sealed class MainWindow : Window
     private void UpdateTemperatureUi(TemperatureSnapshot temps)
     {
         _cpuTempText.Text = FormatTemp(temps.CpuTempC);
+        _cpuPowerText.Text = FormatPower(temps.CpuPowerW);
         _gpuTempText.Text = FormatTemp(temps.GpuTempC);
+        _gpuPowerText.Text = FormatPower(temps.GpuPowerW);
         _vramTempText.Text = FormatTemp(temps.VramTempC);
         _lastCpuText = _cpuTempText.Text;
         _lastGpuText = _gpuTempText.Text;
@@ -1979,6 +2216,136 @@ public sealed class MainWindow : Window
             ItsMode.Geek => "Geek",
             _ => "Unknown"
         };
+    }
+
+    private ItsMode SelectedItsMode()
+    {
+        var index = _itsModeCombo.SelectedIndex;
+        return index >= 0 && index < SwitchableItsModes.Length
+            ? SwitchableItsModes[index]
+            : ItsMode.Unknown;
+    }
+
+    private string ItsModeComboLabel(ItsMode mode)
+    {
+        var label = T(ModeKey(mode));
+        return IsChinese ? label + "\u6a21\u5f0f" : label;
+    }
+
+    private async void OnItsModeSelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (_updatingItsModeCombo || _switchingItsMode ||
+            _itsModeCombo.SelectedIndex < 0 ||
+            _itsModeCombo.SelectedIndex >= SwitchableItsModes.Length)
+        {
+            return;
+        }
+
+        var requestedMode = SwitchableItsModes[_itsModeCombo.SelectedIndex];
+        UpdateItsModeCombo(_displayedItsMode);
+        _switchingItsMode = true;
+        _itsModeCombo.IsEnabled = false;
+        try
+        {
+            var result = await Task.Run(() =>
+            {
+                if (!_itsModeDetector.IsModeSwitchSupported())
+                    return ItsModeSwitchResult.Unsupported;
+
+                ItsModeController.SetMode(requestedMode);
+                var deadline = DateTimeOffset.UtcNow.AddSeconds(3);
+                while (DateTimeOffset.UtcNow < deadline)
+                {
+                    if (_itsModeDetector.ReadMode() == requestedMode)
+                        return ItsModeSwitchResult.Confirmed;
+                    Thread.Sleep(200);
+                }
+
+                return ItsModeSwitchResult.NotConfirmed;
+            });
+
+            if (result != ItsModeSwitchResult.Confirmed)
+            {
+                var messageKey = result == ItsModeSwitchResult.Unsupported
+                    ? "ItsModeSwitchUnavailable"
+                    : "ItsModeSwitchNotConfirmed";
+                MessageBox.Show(this, T(messageKey), T("CurrentMode"), MessageBoxButton.OK, MessageBoxImage.Warning);
+            }
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show(
+                this,
+                string.Format(CultureInfo.CurrentCulture, T("ItsModeSwitchFailedFormat"), ex.Message),
+                T("CurrentMode"),
+                MessageBoxButton.OK,
+                MessageBoxImage.Error);
+        }
+        finally
+        {
+            _switchingItsMode = false;
+            await RefreshItsModeAsync();
+        }
+    }
+
+    private async Task SetFullSpeedWithLockAsync(bool enabled)
+    {
+        await _fanIoLock.WaitAsync();
+        try
+        {
+            await Task.Run(() => _fanController.SetFullSpeed(enabled));
+        }
+        finally
+        {
+            _fanIoLock.Release();
+        }
+    }
+
+    private async Task RefreshItsModeAsync()
+    {
+        if (_refreshingItsMode)
+            return;
+
+        _refreshingItsMode = true;
+        try
+        {
+            var state = await Task.Run(() => (
+                Supported: _itsModeDetector.IsModeSwitchSupported(),
+                Mode: _itsModeDetector.ReadMode()));
+
+            _displayedItsMode = state.Mode;
+            UpdateItsModeCombo(state.Mode);
+            _itsModeCombo.IsEnabled = state.Supported && !_switchingItsMode;
+            _itsModeCombo.ToolTip = state.Supported ? null : T("ItsModeSwitchUnavailable");
+        }
+        catch
+        {
+            _displayedItsMode = ItsMode.Unknown;
+            UpdateItsModeCombo(ItsMode.Unknown);
+            _itsModeCombo.IsEnabled = false;
+            _itsModeCombo.ToolTip = T("ItsModeSwitchUnavailable");
+        }
+        finally
+        {
+            _refreshingItsMode = false;
+        }
+    }
+
+    private void UpdateItsModeCombo(ItsMode mode)
+    {
+        var selectedIndex = Array.IndexOf(SwitchableItsModes, mode);
+        if (_itsModeCombo.SelectedIndex == selectedIndex)
+            return;
+
+        _updatingItsModeCombo = true;
+        try
+        {
+            _itsModeCombo.SelectedIndex = selectedIndex;
+        }
+        finally
+        {
+            _updatingItsModeCombo = false;
+        }
     }
 
     private void SetResumeFanControlOnNextStart(bool value)
@@ -2096,6 +2463,11 @@ public sealed class MainWindow : Window
     private static string FormatTemp(double? value)
     {
         return value is null ? "-- \u00B0C" : $"{value:F1} \u00B0C";
+    }
+
+    private static string FormatPower(double? value)
+    {
+        return value is null ? "-- W" : $"{value:F1} W";
     }
 
     private static ComboBox OptionCombo(params string[] options)
@@ -2271,10 +2643,13 @@ public sealed class MainWindow : Window
 
     private void SyncTimerIntervals()
     {
-        var interval = TimeSpan.FromSeconds(Math.Max(0.5, _settings.IntervalSeconds));
+        var interval = GetSettingsRefreshInterval();
         _timer.Interval = interval;
         _trayMenuTimer.Interval = interval;
     }
+
+    private TimeSpan GetSettingsRefreshInterval() =>
+        TimeSpan.FromSeconds(Math.Max(0.5, _settings.IntervalSeconds));
 
     private bool IsChinese => _settings.Language != "en-US";
     private bool IsDark => _settings.Theme == "dark";
@@ -2311,9 +2686,16 @@ public sealed class MainWindow : Window
             "Save" => "\u4fdd\u5b58",
             "Refresh" => "\u5237\u65b0",
             "PowerSettings" => "\u529f\u8017\u8bbe\u7f6e",
+            "DisplaySettings" => "\u663e\u793a\u8bbe\u7f6e",
+            "SoundSettings" => "\u58f0\u97f3\u8bbe\u7f6e",
             "OtherSettings" => "\u5176\u5b83\u8bbe\u7f6e",
             "Start" => "\u542f\u52a8",
             "Stop" => "\u505c\u6b62",
+            "FullSpeed" => "\u98ce\u6247\u62c9\u6ee1",
+            "EnablingFullSpeed" => "\u6b63\u5728\u5f00\u542f\u98ce\u6247\u62c9\u6ee1...",
+            "DisablingFullSpeed" => "\u6b63\u5728\u5173\u95ed\u98ce\u6247\u62c9\u6ee1...",
+            "FullSpeedEnabled" => "\u98ce\u6247\u5df2\u62c9\u6ee1",
+            "FullSpeedFailed" => "\u98ce\u6247\u62c9\u6ee1\u5207\u6362\u5931\u8d25",
             "Idle" => "\u7a7a\u95f2",
             "Stopping" => "\u505c\u6b62\u4e2d...",
             "Running" => "\u8fd0\u884c\u4e2d",
@@ -2362,6 +2744,9 @@ public sealed class MainWindow : Window
             "Unknown" => "\u672a\u77e5",
             "FirmwareAuto" => "\u9ed8\u8ba4\u81ea\u52a8",
             "CurrentMode" => "\u5f53\u524d\u6a21\u5f0f",
+            "ItsModeSwitchUnavailable" => "\u4ec5\u5f53 LenovoProcessManagement PowerSlider Version \u5927\u4e8e\u7b49\u4e8e 8192 \u65f6\u53ef\u5207\u6362\u6a21\u5f0f\u3002",
+            "ItsModeSwitchNotConfirmed" => "\u670d\u52a1\u5df2\u63a5\u6536\u547d\u4ee4\uff0c\u4f46 3 \u79d2\u5185\u672a\u80fd\u4ece\u6ce8\u518c\u8868\u786e\u8ba4\u6a21\u5f0f\u53d8\u66f4\u3002",
+            "ItsModeSwitchFailedFormat" => "\u6a21\u5f0f\u5207\u6362\u5931\u8d25\uff1a{0}",
             "Holding" => "\u5ef6\u65f6",
             "PendingChange" => "\u7b49\u5f85\u4e8c\u6b21\u786e\u8ba4",
             "None" => "\u65e0",
@@ -2373,6 +2758,76 @@ public sealed class MainWindow : Window
             "KeyboardBacklightBrightness" => "\u952e\u76d8\u80cc\u5149\u4eae\u5ea6",
             "KeyboardBacklightOff" => "\u5173\u95ed",
             "KeyboardBacklightAutoOff" => "30 \u79d2\u5185\u65e0\u952e\u76d8\u6216\u89e6\u6478\u677f\u64cd\u4f5c\u81ea\u52a8\u5173\u95ed\u952e\u76d8\u80cc\u5149",
+            "FunctionLock" => "\u529f\u80fd\u9501\u5b9a\uff08Fn + FnLock\uff09",
+            "CapsLockOsd" => "CapsLock OSD \u56fe\u6807",
+            "NumLockOsd" => "NumLock OSD \u56fe\u6807",
+            "FnCtrlSwap" => "Fn \u952e\u548c Ctrl \u952e\u4e92\u6362",
+            "Touchpad" => "\u89e6\u6478\u677f",
+            "ReadFailed" => "\u8bfb\u53d6\u5931\u8d25",
+            "EyeCareMode" => "\u62a4\u773c\u6a21\u5f0f",
+            "EyeCareModeDescription" => "\u8c03\u8282\u5c4f\u5e55\u8272\u6e29\u4ee5\u5e2e\u52a9\u51cf\u8f7b\u773c\u775b\u75b2\u52b3\u3002",
+            "ColorEffect" => "\u989c\u8272\u6548\u679c",
+            "ColorEffectDescription" => "\u9009\u62e9 Vantage 5.x \u62a4\u773c\u6a21\u5f0f\u7684\u8272\u6e29\u914d\u7f6e\u3002",
+            "EyeCareSchedule" => "\u8ba1\u5212",
+            "EyeCareScheduleDescription" => "\u9009\u62e9\u59cb\u7ec8\u751f\u6548\uff0c\u6216\u4ec5\u5728\u591c\u95f4\u65f6\u6bb5\u751f\u6548\u3002",
+            "CustomColorTemperature" => "\u81ea\u5b9a\u4e49\u8272\u6e29",
+            "CustomColorTemperatureDescription" => "\u9009\u62e9\u201c\u81ea\u5b9a\u4e49\u989c\u8272\u201d\u65f6\u4f7f\u7528\u7684\u8272\u6e29\u3002",
+            "EyeCareVivid" => "\u751f\u52a8",
+            "EyeCareVisionCare" => "\u62a4\u773c",
+            "EyeCareAmber" => "\u6cdb\u9ec4",
+            "EyeCareCustom" => "\u81ea\u5b9a\u4e49\u989c\u8272",
+            "EyeCareAlways" => "\u59cb\u7ec8",
+            "EyeCareNight" => "\u591c\u95f4",
+            "ColorTemperatureFormat" => "{0} K",
+            "EyeCareStatusFormat" => "API\uff1a{0}\uff1b\u51fa\u5382\u8272\u6e29\uff1a{1} K",
+            "ApiAvailable" => "\u53ef\u7528",
+            "ApiUnavailable" => "\u4e0d\u53ef\u7528",
+            "ColorManagement" => "\u989c\u8272\u7ba1\u7406",
+            "ColorManagementDescription" => "\u4e3a\u5f53\u524d\u573a\u666f\u5207\u6362\u663e\u793a\u5668\u8272\u57df / ICC \u914d\u7f6e\u3002",
+            "ColorManagementStatusFormat" => "\u5f53\u524d\u8def\u5f84\uff1a{0}\uff1bOptionsColor\uff1a{1}\uff1b24H2+\uff1a{2}",
+            "ColorModeDefault" => "\u9ed8\u8ba4",
+            "ColorModeAdobeRgb" => "Adobe RGB",
+            "ColorModeSrgb" => "sRGB",
+            "ColorModeDisplayP3" => "Display P3",
+            "ColorModeNative" => "Native",
+            "ColorModeRec709" => "REC709",
+            "ColorModeDciP3" => "DCI P3",
+            "ColorModeAuto" => "\u81ea\u52a8",
+            "ColorModeDicomDim" => "DICOM Dim",
+            "ColorModeDicomOffice" => "DICOM Office",
+            "Yes" => "\u662f",
+            "No" => "\u5426",
+            "DolbyAtmos" => "Dolby Atmos",
+            "DolbyAtmosDescription" => "\u5207\u6362 Dolby \u5168\u666f\u58f0\u7684\u8f93\u51fa\u97f3\u6548\u6a21\u5f0f\u3002",
+            "SpeakerNoiseCancellation" => "\u626c\u58f0\u5668\u6d88\u566a",
+            "SpeakerNoiseCancellationDescription" => "\u8fc7\u6ee4\u8f93\u51fa\u97f3\u9891\u4e2d\u7684\u5176\u4ed6\u58f0\u97f3\uff0c\u4ec5\u64ad\u653e\u4eba\u58f0\u3002\u5efa\u8bae\u5728\u80cc\u666f\u566a\u97f3\u8f83\u5927\u7684\u7ebf\u4e0a\u4f1a\u8bae\u4e2d\u4f7f\u7528\u3002",
+            "SpeakerNoiseDriverControlled" => "\u7531 Lenovo \u667a\u80fd\u6d88\u566a\u63d2\u4ef6\u63a7\u5236\u3002",
+            "MicrophoneNoiseCancellation" => "\u9ea6\u514b\u98ce\u964d\u566a",
+            "MicrophoneNoiseCancellationDescription" => "\u4f7f\u7528\u8bbe\u5907\u97f3\u9891\u9a71\u52a8\u7684\u9ea6\u514b\u98ce\u964d\u566a\u7b97\u6cd5\u3002",
+            "DolbyDynamic" => "\u52a8\u6001",
+            "DolbyMovie" => "\u7535\u5f71",
+            "DolbyMusic" => "\u97f3\u4e50",
+            "DolbyGame" => "\u6e38\u620f",
+            "DolbyVoice" => "\u8bed\u97f3",
+            "DolbyCustom" => "\u81ea\u5b9a\u4e49",
+            "DolbyDriverControlled" => "\u7531\u5df2\u5b89\u88c5\u7684 Dolby DAX \u670d\u52a1\u63a7\u5236\u3002",
+            "NoiseNormal" => "\u6b63\u5e38",
+            "NoiseVoiceRecognition" => "\u58f0\u97f3\u8bc6\u522b",
+            "NoiseOnlyMyVoice" => "\u4ec5\u6211\u7684\u58f0\u97f3",
+            "NoiseOnlyMyVoiceNeedsEnrollment" => "\u4ec5\u6211\u7684\u58f0\u97f3\uff08\u8bf7\u5148\u5f55\u5236\u6211\u7684\u58f0\u97f3\uff09",
+            "NoiseMultipleVoices" => "\u591a\u4eba\u58f0\u97f3",
+            "NoiseVendorFormat" => "\u5f53\u524d\u964d\u566a\u5f15\u64ce\uff1a{0}",
+            "RecordMyVoice" => "\u5f55\u5236\u6211\u7684\u58f0\u97f3",
+            "RecordMyVoiceDescription" => "\u5f55\u5236 20 \u79d2\u58f0\u7eb9\uff0c\u7528\u4e8e\u201c\u4ec5\u6211\u7684\u58f0\u97f3\u201d\u964d\u566a\u6a21\u5f0f\u3002",
+            "Record" => "\u5f55\u5236",
+            "RecordAgain" => "\u91cd\u65b0\u5f55\u5236",
+            "ReplaceVoiceIdWarning" => "\u91cd\u65b0\u5f55\u5236\u4f1a\u66ff\u6362\u5df2\u6709\u58f0\u7eb9\u3002\u662f\u5426\u7ee7\u7eed\uff1f",
+            "VoiceRecordComplete" => "\u58f0\u7eb9\u5f55\u5236\u5b8c\u6210\u3002",
+            "VoiceRecordFailedFormat" => "\u58f0\u7eb9\u5f55\u5236\u5931\u8d25\uff1a{0}",
+            "VoiceRecordingCountdownFormat" => "\u8bf7\u5728\u5b89\u9759\u73af\u5883\u4e2d\u6301\u7eed\u6e05\u6670\u8bf4\u8bdd\uff0c\u5269\u4f59 {0} \u79d2\u3002",
+            "VoiceRecordProcessing" => "\u6b63\u5728\u63d0\u53d6\u5e76\u4fdd\u5b58\u58f0\u7eb9...",
+            "VoiceIdRecorded" => "\u5df2\u5f55\u5165\u58f0\u7eb9\u3002",
+            "VoiceIdNotRecorded" => "\u5c1a\u672a\u5f55\u5165\u58f0\u7eb9\u3002",
             "OK" => "\u786e\u5b9a",
             "CpuPl1" => "CPU PL1",
             "CpuPl2" => "CPU PL2",
@@ -2384,6 +2839,8 @@ public sealed class MainWindow : Window
             "GpuToCpuDynamicBoost" => "GPU To CPU Dynamic Boost",
             "PowerSettingsReadFailedFormat" => "\u8bfb\u53d6\u529f\u8017\u8bbe\u7f6e\u5931\u8d25\uff1a{0}",
             "PowerSettingsWriteFailedFormat" => "\u5199\u5165\u529f\u8017\u8bbe\u7f6e\u5931\u8d25\uff1a{0}",
+            "RestoreCurrentModeDefaults" => "\u6062\u590d\u5f53\u524d\u6a21\u5f0f\u9ed8\u8ba4\u503c",
+            "PowerSettingsCurrentModeUnavailable" => "\u65e0\u6cd5\u786e\u5b9a\u5f53\u524d\u6a21\u5f0f\uff0c\u4e0d\u80fd\u6062\u590d\u9ed8\u8ba4\u529f\u8017\u8bbe\u7f6e\u3002",
             "PowerSettingRangeFormat" => "\u201c{0}\u201d\u5fc5\u987b\u662f {1} \u5230 {2} \u4e4b\u95f4\u7684\u6574\u6570\u3002",
             "PowerSettingsTurboRequired" => "\u8bf7\u9009\u62e9 CPU Turbo Time Limit\u3002",
             "ReadingSettings" => "\u6b63\u5728\u8bfb\u53d6\u5f53\u524d\u72b6\u6001...",
@@ -2411,7 +2868,14 @@ public sealed class MainWindow : Window
             "GpuCurve" => "GPU Curve",
             "TemperatureAxis" => "Temperature (\u00B0C)",
             "PowerSettings" => "Power settings",
+            "DisplaySettings" => "Display settings",
+            "SoundSettings" => "Sound settings",
             "OtherSettings" => "Other settings",
+            "FullSpeed" => "Full speed",
+            "EnablingFullSpeed" => "Enabling full speed...",
+            "DisablingFullSpeed" => "Disabling full speed...",
+            "FullSpeedEnabled" => "Fans at full speed",
+            "FullSpeedFailed" => "Full-speed switch failed",
             "Idle" => "Idle",
             "Stopping" => "Stopping...",
             "HeatSoak" => "Heat soak",
@@ -2448,13 +2912,16 @@ public sealed class MainWindow : Window
             "NormalFan2" => "Normal FAN2",
             "GameFan1" => "Game FAN1",
             "GameFan2" => "Game FAN2",
-            "PowerSaving" => "Power saving",
-            "Intelligent" => "Intelligent",
+            "PowerSaving" => "Cool",
+            "Intelligent" => "Auto",
             "Performance" => "Performance",
             "Geek" => "Geek",
             "Unknown" => "Unknown",
             "FirmwareAuto" => "Firmware auto",
             "CurrentMode" => "Current mode",
+            "ItsModeSwitchUnavailable" => "Mode switching requires LenovoProcessManagement PowerSlider Version 8192 or later.",
+            "ItsModeSwitchNotConfirmed" => "The service accepted the command, but the registry did not confirm the mode change within 3 seconds.",
+            "ItsModeSwitchFailedFormat" => "Failed to switch mode: {0}",
             "Holding" => "Holding",
             "PendingChange" => "Waiting for confirmation",
             "None" => "None",
@@ -2466,6 +2933,76 @@ public sealed class MainWindow : Window
             "KeyboardBacklightBrightness" => "Keyboard backlight brightness",
             "KeyboardBacklightOff" => "Off",
             "KeyboardBacklightAutoOff" => "Auto-off after 30 seconds without keyboard or touchpad input",
+            "FunctionLock" => "Function lock (Fn + FnLock)",
+            "CapsLockOsd" => "CapsLock OSD icon",
+            "NumLockOsd" => "NumLock OSD icon",
+            "FnCtrlSwap" => "Swap Fn and Ctrl keys",
+            "Touchpad" => "Touchpad",
+            "ReadFailed" => "Read failed",
+            "EyeCareMode" => "Eye care mode",
+            "EyeCareModeDescription" => "Adjust screen color temperature to help reduce eye strain.",
+            "ColorEffect" => "Color effect",
+            "ColorEffectDescription" => "Choose the Vantage 5.x eye care color temperature profile.",
+            "EyeCareSchedule" => "Schedule",
+            "EyeCareScheduleDescription" => "Apply the color adjustment always, or only during nighttime.",
+            "CustomColorTemperature" => "Custom color temperature",
+            "CustomColorTemperatureDescription" => "Color temperature used by the custom color mode.",
+            "EyeCareVivid" => "Vivid",
+            "EyeCareVisionCare" => "Eye care",
+            "EyeCareAmber" => "Amber",
+            "EyeCareCustom" => "Custom color",
+            "EyeCareAlways" => "Always",
+            "EyeCareNight" => "Night",
+            "ColorTemperatureFormat" => "{0} K",
+            "EyeCareStatusFormat" => "API: {0}; factory color temperature: {1} K",
+            "ApiAvailable" => "Available",
+            "ApiUnavailable" => "Unavailable",
+            "ColorManagement" => "Color management",
+            "ColorManagementDescription" => "Switch the display color gamut / ICC profile for the current scenario.",
+            "ColorManagementStatusFormat" => "Current path: {0}; OptionsColor: {1}; 24H2+: {2}",
+            "ColorModeDefault" => "Default",
+            "ColorModeAdobeRgb" => "Adobe RGB",
+            "ColorModeSrgb" => "sRGB",
+            "ColorModeDisplayP3" => "Display P3",
+            "ColorModeNative" => "Native",
+            "ColorModeRec709" => "REC709",
+            "ColorModeDciP3" => "DCI P3",
+            "ColorModeAuto" => "Auto",
+            "ColorModeDicomDim" => "DICOM Dim",
+            "ColorModeDicomOffice" => "DICOM Office",
+            "Yes" => "Yes",
+            "No" => "No",
+            "DolbyAtmos" => "Dolby Atmos",
+            "DolbyAtmosDescription" => "Switch the Dolby Atmos output sound profile.",
+            "SpeakerNoiseCancellation" => "Speaker noise cancellation",
+            "SpeakerNoiseCancellationDescription" => "Filter other output sounds and only play human voice. Useful for online meetings with noisy speakers.",
+            "SpeakerNoiseDriverControlled" => "Controlled by the Lenovo smart noise cancellation plugin.",
+            "MicrophoneNoiseCancellation" => "Microphone noise cancellation",
+            "MicrophoneNoiseCancellationDescription" => "Use the audio driver's microphone noise cancellation algorithms.",
+            "DolbyDynamic" => "Dynamic",
+            "DolbyMovie" => "Movie",
+            "DolbyMusic" => "Music",
+            "DolbyGame" => "Game",
+            "DolbyVoice" => "Voice",
+            "DolbyCustom" => "Custom",
+            "DolbyDriverControlled" => "Controlled by the installed Dolby DAX service.",
+            "NoiseNormal" => "Normal",
+            "NoiseVoiceRecognition" => "Voice recognition",
+            "NoiseOnlyMyVoice" => "Only my voice",
+            "NoiseOnlyMyVoiceNeedsEnrollment" => "Only my voice (record my voice first)",
+            "NoiseMultipleVoices" => "Multiple voices",
+            "NoiseVendorFormat" => "Active noise cancellation engine: {0}",
+            "RecordMyVoice" => "Record my voice",
+            "RecordMyVoiceDescription" => "Record a 20-second voice ID for the Only my voice mode.",
+            "Record" => "Record",
+            "RecordAgain" => "Record again",
+            "ReplaceVoiceIdWarning" => "Recording again will replace the existing voice ID. Continue?",
+            "VoiceRecordComplete" => "Voice ID recording completed.",
+            "VoiceRecordFailedFormat" => "Voice ID recording failed: {0}",
+            "VoiceRecordingCountdownFormat" => "Speak continuously and clearly in a quiet room. {0} seconds remaining.",
+            "VoiceRecordProcessing" => "Extracting and saving the voice ID...",
+            "VoiceIdRecorded" => "A voice ID has been recorded.",
+            "VoiceIdNotRecorded" => "No voice ID has been recorded.",
             "OK" => "OK",
             "CpuPl1" => "CPU PL1",
             "CpuPl2" => "CPU PL2",
@@ -2477,6 +3014,8 @@ public sealed class MainWindow : Window
             "GpuToCpuDynamicBoost" => "GPU To CPU Dynamic Boost",
             "PowerSettingsReadFailedFormat" => "Failed to read power settings: {0}",
             "PowerSettingsWriteFailedFormat" => "Failed to write power settings: {0}",
+            "RestoreCurrentModeDefaults" => "Restore current mode defaults",
+            "PowerSettingsCurrentModeUnavailable" => "The current mode could not be determined, so its default power settings cannot be restored.",
             "PowerSettingRangeFormat" => "\"{0}\" must be an integer from {1} to {2}.",
             "PowerSettingsTurboRequired" => "Select a CPU Turbo Time Limit.",
             "ReadingSettings" => "Reading current state...",
@@ -2512,6 +3051,8 @@ public sealed class MainWindow : Window
         _saveButton.Content = T("Save");
         _refreshButton.Content = T("Refresh");
         _powerSettingsButton.Content = T("PowerSettings");
+        _displaySettingsButton.Content = T("DisplaySettings");
+        _soundSettingsButton.Content = T("SoundSettings");
         _otherSettingsButton.Content = T("OtherSettings");
         _syncFanSpeedsCheck.Content = T("SyncFanSpeeds");
         _fixedSyncFanSpeedsCheck.Content = T("FixedSyncFanSpeeds");
@@ -2521,6 +3062,7 @@ public sealed class MainWindow : Window
         _startToTrayCheck.Content = T("StartToTray");
         _minimizeToTrayCheck.Content = T("MinimizeToTray");
         _closeToTrayCheck.Content = T("CloseToTray");
+        _fullSpeedCheck.Content = T("FullSpeed");
         _startButton.Content = _running ? T("Stop") : T("Start");
         _fixedStrategyTab!.Header = T("FixedRpm");
         _fanCurveStrategyTab!.Header = T("FanCurve");
@@ -2552,6 +3094,13 @@ public sealed class MainWindow : Window
         SetComboItems(_themeCombo, [T("Light"), T("Dark")], IsDark ? 1 : 0);
         SetComboItems(_fixedModeCombo, [T("Normal"), T("Game")], _effectiveGameMode ? 1 : 0);
         SetComboItems(_editFanCombo, [T("Fan1"), T("Fan2")], _settings.EditFan == 2 ? 1 : 0);
+        _updatingItsModeCombo = true;
+        SetComboItems(
+            _itsModeCombo,
+            SwitchableItsModes.Select(ItsModeComboLabel).ToArray(),
+            Math.Max(0, Array.IndexOf(SwitchableItsModes, _displayedItsMode)));
+        _itsModeCombo.SelectedIndex = Array.IndexOf(SwitchableItsModes, _displayedItsMode);
+        _updatingItsModeCombo = false;
         _loadingSettings = false;
         ApplyStrategyVisibility();
         UpdateTrayMenu();
@@ -2590,7 +3139,8 @@ public sealed class MainWindow : Window
             label.Foreground = muted;
         foreach (var checkBox in new[] { _syncFanSpeedsCheck, _fixedSyncFanSpeedsCheck, _autoDetectGamesCheck, _startupCheck, _startToTrayCheck, _minimizeToTrayCheck, _closeToTrayCheck })
             checkBox.Foreground = muted;
-        foreach (var value in new[] { _cpuTempText, _gpuTempText, _vramTempText, _fan1Text, _fan2Text, _targetText })
+        _fullSpeedCheck.Foreground = IsDark ? Brush("#ffffff") : muted;
+        foreach (var value in new[] { _cpuTempText, _cpuPowerText, _gpuTempText, _gpuPowerText, _vramTempText, _fan1Text, _fan2Text, _targetText })
             value.Foreground = text;
 
         _cpuChart.SetTheme(IsDark);
@@ -2677,7 +3227,7 @@ public sealed class MainWindow : Window
             : SelectedNumber(_rampDownCombo, 20);
     }
 
-    private Border Metric(TextBlock title, TextBlock value)
+    private Border Metric(TextBlock title, UIElement value)
     {
         var panel = new StackPanel();
         if (!_labels.Contains(title))
@@ -2696,12 +3246,47 @@ public sealed class MainWindow : Window
         return border;
     }
 
-    private static TextBlock MetricValue()
+    private static Grid MetricPair(TextBlock left, TextBlock right)
+    {
+        left.Margin = new Thickness(0, 2, 8, 0);
+        right.Opacity = 0;
+
+        var values = new StackPanel
+        {
+            Orientation = Orientation.Horizontal,
+            HorizontalAlignment = HorizontalAlignment.Left
+        };
+        values.Children.Add(left);
+        values.Children.Add(right);
+
+        var panel = new Grid
+        {
+            HorizontalAlignment = HorizontalAlignment.Stretch,
+            ClipToBounds = true
+        };
+        panel.Children.Add(values);
+
+        void UpdatePowerVisibility()
+        {
+            var requiredWidth =
+                left.ActualWidth + left.Margin.Left + left.Margin.Right +
+                right.ActualWidth + right.Margin.Left + right.Margin.Right;
+            right.Opacity = panel.ActualWidth + 0.5 >= requiredWidth ? 1 : 0;
+        }
+
+        panel.Loaded += (_, _) => UpdatePowerVisibility();
+        panel.SizeChanged += (_, _) => UpdatePowerVisibility();
+        left.SizeChanged += (_, _) => UpdatePowerVisibility();
+        right.SizeChanged += (_, _) => UpdatePowerVisibility();
+        return panel;
+    }
+
+    private static TextBlock MetricValue(double fontSize = 20)
     {
         return new TextBlock
         {
             Text = "--",
-            FontSize = 20,
+            FontSize = fontSize,
             FontWeight = FontWeights.Bold,
             Margin = new Thickness(0, 2, 0, 0)
         };
@@ -2720,6 +3305,13 @@ public sealed class MainWindow : Window
     private List<string> ProfileLabels()
     {
         return _profiles.Select((profile, index) => $"{index + 1}: {profile.Name}").ToList();
+    }
+
+    private enum ItsModeSwitchResult
+    {
+        Confirmed,
+        Unsupported,
+        NotConfirmed
     }
 }
 

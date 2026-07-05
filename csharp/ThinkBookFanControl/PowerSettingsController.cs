@@ -30,6 +30,16 @@ internal static class PowerSettingsController
     public static IReadOnlyList<int> TurboTimeLimits { get; } =
         [20, 24, 28, 32, 40, 48, 56, 64, 80, 96, 112, 128, 160];
 
+    public static PowerSettingsState? GetDefaultState(ItsMode mode) =>
+        mode switch
+        {
+            ItsMode.Intelligent => new(90, 125, 100, 56, 15, 75, 87, 10),
+            ItsMode.PowerSaving => new(35, 60, 93, 56, 10, 50, 87, 10),
+            ItsMode.Performance => new(125, 180, 100, 56, 15, 100, 87, 0),
+            ItsMode.Geek => new(130, 185, 100, 56, 15, 100, 87, 0),
+            _ => null
+        };
+
     public static PowerSettingsState ReadState()
     {
         using var other = GetActiveOtherMethod();

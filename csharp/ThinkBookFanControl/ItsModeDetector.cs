@@ -8,6 +8,13 @@ public sealed class ItsModeDetector
     private const string ModernPath = @"SYSTEM\CurrentControlSet\Services\LenovoProcessManagement\Performance\PowerSlider";
     private const string LegacyPath = @"SYSTEM\CurrentControlSet\Services\LITSSVC\LNBITS\IC\MMC";
     private const string LegacyBasePath = @"SYSTEM\CurrentControlSet\Services\LITSSVC\LNBITS\IC";
+    private const int DispatcherVersion3 = 8192;
+
+    public bool IsModeSwitchSupported()
+    {
+        using var key = Registry.LocalMachine.OpenSubKey(ModernPath, writable: false);
+        return key is not null && ReadInt(key, "Version", -1) >= DispatcherVersion3;
+    }
 
     public ItsMode ReadMode()
     {

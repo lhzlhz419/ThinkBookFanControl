@@ -8,6 +8,7 @@ namespace ThinkBookFanControl;
 public sealed class FanController
 {
     private const string NamespacePath = @"root\wmi";
+    private const uint FullSpeedId = 0x04020000;
     private const uint Fan1Id = 0x04030001;
     private const uint Fan2Id = 0x04030002;
     private IReadOnlyDictionary<string, FanLimit>? _cachedLimits;
@@ -36,6 +37,12 @@ public sealed class FanController
     public void RestoreAuto()
     {
         ApplyBoth(0);
+    }
+
+    public void SetFullSpeed(bool enabled)
+    {
+        using var other = GetActiveOtherMethod();
+        SetFeatureValue(other, FullSpeedId, enabled ? 1 : 0);
     }
 
     public static int ClampForBoth(int rpm, IReadOnlyDictionary<string, FanLimit> limits)
@@ -145,7 +152,8 @@ public sealed class FanController
 
         try
         {
-            other.InvokeMethod("SetFeatureValue", new object[] { id, unchecked((uint)value) });
+            var args = new object?[] { id, unchecked((uint)value) };
+            _ = other.InvokeMethod("SetFeatureValue", args);
             return;
         }
         catch (Exception ex)
@@ -156,9 +164,9 @@ public sealed class FanController
         try
         {
             using var inParams = other.GetMethodParameters("SetFeatureValue");
-            SetParameter(inParams, ["Data", "Id", "ID", "FeatureId", "AttributeId"], id);
-            SetParameter(inParams, ["Value", "value", "Data2"], unchecked((uint)value));
-            other.InvokeMethod("SetFeatureValue", inParams, null);
+            SetParameter(inParams, ["IDs", "Data", "Id", "ID", "FeatureId", "AttributeId"], id);
+            SetParameter(inParams, ["value", "Value"], unchecked((uint)value));
+            using var outParams = other.InvokeMethod("SetFeatureValue", inParams, null);
             return;
         }
         catch (Exception ex)

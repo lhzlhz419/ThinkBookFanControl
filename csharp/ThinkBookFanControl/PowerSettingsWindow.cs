@@ -11,6 +11,7 @@ namespace ThinkBookFanControl;
 internal sealed class PowerSettingsWindow : Window
 {
     private readonly Func<string, string> _t;
+    private readonly Func<ItsMode> _getCurrentMode;
     private readonly ComboBox _cpuTurboTimeLimitCombo = new()
     {
         Width = 128,
@@ -19,6 +20,12 @@ internal sealed class PowerSettingsWindow : Window
     private readonly Button _okButton = new() { MinWidth = 76, Margin = new Thickness(0, 0, 8, 0), IsDefault = true };
     private readonly Button _cancelButton = new() { MinWidth = 76, Margin = new Thickness(0, 0, 8, 0), IsCancel = true };
     private readonly Button _saveButton = new() { MinWidth = 76 };
+    private readonly Button _restoreDefaultsButton = new()
+    {
+        MinWidth = 160,
+        HorizontalAlignment = HorizontalAlignment.Left,
+        VerticalAlignment = VerticalAlignment.Center
+    };
     private readonly List<IntegerSliderEditor> _sliderEditors = [];
 
     private Grid _settingsGrid = null!;
@@ -33,11 +40,13 @@ internal sealed class PowerSettingsWindow : Window
 
     public PowerSettingsWindow(
         Func<string, string> translate,
+        Func<ItsMode> getCurrentMode,
         bool isDark,
         FontFamily fontFamily,
         double fontSize)
     {
         _t = translate;
+        _getCurrentMode = getCurrentMode;
         Title = _t("PowerSettings");
         Width = 720;
         Height = 430;
@@ -76,19 +85,27 @@ internal sealed class PowerSettingsWindow : Window
         _okButton.Content = _t("OK");
         _cancelButton.Content = _t("Cancel");
         _saveButton.Content = _t("Save");
+        _restoreDefaultsButton.Content = _t("RestoreCurrentModeDefaults");
         _okButton.Click += async (_, _) => await SaveAsync(closeAfterSave: true);
         _cancelButton.Click += (_, _) => Close();
         _saveButton.Click += async (_, _) => await SaveAsync(closeAfterSave: false);
+        _restoreDefaultsButton.Click += async (_, _) => await RestoreCurrentModeDefaultsAsync();
 
         var buttons = new StackPanel
         {
             Orientation = Orientation.Horizontal,
-            HorizontalAlignment = HorizontalAlignment.Right,
-            Margin = new Thickness(0, 14, 0, 0)
+            HorizontalAlignment = HorizontalAlignment.Right
         };
         buttons.Children.Add(_okButton);
         buttons.Children.Add(_cancelButton);
         buttons.Children.Add(_saveButton);
+
+        var footer = new Grid { Margin = new Thickness(0, 14, 0, 0) };
+        footer.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        footer.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        footer.Children.Add(_restoreDefaultsButton);
+        Grid.SetColumn(buttons, 1);
+        footer.Children.Add(buttons);
 
         var root = new Grid { Margin = new Thickness(16) };
         root.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
@@ -102,8 +119,8 @@ internal sealed class PowerSettingsWindow : Window
         };
         Grid.SetRow(scrollViewer, 0);
         root.Children.Add(scrollViewer);
-        Grid.SetRow(buttons, 1);
-        root.Children.Add(buttons);
+        Grid.SetRow(footer, 1);
+        root.Children.Add(footer);
         return root;
     }
 
@@ -207,6 +224,41 @@ internal sealed class PowerSettingsWindow : Window
         }
     }
 
+    private async Task RestoreCurrentModeDefaultsAsync()
+    {
+        var state = PowerSettingsController.GetDefaultState(_getCurrentMode());
+        if (state is null)
+        {
+            MessageBox.Show(
+                this,
+                _t("PowerSettingsCurrentModeUnavailable"),
+                Title,
+                MessageBoxButton.OK,
+                MessageBoxImage.Warning);
+            return;
+        }
+
+        SetBusy(true);
+        try
+        {
+            var confirmedState = await Task.Run(() => PowerSettingsController.WriteAndReadState(state));
+            ApplyState(confirmedState);
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show(
+                this,
+                string.Format(_t("PowerSettingsWriteFailedFormat"), ex.Message),
+                Title,
+                MessageBoxButton.OK,
+                MessageBoxImage.Error);
+        }
+        finally
+        {
+            SetBusy(false);
+        }
+    }
+
     private void ApplyState(PowerSettingsState state)
     {
         _cpuPl1.SetValue(state.CpuPl1);
@@ -275,6 +327,7 @@ internal sealed class PowerSettingsWindow : Window
         _settingsGrid.IsEnabled = !busy && _hasLoadedState;
         _okButton.IsEnabled = !busy && _hasLoadedState;
         _saveButton.IsEnabled = !busy && _hasLoadedState;
+        _restoreDefaultsButton.IsEnabled = !busy && _hasLoadedState;
         _cancelButton.IsEnabled = !busy;
     }
 

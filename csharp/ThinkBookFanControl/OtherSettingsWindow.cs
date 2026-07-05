@@ -1,42 +1,72 @@
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
+using System.Windows.Threading;
 
 namespace ThinkBookFanControl;
 
 internal sealed class OtherSettingsWindow : Window
 {
     private const int BrightnessOptionCount = 4;
-    private const int AutoOffOptionCount = 2;
 
     private readonly Func<string, string> _t;
+    private readonly Func<TimeSpan> _refreshInterval;
+    private readonly DispatcherTimer _refreshTimer;
     private readonly ComboBox _brightnessCombo = new() { Width = 128 };
-    private readonly ComboBox _autoOffCombo = new() { Width = 128 };
+    private readonly CheckBox _autoOffToggle = new()
+    {
+        MinWidth = 128,
+        HorizontalAlignment = HorizontalAlignment.Right,
+        VerticalAlignment = VerticalAlignment.Center,
+        Margin = new Thickness(0, 0, 0, 8)
+    };
+    private readonly Dictionary<InputSettingKind, CheckBox> _inputToggles = [];
     private KeyboardBacklightState? _currentState;
+    private InputSettingsState? _inputState;
     private bool _autoOffSupported;
     private bool _loading;
+    private bool _refreshing;
 
     public OtherSettingsWindow(
         Func<string, string> translate,
         bool isDark,
         FontFamily fontFamily,
-        double fontSize)
+        double fontSize,
+        Func<TimeSpan> refreshInterval)
     {
         _t = translate;
+        _refreshInterval = refreshInterval;
+        _refreshTimer = new DispatcherTimer
+        {
+            Interval = CurrentRefreshInterval()
+        };
         Title = _t("OtherSettings");
-        Width = 460;
-        Height = 200;
-        MinWidth = 420;
-        MinHeight = 190;
+        Width = 580;
+        Height = 390;
+        MinWidth = 520;
+        MinHeight = 340;
         ResizeMode = ResizeMode.NoResize;
         WindowStartupLocation = WindowStartupLocation.CenterOwner;
+        ShowInTaskbar = false;
         FontFamily = fontFamily;
         FontSize = fontSize;
         Content = BuildLayout();
         ApplyTheme(isDark);
-        Loaded += async (_, _) => await LoadCurrentStateAsync();
+        _refreshTimer.Tick += async (_, _) =>
+        {
+            SyncRefreshTimerInterval();
+            await LoadCurrentStateAsync();
+        };
+        Loaded += async (_, _) =>
+        {
+            SyncRefreshTimerInterval();
+            await LoadCurrentStateAsync(showReading: true);
+            _refreshTimer.Start();
+        };
+        Closed += (_, _) => _refreshTimer.Stop();
     }
 
     private UIElement BuildLayout()
@@ -47,18 +77,21 @@ internal sealed class OtherSettingsWindow : Window
         _brightnessCombo.Items.Add(_t("KeyboardBacklightOff"));
         _brightnessCombo.SelectionChanged += async (_, _) => await ChangeBrightnessAsync();
 
-        _autoOffCombo.Items.Add(_t("On"));
-        _autoOffCombo.Items.Add(_t("Off"));
-        _autoOffCombo.SelectionChanged += async (_, _) => await ChangeAutoOffAsync();
+        _autoOffToggle.Click += async (_, _) => await ChangeAutoOffAsync();
 
         var grid = new Grid();
         grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
         grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-        grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
-        grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+        for (var row = 0; row < 7; row++)
+            grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
 
         AddSettingRow(grid, 0, _t("KeyboardBacklightBrightness"), _brightnessCombo);
-        AddSettingRow(grid, 1, _t("KeyboardBacklightAutoOff"), _autoOffCombo);
+        AddSettingRow(grid, 1, _t("KeyboardBacklightAutoOff"), _autoOffToggle);
+        AddInputSettingRow(grid, 2, _t("FunctionLock"), InputSettingKind.FunctionLock);
+        AddInputSettingRow(grid, 3, _t("CapsLockOsd"), InputSettingKind.CapsLockOsd);
+        AddInputSettingRow(grid, 4, _t("NumLockOsd"), InputSettingKind.NumLockOsd);
+        AddInputSettingRow(grid, 5, _t("FnCtrlSwap"), InputSettingKind.FnCtrlSwap);
+        AddInputSettingRow(grid, 6, _t("Touchpad"), InputSettingKind.Touchpad);
 
         var closeButton = new Button
         {
@@ -69,10 +102,21 @@ internal sealed class OtherSettingsWindow : Window
         };
         closeButton.Click += (_, _) => Close();
 
-        var panel = new StackPanel { Margin = new Thickness(16) };
-        panel.Children.Add(grid);
-        panel.Children.Add(closeButton);
-        return panel;
+        var root = new Grid { Margin = new Thickness(16) };
+        root.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
+        root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+
+        var scrollViewer = new ScrollViewer
+        {
+            VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
+            HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled,
+            Content = grid
+        };
+        Grid.SetRow(scrollViewer, 0);
+        root.Children.Add(scrollViewer);
+        Grid.SetRow(closeButton, 1);
+        root.Children.Add(closeButton);
+        return root;
     }
 
     private static void AddSettingRow(Grid grid, int row, string label, UIElement control)
@@ -95,24 +139,113 @@ internal sealed class OtherSettingsWindow : Window
         grid.Children.Add(container);
     }
 
-    private async Task LoadCurrentStateAsync()
+    private void AddInputSettingRow(
+        Grid grid,
+        int row,
+        string label,
+        InputSettingKind kind)
     {
-        if (_loading)
+        var toggle = new CheckBox
+        {
+            MinWidth = 128,
+            HorizontalAlignment = HorizontalAlignment.Right,
+            VerticalAlignment = VerticalAlignment.Center,
+            Margin = new Thickness(0, 0, 0, 8)
+        };
+        toggle.Click += async (_, _) => await ChangeInputSettingAsync(kind, toggle);
+        _inputToggles.Add(kind, toggle);
+        AddSettingRow(grid, row, label, toggle);
+    }
+
+    private async Task LoadCurrentStateAsync(bool showReading = false)
+    {
+        if (_loading || _refreshing)
             return;
 
-        SetBusy(true);
-        SetComboStatus(_brightnessCombo, _t("ReadingSettings"));
-        SetComboStatus(_autoOffCombo, _t("ReadingSettings"));
+        _refreshing = true;
+        if (showReading)
+        {
+            SetBusy(true);
+            SetComboStatus(_brightnessCombo, _t("ReadingSettings"));
+            _autoOffToggle.Content = _t("ReadingSettings");
+            _autoOffToggle.ToolTip = null;
+        }
+
         try
         {
-            var state = await Task.Run(KeyboardBacklightController.ReadState);
-            ApplyState(state);
+            try
+            {
+                var state = await Task.Run(KeyboardBacklightController.ReadState);
+                ApplyState(state);
+            }
+            catch (Exception ex)
+            {
+                var message = string.Format(
+                    _t("SettingsReadFailedFormat"),
+                    ex.Message);
+                SetComboStatus(_brightnessCombo, message);
+                _autoOffSupported = false;
+                _autoOffToggle.IsChecked = false;
+                _autoOffToggle.Content = _t("ReadFailed");
+                _autoOffToggle.ToolTip = message;
+            }
+
+            if (showReading)
+            {
+                foreach (var toggle in _inputToggles.Values)
+                {
+                    toggle.Content = _t("ReadingSettings");
+                    toggle.ToolTip = null;
+                }
+            }
+
+            try
+            {
+                var inputState = await Task.Run(InputSettingsController.ReadState);
+                ApplyInputState(inputState);
+            }
+            catch (Exception ex)
+            {
+                var failed = ToggleSettingState.Failed(ex);
+                ApplyInputState(new(failed, failed, failed, failed, failed));
+            }
+        }
+        finally
+        {
+            if (showReading)
+                SetBusy(false);
+            _refreshing = false;
+            SyncRefreshTimerInterval();
+        }
+    }
+
+    private async Task ChangeInputSettingAsync(
+        InputSettingKind kind,
+        CheckBox toggle)
+    {
+        if (_loading || _refreshing || _inputState is null)
+            return;
+
+        var desired = toggle.IsChecked == true;
+        var previous = _inputState.Get(kind);
+        SetBusy(true);
+        try
+        {
+            var confirmed = await Task.Run(
+                () => InputSettingsController.SetState(kind, desired));
+            _inputState = _inputState.With(kind, confirmed);
+            ApplyToggleState(toggle, confirmed);
         }
         catch (Exception ex)
         {
-            var message = string.Format(_t("SettingsReadFailedFormat"), ex.Message);
-            SetComboStatus(_brightnessCombo, message);
-            SetComboStatus(_autoOffCombo, message);
+            ApplyToggleState(toggle, previous);
+            var message = string.Format(_t("SettingWriteFailedFormat"), ex.Message);
+            MessageBox.Show(
+                this,
+                message,
+                Title,
+                MessageBoxButton.OK,
+                MessageBoxImage.Error);
         }
         finally
         {
@@ -122,7 +255,7 @@ internal sealed class OtherSettingsWindow : Window
 
     private async Task ChangeBrightnessAsync()
     {
-        if (_loading)
+        if (_loading || _refreshing)
             return;
 
         var level = _brightnessCombo.SelectedIndex switch
@@ -154,22 +287,15 @@ internal sealed class OtherSettingsWindow : Window
 
     private async Task ChangeAutoOffAsync()
     {
-        if (_loading || !_autoOffSupported)
+        if (_loading || _refreshing || !_autoOffSupported)
             return;
 
-        var enabled = _autoOffCombo.SelectedIndex switch
-        {
-            0 => true,
-            1 => false,
-            _ => (bool?)null
-        };
-        if (enabled is null)
-            return;
+        var enabled = _autoOffToggle.IsChecked == true;
 
         SetBusy(true);
         try
         {
-            var state = await Task.Run(() => KeyboardBacklightController.SetAutoOff(enabled.Value));
+            var state = await Task.Run(() => KeyboardBacklightController.SetAutoOff(enabled));
             ApplyState(state);
         }
         catch (NotSupportedException)
@@ -178,7 +304,7 @@ internal sealed class OtherSettingsWindow : Window
         }
         catch (Exception ex)
         {
-            HandleWriteFailure(_autoOffCombo, ex);
+            HandleAutoOffWriteFailure(ex);
         }
         finally
         {
@@ -193,17 +319,72 @@ internal sealed class OtherSettingsWindow : Window
         SelectBrightness(state.Level, state.BrightnessStatus);
         _autoOffSupported = state.AutoOffSupported;
         if (_autoOffSupported)
-            SelectAutoOff(state.AutoOffEnabled, state.AutoOffStatus);
+            ApplyAutoOffState(state.AutoOffEnabled, state.AutoOffStatus);
         else
-            SetComboStatus(_autoOffCombo, _t("NotSupported"));
+            MarkAutoOffUnsupported();
         _currentState = state;
         _loading = wasLoading;
+    }
+
+    private void ApplyInputState(InputSettingsState state)
+    {
+        var wasLoading = _loading;
+        _loading = true;
+        foreach (var (kind, toggle) in _inputToggles)
+            ApplyToggleState(toggle, state.Get(kind));
+        _inputState = state;
+        _loading = wasLoading;
+    }
+
+    private void ApplyToggleState(CheckBox toggle, ToggleSettingState state)
+    {
+        toggle.IsChecked = state.Supported && state.Enabled;
+        toggle.Content = state.Error is not null
+            ? _t("ReadFailed")
+            : state.Supported
+                ? _t(state.Enabled ? "On" : "Off")
+                : _t("NotSupported");
+        toggle.ToolTip = state.Error;
     }
 
     private void MarkAutoOffUnsupported()
     {
         _autoOffSupported = false;
-        SetComboStatus(_autoOffCombo, _t("NotSupported"));
+        _autoOffToggle.IsChecked = false;
+        _autoOffToggle.Content = _t("NotSupported");
+        _autoOffToggle.ToolTip = null;
+    }
+
+    private void ApplyAutoOffState(bool? enabled, byte status)
+    {
+        _autoOffToggle.IsChecked = enabled == true;
+        if (enabled.HasValue)
+        {
+            _autoOffToggle.Content = _t(enabled.Value ? "On" : "Off");
+            _autoOffToggle.ToolTip = null;
+            return;
+        }
+
+        var unknown = string.Format(_t("UnknownEcValueFormat"), status);
+        _autoOffToggle.Content = unknown;
+        _autoOffToggle.ToolTip = unknown;
+    }
+
+    private void HandleAutoOffWriteFailure(Exception exception)
+    {
+        var message = string.Format(_t("SettingWriteFailedFormat"), exception.Message);
+        if (_currentState is not null)
+        {
+            ApplyState(_currentState);
+        }
+        else
+        {
+            _autoOffToggle.IsChecked = false;
+            _autoOffToggle.Content = _t("ReadFailed");
+            _autoOffToggle.ToolTip = message;
+        }
+
+        MessageBox.Show(this, message, Title, MessageBoxButton.OK, MessageBoxImage.Error);
     }
 
     private void HandleWriteFailure(ComboBox comboBox, Exception exception)
@@ -221,7 +402,28 @@ internal sealed class OtherSettingsWindow : Window
     {
         _loading = busy;
         _brightnessCombo.IsEnabled = !busy;
-        _autoOffCombo.IsEnabled = !busy && _autoOffSupported;
+        _autoOffToggle.IsEnabled = !busy && _autoOffSupported;
+        foreach (var (kind, toggle) in _inputToggles)
+        {
+            var state = _inputState?.Get(kind);
+            toggle.IsEnabled = !busy &&
+                               state is { Supported: true, Error: null };
+        }
+    }
+
+    private TimeSpan CurrentRefreshInterval()
+    {
+        var interval = _refreshInterval();
+        return interval < TimeSpan.FromMilliseconds(500)
+            ? TimeSpan.FromMilliseconds(500)
+            : interval;
+    }
+
+    private void SyncRefreshTimerInterval()
+    {
+        var interval = CurrentRefreshInterval();
+        if (_refreshTimer.Interval != interval)
+            _refreshTimer.Interval = interval;
     }
 
     private void SelectBrightness(KeyboardBacklightLevel? level, byte status)
@@ -245,25 +447,6 @@ internal sealed class OtherSettingsWindow : Window
         SetComboStatus(_brightnessCombo, string.Format(_t("UnknownEcValueFormat"), status));
     }
 
-    private void SelectAutoOff(bool? enabled, byte status)
-    {
-        RemoveStatusItem(_autoOffCombo);
-        var selectedIndex = enabled switch
-        {
-            true => 0,
-            false => 1,
-            null => -1
-        };
-
-        if (selectedIndex >= 0)
-        {
-            _autoOffCombo.SelectedIndex = selectedIndex;
-            return;
-        }
-
-        SetComboStatus(_autoOffCombo, string.Format(_t("UnknownEcValueFormat"), status));
-    }
-
     private void SetComboStatus(ComboBox comboBox, string text)
     {
         RemoveStatusItem(comboBox);
@@ -274,10 +457,7 @@ internal sealed class OtherSettingsWindow : Window
 
     private void RemoveStatusItem(ComboBox comboBox)
     {
-        var optionCount = ReferenceEquals(comboBox, _brightnessCombo)
-            ? BrightnessOptionCount
-            : AutoOffOptionCount;
-        while (comboBox.Items.Count > optionCount)
+        while (comboBox.Items.Count > BrightnessOptionCount)
             comboBox.Items.RemoveAt(comboBox.Items.Count - 1);
         comboBox.ToolTip = null;
     }
@@ -289,7 +469,9 @@ internal sealed class OtherSettingsWindow : Window
         Background = background;
         Foreground = text;
         _brightnessCombo.Foreground = SystemColors.ControlTextBrush;
-        _autoOffCombo.Foreground = SystemColors.ControlTextBrush;
+        _autoOffToggle.Foreground = text;
+        foreach (var toggle in _inputToggles.Values)
+            toggle.Foreground = text;
     }
 
     private static SolidColorBrush Brush(string hex)
