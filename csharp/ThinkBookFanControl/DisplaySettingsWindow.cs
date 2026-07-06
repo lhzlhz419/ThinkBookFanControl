@@ -13,7 +13,12 @@ internal sealed class DisplaySettingsWindow : Window
 {
     private readonly Func<string, string> _t;
     private readonly Func<TimeSpan> _refreshInterval;
+    private readonly Func<PcManagerEyeCareDefaults> _readPcManagerDefaults;
+    private readonly Action<PcManagerEyeCareDefaults> _savePcManagerDefaults;
+    private readonly bool _isDark;
     private readonly DispatcherTimer _refreshTimer;
+    private readonly DispatcherTimer _pcManagerRefreshTimer;
+    private readonly DispatcherTimer _temperatureApplyTimer;
     private readonly CheckBox _eyeCareToggle = new()
     {
         MinWidth = 96,
@@ -44,7 +49,29 @@ internal sealed class DisplaySettingsWindow : Window
         HorizontalAlignment = HorizontalAlignment.Right,
         VerticalAlignment = VerticalAlignment.Center
     };
+    private readonly CheckBox _pcManagerEyeCareToggle = new()
+    {
+        MinWidth = 96,
+        HorizontalAlignment = HorizontalAlignment.Right,
+        VerticalAlignment = VerticalAlignment.Center
+    };
+    private readonly TemperatureEditor _pcManagerTemperature = new()
+    {
+        Width = 330,
+        HorizontalAlignment = HorizontalAlignment.Right,
+        VerticalAlignment = VerticalAlignment.Center
+    };
+    private readonly Button _pcManagerRestoreButton = new()
+    {
+        MinWidth = 88
+    };
+    private readonly Button _pcManagerDefaultsButton = new()
+    {
+        MinWidth = 88,
+        Margin = new Thickness(8, 0, 0, 0)
+    };
     private readonly TextBlock _eyeCareStatus = StatusText();
+    private readonly TextBlock _pcManagerEyeCareStatus = StatusText();
     private readonly TextBlock _colorManagementStatus = StatusText();
     private readonly Button _refreshButton = new() { MinWidth = 76 };
     private readonly Button _closeButton = new()
@@ -56,25 +83,40 @@ internal sealed class DisplaySettingsWindow : Window
     private int _stateVersion;
     private bool _loading = true;
     private bool _refreshing;
+    private bool _refreshingPcManager;
+    private int _pendingTemperature;
 
     public DisplaySettingsWindow(
         Func<string, string> translate,
         bool isDark,
         FontFamily fontFamily,
         double fontSize,
-        Func<TimeSpan> refreshInterval)
+        Func<TimeSpan> refreshInterval,
+        Func<PcManagerEyeCareDefaults> readPcManagerDefaults,
+        Action<PcManagerEyeCareDefaults> savePcManagerDefaults)
     {
         _t = translate;
+        _isDark = isDark;
         _refreshInterval = refreshInterval;
+        _readPcManagerDefaults = readPcManagerDefaults;
+        _savePcManagerDefaults = savePcManagerDefaults;
         _refreshTimer = new DispatcherTimer
         {
             Interval = CurrentRefreshInterval()
         };
+        _pcManagerRefreshTimer = new DispatcherTimer
+        {
+            Interval = TimeSpan.FromMilliseconds(500)
+        };
+        _temperatureApplyTimer = new DispatcherTimer
+        {
+            Interval = TimeSpan.FromMilliseconds(160)
+        };
         Title = _t("DisplaySettings");
-        Width = 640;
-        Height = 540;
-        MinWidth = 580;
-        MinHeight = 500;
+        Width = 720;
+        Height = 760;
+        MinWidth = 660;
+        MinHeight = 700;
         ResizeMode = ResizeMode.NoResize;
         WindowStartupLocation = WindowStartupLocation.CenterOwner;
         ShowInTaskbar = false;
@@ -87,14 +129,28 @@ internal sealed class DisplaySettingsWindow : Window
             SyncRefreshTimerInterval();
             await LoadStateAsync();
         };
+        _pcManagerRefreshTimer.Tick += async (_, _) =>
+            await LoadPcManagerStateAsync();
+        _temperatureApplyTimer.Tick += async (_, _) =>
+        {
+            _temperatureApplyTimer.Stop();
+            await ChangePcManagerTemperatureAsync(_pendingTemperature);
+        };
         Loaded += async (_, _) =>
         {
             _loading = false;
             SyncRefreshTimerInterval();
             await LoadStateAsync(showReading: true);
             _refreshTimer.Start();
+            _pcManagerRefreshTimer.Start();
         };
-        Closed += (_, _) => _refreshTimer.Stop();
+        Closed += (_, _) =>
+        {
+            _refreshTimer.Stop();
+            _pcManagerRefreshTimer.Stop();
+            _temperatureApplyTimer.Stop();
+            DisplaySettingsController.Shutdown();
+        };
     }
 
     private UIElement BuildLayout()
@@ -107,6 +163,28 @@ internal sealed class DisplaySettingsWindow : Window
             async (_, _) => await ChangeEyeScheduleAsync();
         _customTemperatureCombo.SelectionChanged +=
             async (_, _) => await ChangeEyeCustomTemperatureAsync();
+        _pcManagerEyeCareToggle.Click +=
+            async (_, _) => await ChangePcManagerEyeCareEnabledAsync();
+        _pcManagerTemperature.ValueChanged += (_, _) =>
+        {
+            if (_loading ||
+                _state?.PcManagerEyeCare.Enabled != false)
+            {
+                return;
+            }
+
+            _pendingTemperature = _pcManagerTemperature.Value;
+            _refreshTimer.Stop();
+            _pcManagerRefreshTimer.Stop();
+            _temperatureApplyTimer.Stop();
+            _temperatureApplyTimer.Start();
+        };
+        _pcManagerRestoreButton.Content = _t("RestoreDefault");
+        _pcManagerRestoreButton.Click +=
+            async (_, _) => await RestorePcManagerDefaultAsync();
+        _pcManagerDefaultsButton.Content = _t("SetDefaultValues");
+        _pcManagerDefaultsButton.Click += (_, _) =>
+            ShowPcManagerDefaultsWindow();
         _colorManagementCombo.SelectionChanged +=
             async (_, _) => await ChangeColorManagementAsync();
 
@@ -129,6 +207,7 @@ internal sealed class DisplaySettingsWindow : Window
 
         var content = new StackPanel();
         content.Children.Add(BuildEyeCareGroup());
+        content.Children.Add(BuildPcManagerEyeCareGroup());
         content.Children.Add(BuildColorManagementGroup());
 
         var buttons = new StackPanel
@@ -166,7 +245,7 @@ internal sealed class DisplaySettingsWindow : Window
     {
         var panel = new StackPanel();
         panel.Children.Add(BuildHeaderRow(
-            _t("EyeCareMode"),
+            _t("EyeCareModeVantage"),
             _t("EyeCareModeDescription"),
             _eyeCareToggle));
         panel.Children.Add(new Border
@@ -189,6 +268,47 @@ internal sealed class DisplaySettingsWindow : Window
             _t("CustomColorTemperatureDescription"),
             _customTemperatureCombo));
         panel.Children.Add(_eyeCareStatus);
+
+        return new Border
+        {
+            BorderBrush = Brush("#4b5563"),
+            BorderThickness = new Thickness(1),
+            CornerRadius = new CornerRadius(6),
+            Padding = new Thickness(14),
+            Margin = new Thickness(0, 0, 0, 12),
+            Child = panel
+        };
+    }
+
+    private Border BuildPcManagerEyeCareGroup()
+    {
+        var panel = new StackPanel();
+        panel.Children.Add(BuildHeaderRow(
+            _t("EyeCareModePcManager"),
+            _t("EyeCareModePcManagerDescription"),
+            _pcManagerEyeCareToggle));
+        panel.Children.Add(new Border
+        {
+            Height = 1,
+            Background = Brush("#4b5563"),
+            Opacity = 0.7,
+            Margin = new Thickness(0, 10, 0, 10)
+        });
+        panel.Children.Add(BuildOptionRow(
+            _t("ColorTemperature"),
+            _t("PcManagerColorTemperatureDescription"),
+            _pcManagerTemperature));
+
+        var buttons = new StackPanel
+        {
+            Orientation = Orientation.Horizontal,
+            HorizontalAlignment = HorizontalAlignment.Right,
+            Margin = new Thickness(0, 0, 0, 8)
+        };
+        buttons.Children.Add(_pcManagerRestoreButton);
+        buttons.Children.Add(_pcManagerDefaultsButton);
+        panel.Children.Add(buttons);
+        panel.Children.Add(_pcManagerEyeCareStatus);
 
         return new Border
         {
@@ -306,7 +426,9 @@ internal sealed class DisplaySettingsWindow : Window
 
         try
         {
-            var state = await Task.Run(DisplaySettingsController.ReadState);
+            var defaults = _readPcManagerDefaults();
+            var state = await Task.Run(
+                () => DisplaySettingsController.ReadState(defaults));
             if (version == _stateVersion)
             {
                 _state = state;
@@ -319,6 +441,40 @@ internal sealed class DisplaySettingsWindow : Window
                 SetBusy(false);
             _refreshing = false;
             SyncRefreshTimerInterval();
+        }
+    }
+
+    private async Task LoadPcManagerStateAsync()
+    {
+        if (_loading ||
+            _refreshingPcManager ||
+            _pcManagerTemperature.IsUserInteracting)
+        {
+            return;
+        }
+
+        var version = _stateVersion;
+        var defaults = _readPcManagerDefaults();
+        _refreshingPcManager = true;
+        try
+        {
+            var state = await Task.Run(
+                () => PcManagerEyeCareController.ReadState(defaults));
+            if (version != _stateVersion)
+                return;
+
+            if (_state is null)
+            {
+                await LoadStateAsync();
+                return;
+            }
+
+            _state = _state with { PcManagerEyeCare = state };
+            ApplyPcManagerEyeCareState(state);
+        }
+        finally
+        {
+            _refreshingPcManager = false;
         }
     }
 
@@ -423,6 +579,101 @@ internal sealed class DisplaySettingsWindow : Window
         }
     }
 
+    private async Task ChangePcManagerEyeCareEnabledAsync()
+    {
+        if (_loading || _state is null)
+            return;
+
+        var enabled = _pcManagerEyeCareToggle.IsChecked == true;
+        await ChangePcManagerSettingAsync(defaults =>
+            PcManagerEyeCareController.SetEnabled(enabled, defaults));
+    }
+
+    private async Task ChangePcManagerTemperatureAsync(int temperature)
+    {
+        if (_loading ||
+            _state is null ||
+            _state.PcManagerEyeCare.Enabled)
+        {
+            return;
+        }
+
+        await ChangePcManagerSettingAsync(defaults =>
+            PcManagerEyeCareController.SetTemperature(
+                temperature,
+                defaults));
+    }
+
+    private async Task RestorePcManagerDefaultAsync()
+    {
+        if (_loading || _state is null)
+            return;
+
+        await ChangePcManagerSettingAsync(
+            PcManagerEyeCareController.RestoreConfiguredDefault);
+    }
+
+    private async Task ChangePcManagerSettingAsync(
+        Func<PcManagerEyeCareDefaults, PcManagerEyeCareState> update)
+    {
+        if (_state is null)
+            return;
+
+        _stateVersion++;
+        _temperatureApplyTimer.Stop();
+        _refreshTimer.Stop();
+        _pcManagerRefreshTimer.Stop();
+        var previous = _state.PcManagerEyeCare;
+        var defaults = _readPcManagerDefaults();
+        SetBusy(true);
+        try
+        {
+            var confirmed = await Task.Run(() => update(defaults));
+            _state = _state with { PcManagerEyeCare = confirmed };
+            ApplyPcManagerEyeCareState(confirmed);
+        }
+        catch (Exception ex)
+        {
+            ApplyPcManagerEyeCareState(previous);
+            ShowWriteError(ex);
+        }
+        finally
+        {
+            SetBusy(false);
+            RestartRefreshTimer();
+            if (IsVisible)
+                _pcManagerRefreshTimer.Start();
+        }
+    }
+
+    private void ShowPcManagerDefaultsWindow()
+    {
+        var window = new PcManagerEyeCareDefaultsWindow(
+            _t,
+            _isDark,
+            FontFamily,
+            FontSize,
+            _readPcManagerDefaults())
+        {
+            Owner = this
+        };
+        if (window.ShowDialog() != true)
+            return;
+
+        var defaults = window.Defaults.Normalize();
+        _savePcManagerDefaults(defaults);
+        if (_state is null)
+            return;
+
+        var state = _state.PcManagerEyeCare with
+        {
+            NormalDefaultTemperature = defaults.NormalTemperature,
+            EyeCareDefaultTemperature = defaults.EyeCareTemperature
+        };
+        _state = _state with { PcManagerEyeCare = state };
+        ApplyPcManagerEyeCareState(state);
+    }
+
     private async Task ChangeColorManagementAsync()
     {
         if (_loading ||
@@ -462,6 +713,7 @@ internal sealed class DisplaySettingsWindow : Window
     private void ApplyState(DisplaySettingsState state)
     {
         ApplyEyeCareState(state.EyeCare);
+        ApplyPcManagerEyeCareState(state.PcManagerEyeCare);
         ApplyColorManagementState(state.ColorManagement);
     }
 
@@ -520,6 +772,34 @@ internal sealed class DisplaySettingsWindow : Window
                 : _t("NotSupported");
         _loading = wasLoading;
         UpdateEyeCareControlAvailability();
+    }
+
+    private void ApplyPcManagerEyeCareState(PcManagerEyeCareState state)
+    {
+        var wasLoading = _loading;
+        _loading = true;
+        _pcManagerEyeCareToggle.IsChecked = state.Available && state.Enabled;
+        _pcManagerEyeCareToggle.Content = _t(state.Enabled ? "On" : "Off");
+        _pcManagerEyeCareToggle.ToolTip = state.Error;
+        if (!_pcManagerTemperature.IsUserInteracting)
+            _pcManagerTemperature.Value = state.CurrentTemperature;
+
+        _pcManagerEyeCareStatus.Text = !state.Available
+            ? state.Error is not null
+                ? string.Format(
+                    _t("SettingsReadFailedFormat"),
+                    state.Error)
+                : _t("NotSupported")
+            : string.Format(
+                _t("PcManagerEyeCareStatusFormat"),
+                state.CurrentTemperature,
+                state.NormalDefaultTemperature,
+                state.EyeCareDefaultTemperature,
+                state.DllCapability
+                    ? _t("ApiAvailable")
+                    : _t("ApiUnavailable"));
+        _loading = wasLoading;
+        UpdatePcManagerControlAvailability();
     }
 
     private void ApplyColorManagementState(ColorManagementState state)
@@ -595,10 +875,22 @@ internal sealed class DisplaySettingsWindow : Window
             value == (int)EyeCareColorEffect.Custom;
     }
 
+    private void UpdatePcManagerControlAvailability()
+    {
+        var available = !_loading &&
+                        _state?.PcManagerEyeCare.Available == true;
+        var enabled = _state?.PcManagerEyeCare.Enabled == true;
+        _pcManagerEyeCareToggle.IsEnabled = available;
+        _pcManagerTemperature.IsEnabled = available && !enabled;
+        _pcManagerRestoreButton.IsEnabled = available;
+        _pcManagerDefaultsButton.IsEnabled = !_loading;
+    }
+
     private void SetBusy(bool busy)
     {
         _loading = busy;
         UpdateEyeCareControlAvailability();
+        UpdatePcManagerControlAvailability();
         _colorManagementCombo.IsEnabled =
             !busy &&
             _state?.ColorManagement.Available == true &&
@@ -610,8 +902,8 @@ internal sealed class DisplaySettingsWindow : Window
     private TimeSpan CurrentRefreshInterval()
     {
         var interval = _refreshInterval();
-        return interval < TimeSpan.FromMilliseconds(500)
-            ? TimeSpan.FromMilliseconds(500)
+        return interval < TimeSpan.FromSeconds(5)
+            ? TimeSpan.FromSeconds(5)
             : interval;
     }
 
@@ -728,6 +1020,7 @@ internal sealed class DisplaySettingsWindow : Window
         _eyeColorEffectCombo.Foreground = SystemColors.ControlTextBrush;
         _eyeScheduleCombo.Foreground = SystemColors.ControlTextBrush;
         _customTemperatureCombo.Foreground = SystemColors.ControlTextBrush;
+        _pcManagerEyeCareToggle.Foreground = Foreground;
         _colorManagementCombo.Foreground = SystemColors.ControlTextBrush;
     }
 

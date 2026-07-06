@@ -96,6 +96,7 @@ internal sealed class SoundSettingsWindow : Window
         {
             _refreshTimer.Stop();
             _recordTimer.Stop();
+            SoundSettingsController.Shutdown();
         };
     }
 
@@ -609,8 +610,8 @@ internal sealed class SoundSettingsWindow : Window
     private TimeSpan CurrentRefreshInterval()
     {
         var interval = _refreshInterval();
-        return interval < TimeSpan.FromMilliseconds(500)
-            ? TimeSpan.FromMilliseconds(500)
+        return interval < TimeSpan.FromSeconds(5)
+            ? TimeSpan.FromSeconds(5)
             : interval;
     }
 

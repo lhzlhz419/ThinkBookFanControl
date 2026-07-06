@@ -4,7 +4,6 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Management;
 
 namespace ThinkBookFanControl;
 
@@ -119,35 +118,21 @@ public sealed class GameProcessDetector
 
     private static IEnumerable<ProcessRecord> ReadProcesses()
     {
-        try
-        {
-            var records = new List<ProcessRecord>();
-            using var searcher = new ManagementObjectSearcher("root\\CIMV2", "SELECT ProcessId, ParentProcessId, Name, ExecutablePath FROM Win32_Process");
-            foreach (ManagementObject item in searcher.Get())
-            {
-                using (item)
-                {
-                    records.Add(new ProcessRecord(
-                        Convert.ToInt32(item["ProcessId"]),
-                        Convert.ToInt32(item["ParentProcessId"]),
-                        Convert.ToString(item["Name"]) ?? "",
-                        Convert.ToString(item["ExecutablePath"])));
-                }
-            }
-            return records;
-        }
-        catch
-        {
-        }
-
-        var fallback = new List<ProcessRecord>();
+        var records = new List<ProcessRecord>();
         foreach (var process in Process.GetProcesses())
         {
-            string? path = null;
-            try { path = process.MainModule?.FileName; } catch { }
-            fallback.Add(new ProcessRecord(process.Id, 0, process.ProcessName, path));
+            using (process)
+            {
+                string? path = null;
+                try { path = process.MainModule?.FileName; } catch { }
+                records.Add(new ProcessRecord(
+                    process.Id,
+                    0,
+                    process.ProcessName,
+                    path));
+            }
         }
-        return fallback;
+        return records;
     }
 
     private static string NormalizeName(string? name)

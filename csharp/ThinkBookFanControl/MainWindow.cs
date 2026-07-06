@@ -33,6 +33,7 @@ public sealed class MainWindow : Window
     private static readonly TimeSpan HeatSoakExitAverageDuration = TimeSpan.FromSeconds(30);
     private static readonly TimeSpan RunningFanSnapshotMinInterval = TimeSpan.FromSeconds(3);
     private static readonly TimeSpan StoppedFanSnapshotMinInterval = TimeSpan.FromSeconds(10);
+    private static readonly TimeSpan GpuModeRefreshInterval = TimeSpan.FromSeconds(5);
     private static readonly TimeSpan FanWriteMinInterval = TimeSpan.FromSeconds(5);
     private static readonly TimeSpan FanWriteUrgentMinInterval = TimeSpan.FromMilliseconds(1500);
     private const int FanWriteMinDeltaRpm = 300;
@@ -51,6 +52,7 @@ public sealed class MainWindow : Window
     private readonly DispatcherTimer _trayMenuTimer = new();
     private readonly DispatcherTimer _fixedControlTimer = new();
     private readonly DispatcherTimer _itsModeTimer = new();
+    private readonly DispatcherTimer _gpuModeTimer = new();
     private readonly List<FanProfile> _profiles;
     private readonly AppSettings _settings;
     private readonly ItsModeDetector _itsModeDetector = new();
@@ -85,10 +87,12 @@ public sealed class MainWindow : Window
     private readonly ComboBox _languageCombo = OptionCombo("\u4e2d\u6587", "English");
     private readonly ComboBox _themeCombo = OptionCombo("Light", "Dark");
     private readonly ComboBox _itsModeCombo = OptionCombo("Auto", "Cool", "Performance", "Geek");
+    private readonly ComboBox _gpuModeCombo = OptionCombo("Hybrid");
     private readonly Button _startButton = new() { Content = "Start", MinWidth = 76 };
     private readonly Button _saveButton = new() { MinWidth = 76, Margin = new Thickness(0, 0, 6, 0) };
     private readonly Button _refreshButton = new() { MinWidth = 76, Margin = new Thickness(0, 0, 6, 0) };
     private readonly Button _powerSettingsButton = new() { MinWidth = 96, Margin = new Thickness(0, 0, 6, 0) };
+    private readonly Button _batterySettingsButton = new() { MinWidth = 96, Margin = new Thickness(0, 0, 6, 0) };
     private readonly Button _displaySettingsButton = new() { MinWidth = 96, Margin = new Thickness(0, 0, 6, 0) };
     private readonly Button _soundSettingsButton = new() { MinWidth = 96, Margin = new Thickness(0, 0, 6, 0) };
     private readonly Button _otherSettingsButton = new() { MinWidth = 96 };
@@ -179,6 +183,14 @@ public sealed class MainWindow : Window
     private bool _refreshingItsMode;
     private bool _switchingItsMode;
     private ItsMode _displayedItsMode = ItsMode.Unknown;
+    private readonly List<GpuWorkingMode> _gpuModes = [];
+    private bool _updatingGpuModeCombo;
+    private bool _refreshingGpuMode;
+    private bool _switchingGpuMode;
+    private GpuWorkingMode? _displayedGpuMode;
+    private GpuWorkingMode? _pendingGpuMode;
+    private bool _pendingGpuModeLoadedAtStartup;
+    private bool _pendingGpuModeApplyAttempted;
     private DateTimeOffset? _lastGameStopTime;
     private int _fanMinRpm = 1500;
     private int _fanMaxRpm = 5500;
@@ -204,7 +216,7 @@ public sealed class MainWindow : Window
         Title = "ThinkBook Fan Control";
         Width = 1220;
         Height = 840;
-        MinWidth = 820;
+        MinWidth = 1160;
         MinHeight = 620;
         Icon = LoadWindowIcon();
         FontFamily = new FontFamily("Segoe UI");
@@ -214,7 +226,12 @@ public sealed class MainWindow : Window
         _itsModeCombo.Width = 112;
         _itsModeCombo.IsEnabled = false;
         _itsModeCombo.VerticalAlignment = VerticalAlignment.Center;
+        _gpuModeCombo.Width = 120;
+        _gpuModeCombo.IsEnabled = false;
+        _gpuModeCombo.VerticalAlignment = VerticalAlignment.Center;
         _settings = CurveProfileStore.LoadSettings();
+        _pendingGpuMode = ParsePendingGpuMode(_settings.PendingGpuMode);
+        _pendingGpuModeLoadedAtStartup = _pendingGpuMode.HasValue;
         _profiles = CurveProfileStore.Load();
         _cpuFan1Curve = [.. _profiles[0].CpuFan1Curve];
         _cpuFan2Curve = [.. _profiles[0].CpuFan2Curve];
@@ -259,12 +276,21 @@ public sealed class MainWindow : Window
         _itsModeTimer.Tick += async (_, _) => await RefreshItsModeAsync();
         _itsModeTimer.Start();
 
+        _gpuModeCombo.SelectionChanged += OnGpuModeSelectionChanged;
+        _gpuModeTimer.Interval = GpuModeRefreshInterval;
+        _gpuModeTimer.Tick += async (_, _) => await RefreshGpuModeAsync();
+
         StateChanged += (_, _) => OnStateChanged();
         SourceInitialized += (_, _) => InitializeGlobalHotkey();
         PreviewKeyDown += OnPreviewKeyDown;
         Closing += OnClosing;
         Closed += (_, _) => OnClosed();
         Loaded += async (_, _) => await RefreshItsModeAsync();
+        Loaded += async (_, _) =>
+        {
+            await RefreshGpuModeAsync();
+            UpdateGpuModePolling();
+        };
 
         if (startToTrayRequested && _settings.StartWithWindows && _settings.StartToTray)
             Loaded += (_, _) => HideWindowToTray();
@@ -354,9 +380,13 @@ public sealed class MainWindow : Window
 
         var settingsActions = new StackPanel { Orientation = Orientation.Horizontal };
         settingsActions.Children.Add(_itsModeCombo);
+        settingsActions.Children.Add(_gpuModeCombo);
 
         _powerSettingsButton.Click += (_, _) => ShowPowerSettingsWindow();
         settingsActions.Children.Add(_powerSettingsButton);
+
+        _batterySettingsButton.Click += (_, _) => ShowBatterySettingsWindow();
+        settingsActions.Children.Add(_batterySettingsButton);
 
         _displaySettingsButton.Click += (_, _) => ShowDisplaySettingsWindow();
         settingsActions.Children.Add(_displaySettingsButton);
@@ -379,7 +409,20 @@ public sealed class MainWindow : Window
         {
             Owner = this
         };
-        window.ShowDialog();
+        ShowSettingsDialog(window);
+    }
+
+    private void ShowBatterySettingsWindow()
+    {
+        var window = new BatterySettingsWindow(
+            T,
+            IsDark,
+            FontFamily,
+            FontSize)
+        {
+            Owner = this
+        };
+        ShowSettingsDialog(window);
     }
 
     private void ShowOtherSettingsWindow()
@@ -393,7 +436,7 @@ public sealed class MainWindow : Window
         {
             Owner = this
         };
-        window.ShowDialog();
+        ShowSettingsDialog(window);
     }
 
     private void ShowDisplaySettingsWindow()
@@ -403,11 +446,22 @@ public sealed class MainWindow : Window
             IsDark,
             FontFamily,
             FontSize,
-            GetSettingsRefreshInterval)
+            GetSettingsRefreshInterval,
+            () => new PcManagerEyeCareDefaults(
+                _settings.PcManagerNormalDefaultTemperature,
+                _settings.PcManagerEyeCareDefaultTemperature),
+            defaults =>
+            {
+                _settings.PcManagerNormalDefaultTemperature =
+                    defaults.NormalTemperature;
+                _settings.PcManagerEyeCareDefaultTemperature =
+                    defaults.EyeCareTemperature;
+                CurveProfileStore.SaveSettings(_settings);
+            })
         {
             Owner = this
         };
-        window.ShowDialog();
+        ShowSettingsDialog(window);
     }
 
     private void ShowSoundSettingsWindow()
@@ -421,7 +475,21 @@ public sealed class MainWindow : Window
         {
             Owner = this
         };
-        window.ShowDialog();
+        ShowSettingsDialog(window);
+    }
+
+    private void ShowSettingsDialog(Window window)
+    {
+        _gpuModeTimer.Stop();
+        try
+        {
+            window.ShowDialog();
+        }
+        finally
+        {
+            UpdateGpuModePolling();
+            _ = RefreshGpuModeAsync();
+        }
     }
 
     private UIElement BuildFanCurvePanel()
@@ -945,10 +1013,13 @@ public sealed class MainWindow : Window
         ShowInTaskbar = true;
         WindowState = WindowState.Normal;
         Activate();
+        UpdateGpuModePolling();
+        _ = RefreshGpuModeAsync();
     }
 
     private void HideWindowToTray()
     {
+        _gpuModeTimer.Stop();
         ShowInTaskbar = false;
         Hide();
     }
@@ -957,6 +1028,18 @@ public sealed class MainWindow : Window
     {
         if (WindowState == WindowState.Minimized && _settings.MinimizeToTray)
             HideWindowToTray();
+
+        UpdateGpuModePolling();
+        if (WindowState != WindowState.Minimized && IsVisible)
+            _ = RefreshGpuModeAsync();
+    }
+
+    private void UpdateGpuModePolling()
+    {
+        if (IsVisible && WindowState != WindowState.Minimized)
+            _gpuModeTimer.Start();
+        else
+            _gpuModeTimer.Stop();
     }
 
     private async void OnClosing(object? sender, CancelEventArgs e)
@@ -1420,6 +1503,7 @@ public sealed class MainWindow : Window
         _trayMenuTimer.Stop();
         _fixedControlTimer.Stop();
         _itsModeTimer.Stop();
+        _gpuModeTimer.Stop();
         UnregisterFixedModeHotkey();
         _hotkeySource?.RemoveHook(WndProc);
         if (_running || _fullSpeedEnabled)
@@ -1455,6 +1539,8 @@ public sealed class MainWindow : Window
             catch { }
         }
         _temperatureReader?.Dispose();
+        DisplaySettingsController.Shutdown();
+        SoundSettingsController.Shutdown();
         if (_trayIcon is not null)
         {
             _trayIcon.Visible = false;
@@ -1508,8 +1594,9 @@ public sealed class MainWindow : Window
         try
         {
             var mode = SelectedItsMode();
-            var gameTask = Task.Run(() => _gameProcessDetector.AreGamesRunning());
-            var gamesRunning = await gameTask;
+            var gamesRunning = _settings.AutoDetectGames &&
+                               await Task.Run(
+                                   () => _gameProcessDetector.AreGamesRunning());
 
             if (!UpdateConfirmedFixedState(mode, gamesRunning))
             {
@@ -2348,6 +2435,367 @@ public sealed class MainWindow : Window
         }
     }
 
+    private async void OnGpuModeSelectionChanged(
+        object sender,
+        SelectionChangedEventArgs e)
+    {
+        if (_updatingGpuModeCombo ||
+            _switchingGpuMode ||
+            _gpuModeCombo.SelectedIndex < 0 ||
+            _gpuModeCombo.SelectedIndex >= _gpuModes.Count)
+        {
+            return;
+        }
+
+        var target = _gpuModes[_gpuModeCombo.SelectedIndex];
+        var current = _displayedGpuMode;
+        UpdateGpuModeCombo(_displayedGpuMode);
+        var hasPendingHybridTransition =
+            ParsePendingGpuMode(_settings.PendingGpuMode).HasValue;
+        var requiresRestart = current.HasValue &&
+                              GpuModeController.RequiresRestart(
+                                  current.Value,
+                                  target) ||
+                              hasPendingHybridTransition &&
+                              GpuModeController.IsHybridMode(target);
+        var restartNow = requiresRestart && ShowGpuRestartPrompt(target);
+
+        _switchingGpuMode = true;
+        _gpuModeCombo.IsEnabled = false;
+        var switched = false;
+        try
+        {
+            await Task.Run(() => GpuModeController.SetMode(target));
+            if (GpuModeController.IsHybridMode(target) &&
+                (hasPendingHybridTransition ||
+                 current.HasValue &&
+                 GpuModeController.IsDirectMode(current.Value)))
+            {
+                SavePendingGpuMode(target);
+            }
+            else
+            {
+                ClearPendingGpuMode();
+                _pendingGpuMode = requiresRestart ? target : null;
+            }
+            _displayedGpuMode = target;
+            UpdateGpuModeCombo(target);
+            switched = true;
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show(
+                this,
+                string.Format(
+                    CultureInfo.CurrentCulture,
+                    T("GpuModeSwitchFailedFormat"),
+                    ex.Message),
+                T("GpuWorkingMode"),
+                MessageBoxButton.OK,
+                MessageBoxImage.Error);
+        }
+        finally
+        {
+            _switchingGpuMode = false;
+            await RefreshGpuModeAsync();
+        }
+
+        if (switched && restartNow)
+        {
+            try
+            {
+                RestartComputer();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(
+                    this,
+                    string.Format(
+                        CultureInfo.CurrentCulture,
+                        T("RestartFailedFormat"),
+                        ex.Message),
+                    T("GpuRestartRequiredTitle"),
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Error);
+            }
+        }
+    }
+
+    private async Task RefreshGpuModeAsync()
+    {
+        if (_refreshingGpuMode)
+            return;
+
+        _refreshingGpuMode = true;
+        try
+        {
+            var state = await Task.Run(GpuModeController.ReadState);
+            state = await ApplyStartupPendingGpuModeAsync(state);
+            UpdateGpuModeItems(state.SupportedModes);
+            if (!_pendingGpuModeLoadedAtStartup &&
+                _pendingGpuMode == state.CurrentMode)
+            {
+                _pendingGpuMode = null;
+            }
+            var displayedMode = _pendingGpuMode ?? state.CurrentMode;
+            _displayedGpuMode = displayedMode;
+            UpdateGpuModeCombo(displayedMode);
+            _gpuModeCombo.IsEnabled =
+                state.SupportedModes.Count > 0 && !_switchingGpuMode;
+            _gpuModeCombo.ToolTip = null;
+        }
+        catch (Exception ex)
+        {
+            if (_pendingGpuMode is { } pending &&
+                _gpuModes.Contains(pending))
+            {
+                _displayedGpuMode = pending;
+                UpdateGpuModeCombo(pending);
+            }
+            else
+            {
+                _displayedGpuMode = null;
+                UpdateGpuModeItems([]);
+                UpdateGpuModeCombo(null);
+            }
+            _gpuModeCombo.IsEnabled = false;
+            _gpuModeCombo.ToolTip = string.Format(
+                CultureInfo.CurrentCulture,
+                T("GpuModeUnavailableFormat"),
+                ex.Message);
+        }
+        finally
+        {
+            _refreshingGpuMode = false;
+        }
+    }
+
+    private async Task<GpuModeState> ApplyStartupPendingGpuModeAsync(
+        GpuModeState state)
+    {
+        if (!_pendingGpuModeLoadedAtStartup ||
+            _pendingGpuModeApplyAttempted ||
+            _pendingGpuMode is not { } pending ||
+            !GpuModeController.IsHybridMode(pending) ||
+            GpuModeController.IsDirectMode(state.CurrentMode))
+        {
+            return state;
+        }
+
+        _pendingGpuModeApplyAttempted = true;
+        try
+        {
+            if (state.CurrentMode != pending)
+            {
+                await Task.Run(() => GpuModeController.SetMode(pending));
+                var deadline = DateTimeOffset.UtcNow.AddSeconds(3);
+                do
+                {
+                    await Task.Delay(500);
+                    state = await Task.Run(GpuModeController.ReadState);
+                    if (state.CurrentMode == pending)
+                        break;
+                } while (DateTimeOffset.UtcNow < deadline);
+            }
+
+            if (state.CurrentMode == pending)
+                ClearPendingGpuMode();
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show(
+                this,
+                string.Format(
+                    CultureInfo.CurrentCulture,
+                    T("GpuModeSwitchFailedFormat"),
+                    ex.Message),
+                T("GpuWorkingMode"),
+                MessageBoxButton.OK,
+                MessageBoxImage.Warning);
+        }
+
+        return state;
+    }
+
+    private void SavePendingGpuMode(GpuWorkingMode mode)
+    {
+        _settings.PendingGpuMode = mode.ToString();
+        CurveProfileStore.SaveSettings(_settings);
+        _pendingGpuMode = mode;
+        _pendingGpuModeLoadedAtStartup = false;
+        _pendingGpuModeApplyAttempted = true;
+    }
+
+    private void ClearPendingGpuMode()
+    {
+        if (!string.IsNullOrEmpty(_settings.PendingGpuMode))
+        {
+            _settings.PendingGpuMode = string.Empty;
+            CurveProfileStore.SaveSettings(_settings);
+        }
+
+        _pendingGpuMode = null;
+        _pendingGpuModeLoadedAtStartup = false;
+        _pendingGpuModeApplyAttempted = false;
+    }
+
+    private static GpuWorkingMode? ParsePendingGpuMode(string value) =>
+        Enum.TryParse<GpuWorkingMode>(value, out var mode) &&
+        GpuModeController.IsHybridMode(mode)
+            ? mode
+            : null;
+
+    private void UpdateGpuModeItems(
+        IReadOnlyList<GpuWorkingMode> modes,
+        bool force = false)
+    {
+        if (!force &&
+            _gpuModes.SequenceEqual(modes) &&
+            _gpuModeCombo.Items.Count == modes.Count)
+        {
+            return;
+        }
+
+        var newModes = modes.ToArray();
+        _updatingGpuModeCombo = true;
+        try
+        {
+            _gpuModes.Clear();
+            _gpuModes.AddRange(newModes);
+            _gpuModeCombo.Items.Clear();
+            foreach (var mode in newModes)
+                _gpuModeCombo.Items.Add(T(GpuModeKey(mode)));
+            ResizeGpuModeCombo();
+        }
+        finally
+        {
+            _updatingGpuModeCombo = false;
+        }
+    }
+
+    private void UpdateGpuModeCombo(GpuWorkingMode? mode)
+    {
+        var selectedIndex = mode.HasValue
+            ? _gpuModes.IndexOf(mode.Value)
+            : -1;
+        if (_gpuModeCombo.SelectedIndex == selectedIndex)
+            return;
+
+        _updatingGpuModeCombo = true;
+        try
+        {
+            _gpuModeCombo.SelectedIndex = selectedIndex;
+        }
+        finally
+        {
+            _updatingGpuModeCombo = false;
+        }
+    }
+
+    private static string GpuModeKey(GpuWorkingMode mode) =>
+        mode switch
+        {
+            GpuWorkingMode.Hybrid => "GpuModeHybrid",
+            GpuWorkingMode.IntegratedOnly => "GpuModeIntegratedOnly",
+            GpuWorkingMode.HybridAuto => "GpuModeHybridAuto",
+            GpuWorkingMode.Discrete => "GpuModeDiscrete",
+            GpuWorkingMode.IntegratedDirect => "GpuModeIntegratedDirect",
+            _ => throw new ArgumentOutOfRangeException(nameof(mode), mode, null)
+        };
+
+    private void ResizeGpuModeCombo()
+    {
+        var labels = _gpuModeCombo.Items
+            .Cast<object>()
+            .Select(item => Convert.ToString(
+                item,
+                CultureInfo.CurrentCulture) ?? string.Empty)
+            .ToArray();
+        if (labels.Length == 0)
+            return;
+
+        var typeface = new Typeface(
+            _gpuModeCombo.FontFamily,
+            _gpuModeCombo.FontStyle,
+            _gpuModeCombo.FontWeight,
+            _gpuModeCombo.FontStretch);
+        var pixelsPerDip = VisualTreeHelper.GetDpi(this).PixelsPerDip;
+        var textWidth = labels.Max(label => new FormattedText(
+            label,
+            CultureInfo.CurrentUICulture,
+            FlowDirection.LeftToRight,
+            typeface,
+            _gpuModeCombo.FontSize,
+            Brushes.Black,
+            pixelsPerDip).WidthIncludingTrailingWhitespace);
+        _gpuModeCombo.Width = Math.Ceiling(textWidth + 38);
+    }
+
+    private bool ShowGpuRestartPrompt(GpuWorkingMode target)
+    {
+        var dialog = new Window
+        {
+            Title = T("GpuRestartRequiredTitle"),
+            Owner = this,
+            Width = 430,
+            SizeToContent = SizeToContent.Height,
+            WindowStartupLocation = WindowStartupLocation.CenterOwner,
+            ResizeMode = ResizeMode.NoResize,
+            ShowInTaskbar = false,
+            FontFamily = FontFamily,
+            FontSize = FontSize
+        };
+        var panel = new StackPanel { Margin = new Thickness(18) };
+        panel.Children.Add(new TextBlock
+        {
+            Text = string.Format(
+                CultureInfo.CurrentCulture,
+                T("GpuRestartRequiredMessage"),
+                T(GpuModeKey(target))),
+            TextWrapping = TextWrapping.Wrap,
+            Margin = new Thickness(0, 0, 0, 16)
+        });
+        var buttons = new StackPanel
+        {
+            Orientation = Orientation.Horizontal,
+            HorizontalAlignment = HorizontalAlignment.Right
+        };
+        var restartNowButton = new Button
+        {
+            Content = T("RestartNow"),
+            MinWidth = 96,
+            Margin = new Thickness(0, 0, 8, 0),
+            IsDefault = true
+        };
+        var restartLaterButton = new Button
+        {
+            Content = T("RestartLater"),
+            MinWidth = 96,
+            IsCancel = true
+        };
+        restartNowButton.Click += (_, _) => dialog.DialogResult = true;
+        restartLaterButton.Click += (_, _) => dialog.DialogResult = false;
+        buttons.Children.Add(restartNowButton);
+        buttons.Children.Add(restartLaterButton);
+        panel.Children.Add(buttons);
+        dialog.Content = panel;
+        return dialog.ShowDialog() == true;
+    }
+
+    private static void RestartComputer()
+    {
+        var shutdown = Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.System),
+            "shutdown.exe");
+        Process.Start(new ProcessStartInfo
+        {
+            FileName = shutdown,
+            Arguments = "/r /t 0",
+            UseShellExecute = false,
+            CreateNoWindow = true
+        });
+    }
+
     private void SetResumeFanControlOnNextStart(bool value)
     {
         if (_settings.ResumeFanControlOnNextStart == value)
@@ -2686,9 +3134,63 @@ public sealed class MainWindow : Window
             "Save" => "\u4fdd\u5b58",
             "Refresh" => "\u5237\u65b0",
             "PowerSettings" => "\u529f\u8017\u8bbe\u7f6e",
+            "BatterySettings" => "\u7535\u6c60\u8bbe\u7f6e",
+            "BatteryInformation" => "\u7535\u6c60\u4fe1\u606f",
             "DisplaySettings" => "\u663e\u793a\u8bbe\u7f6e",
             "SoundSettings" => "\u58f0\u97f3\u8bbe\u7f6e",
             "OtherSettings" => "\u5176\u5b83\u8bbe\u7f6e",
+            "BatteryChargeMode" => "\u5145\u7535\u6a21\u5f0f",
+            "BatteryChargeModeDescription" => "\u9009\u62e9\u7535\u6c60\u5145\u7535\u7b56\u7565\u3002\u517b\u62a4\u6a21\u5f0f\u9650\u5236\u5145\u7535\u91cf\uff0c\u5feb\u5145\u6a21\u5f0f\u63d0\u9ad8\u5145\u7535\u529f\u7387\u3002",
+            "BatteryConservationMode" => "\u517b\u62a4",
+            "BatteryNormalMode" => "\u666e\u901a",
+            "BatteryRapidChargeMode" => "\u5feb\u5145",
+            "OvernightBatteryCharging" => "\u9694\u591c\u7535\u6c60\u5145\u7535",
+            "OvernightBatteryChargingDescription" => "\u542f\u7528\u540e\uff0c\u63d2\u7535\u8fc7\u591c\u65f6\u5148\u5145\u81f3 80%\uff0c\u65e9\u4e0a\u518d\u5145\u81f3 100%\u3002",
+            "AlwaysOnUsb" => "\u4fdd\u6301 USB \u4f9b\u7535",
+            "AlwaysOnUsbDescription" => "\u5728\u5173\u673a\u3001\u7761\u7720\u6216\u4f11\u7720\u65f6\u4fdd\u6301\u6307\u5b9a USB \u63a5\u53e3\u4f9b\u7535\u3002",
+            "AlwaysOnUsbOff" => "\u5173\u95ed",
+            "AlwaysOnUsbSleeping" => "\u4ec5\u7761\u7720\u65f6\u5f00\u542f",
+            "AlwaysOnUsbAlways" => "\u4fdd\u6301\u5f00\u542f",
+            "FlipToStart" => "\u5f00\u76d6\u542f\u52a8",
+            "FlipToStartDescription" => "\u6253\u5f00\u76d6\u5b50\u65f6\u81ea\u52a8\u542f\u52a8\u7b14\u8bb0\u672c\u3002",
+            "BatteryTemperature" => "\u7535\u6c60\u6e29\u5ea6",
+            "BatteryTemperatureDescription" => "\u5f53\u524d\u7535\u6c60\u6e29\u5ea6\u3002",
+            "BatteryPower" => "\u7535\u6c60\u5145\u653e\u7535\u529f\u7387",
+            "BatteryPowerDescription" => "(+) \u4e3a\u5145\u7535\uff0c(-) \u4e3a\u653e\u7535\u3002",
+            "BatteryMinimumPower" => "\u6700\u5c0f\u5145\u653e\u7535\u529f\u7387",
+            "BatteryMinimumPowerDescription" => "\u5f53\u524d\u8fde\u7eed\u5145\u7535\u6216\u653e\u7535\u9636\u6bb5\u7684\u6700\u5c0f\u529f\u7387\u3002",
+            "BatteryMaximumPower" => "\u6700\u5927\u5145\u653e\u7535\u529f\u7387",
+            "BatteryMaximumPowerDescription" => "\u5f53\u524d\u8fde\u7eed\u5145\u7535\u6216\u653e\u7535\u9636\u6bb5\u7684\u6700\u5927\u529f\u7387\u3002",
+            "BatteryCurrentCapacity" => "\u5f53\u524d\u5bb9\u91cf",
+            "BatteryCurrentCapacityDescription" => "\u5f53\u524d\u7535\u6c60\u5bb9\u91cf\u3002",
+            "BatteryFullChargeCapacity" => "\u6ee1\u7535\u5bb9\u91cf",
+            "BatteryFullChargeCapacityDescription" => "\u5f53\u7535\u6c60\u5145\u6ee1\u65f6\u7684\u5bb9\u91cf\u3002",
+            "BatteryDesignCapacity" => "\u8bbe\u8ba1\u5bb9\u91cf",
+            "BatteryDesignCapacityDescription" => "\u7535\u6c60\u8bbe\u8ba1\u5bb9\u91cf\u3002",
+            "BatteryHealth" => "\u7535\u6c60\u5065\u5eb7\u5ea6",
+            "BatteryHealthDescription" => "\u6ee1\u7535\u5bb9\u91cf\u5360\u8bbe\u8ba1\u5bb9\u91cf\u7684\u767e\u5206\u6bd4\u3002",
+            "BatteryUsageTime" => "\u7535\u6c60\u4f7f\u7528\u65f6\u95f4",
+            "BatteryUsageTimeDescription" => "\u7b14\u8bb0\u672c\u65ad\u5f00\u7535\u6e90\u9002\u914d\u5668\u540e\u7684\u65f6\u95f4\u3002",
+            "BatteryUsageTimeFormat" => "{0} ({1})",
+            "BatteryCycleCount" => "\u5faa\u73af\u6b21\u6570",
+            "BatteryCycleCountDescription" => "\u7535\u6c60\u5145\u653e\u7535\u5faa\u73af\u6b21\u6570\u3002",
+            "BatteryManufactureDate" => "\u751f\u4ea7\u65e5\u671f",
+            "BatteryManufactureDateDescription" => "\u7535\u6c60\u7684\u751f\u4ea7\u65e5\u671f\u3002",
+            "BatteryFirstUseDate" => "\u7535\u6c60\u9996\u6b21\u4f7f\u7528\u65f6\u95f4",
+            "BatteryFirstUseDateDescription" => "\u7535\u6c60\u7b2c\u4e00\u6b21\u4f7f\u7528\u7684\u65e5\u671f\u3002",
+            "GpuWorkingMode" => "\u663e\u5361\u5de5\u4f5c\u6a21\u5f0f",
+            "GpuModeHybrid" => "\u6df7\u5408\u6a21\u5f0f",
+            "GpuModeIntegratedOnly" => "\u6df7\u5408\u6838\u663e\u6a21\u5f0f",
+            "GpuModeHybridAuto" => "\u6df7\u5408\u81ea\u52a8\u6a21\u5f0f",
+            "GpuModeDiscrete" => "\u72ec\u663e\u76f4\u8fde\u6a21\u5f0f",
+            "GpuModeIntegratedDirect" => "\u6838\u663e\u76f4\u8fde\u6a21\u5f0f",
+            "GpuRestartRequiredTitle" => "\u9700\u8981\u91cd\u542f",
+            "GpuRestartRequiredMessage" => "\u5207\u6362\u5230\u201c{0}\u201d\u9700\u8981\u91cd\u542f\u624d\u80fd\u5b8c\u5168\u751f\u6548\u3002\u8bf7\u9009\u62e9\u91cd\u542f\u65f6\u95f4\u3002",
+            "RestartNow" => "\u7acb\u5373\u91cd\u542f",
+            "RestartLater" => "\u7a0d\u540e\u91cd\u542f",
+            "RestartFailedFormat" => "\u542f\u52a8\u91cd\u542f\u5931\u8d25\uff1a{0}",
+            "GpuModeSwitchFailedFormat" => "\u663e\u5361\u6a21\u5f0f\u5207\u6362\u5931\u8d25\uff1a{0}",
+            "GpuModeUnavailableFormat" => "\u663e\u5361\u6a21\u5f0f\u4e0d\u53ef\u7528\uff1a{0}",
             "Start" => "\u542f\u52a8",
             "Stop" => "\u505c\u6b62",
             "FullSpeed" => "\u98ce\u6247\u62c9\u6ee1",
@@ -2765,7 +3267,21 @@ public sealed class MainWindow : Window
             "Touchpad" => "\u89e6\u6478\u677f",
             "ReadFailed" => "\u8bfb\u53d6\u5931\u8d25",
             "EyeCareMode" => "\u62a4\u773c\u6a21\u5f0f",
+            "EyeCareModeVantage" => "\u62a4\u773c\u6a21\u5f0f(Vantage)",
             "EyeCareModeDescription" => "\u8c03\u8282\u5c4f\u5e55\u8272\u6e29\u4ee5\u5e2e\u52a9\u51cf\u8f7b\u773c\u775b\u75b2\u52b3\u3002",
+            "EyeCareModePcManager" => "\u62a4\u773c\u6a21\u5f0f(\u8054\u60f3\u7535\u8111\u7ba1\u5bb6)",
+            "EyeCareModePcManagerDescription" => "\u4f7f\u7528\u8054\u60f3\u7535\u8111\u7ba1\u5bb6\u7684 Gamma \u8272\u6e29\u7b97\u6cd5\uff0c\u72ec\u7acb\u4e8e Vantage \u62a4\u773c\u6a21\u5f0f\u3002",
+            "ColorTemperature" => "\u8272\u6e29\u8c03\u8282",
+            "PcManagerColorTemperatureDescription" => "\u5411\u53f3\u964d\u4f4e\u5f00\u5c14\u6587\u503c\u5e76\u589e\u5f3a\u6696\u8272\uff1b\u62a4\u773c\u6a21\u5f0f\u5f00\u542f\u65f6\u4e0d\u53ef\u8c03\u8282\u3002",
+            "RestoreDefault" => "\u6062\u590d\u9ed8\u8ba4",
+            "SetDefaultValues" => "\u8bbe\u7f6e\u9ed8\u8ba4\u503c",
+            "PcManagerEyeCareDefaultSettings" => "\u8bbe\u7f6e\u7535\u8111\u7ba1\u5bb6\u62a4\u773c\u9ed8\u8ba4\u503c",
+            "PcManagerNormalDefault" => "\u5e73\u65f6\u9ed8\u8ba4\u503c",
+            "PcManagerNormalDefaultDescription" => "\u5173\u95ed\u62a4\u773c\u6a21\u5f0f\u6216\u5728\u666e\u901a\u72b6\u6001\u6062\u590d\u9ed8\u8ba4\u65f6\u4f7f\u7528\u3002",
+            "PcManagerEyeCareDefault" => "\u62a4\u773c\u6a21\u5f0f\u9ed8\u8ba4\u503c",
+            "PcManagerEyeCareDefaultDescription" => "\u5f00\u542f\u62a4\u773c\u6a21\u5f0f\u6216\u5728\u62a4\u773c\u72b6\u6001\u6062\u590d\u9ed8\u8ba4\u65f6\u4f7f\u7528\u3002",
+            "PcManagerEyeCareStatusFormat" => "\u5f53\u524d\uff1a{0} K\uff1b\u5e73\u65f6\u9ed8\u8ba4\uff1a{1} K\uff1b\u62a4\u773c\u9ed8\u8ba4\uff1a{2} K\uff1b\u7535\u8111\u7ba1\u5bb6 DLL\uff1a{3}",
+            "Restore" => "\u8fd8\u539f",
             "ColorEffect" => "\u989c\u8272\u6548\u679c",
             "ColorEffectDescription" => "\u9009\u62e9 Vantage 5.x \u62a4\u773c\u6a21\u5f0f\u7684\u8272\u6e29\u914d\u7f6e\u3002",
             "EyeCareSchedule" => "\u8ba1\u5212",
@@ -2798,7 +3314,7 @@ public sealed class MainWindow : Window
             "Yes" => "\u662f",
             "No" => "\u5426",
             "DolbyAtmos" => "Dolby Atmos",
-            "DolbyAtmosDescription" => "\u5207\u6362 Dolby \u5168\u666f\u58f0\u7684\u8f93\u51fa\u97f3\u6548\u6a21\u5f0f\u3002",
+            "DolbyAtmosDescription" => "\u5207\u6362 Dolby \u5168\u666f\u58f0\u7684\u8f93\u51fa\u97f3\u6548\u6a21\u5f0f\u3002\u5efa\u8bae\u4f7f\u7528 Dolby Access \u8f6f\u4ef6\u8c03\u8282\u3002",
             "SpeakerNoiseCancellation" => "\u626c\u58f0\u5668\u6d88\u566a",
             "SpeakerNoiseCancellationDescription" => "\u8fc7\u6ee4\u8f93\u51fa\u97f3\u9891\u4e2d\u7684\u5176\u4ed6\u58f0\u97f3\uff0c\u4ec5\u64ad\u653e\u4eba\u58f0\u3002\u5efa\u8bae\u5728\u80cc\u666f\u566a\u97f3\u8f83\u5927\u7684\u7ebf\u4e0a\u4f1a\u8bae\u4e2d\u4f7f\u7528\u3002",
             "SpeakerNoiseDriverControlled" => "\u7531 Lenovo \u667a\u80fd\u6d88\u566a\u63d2\u4ef6\u63a7\u5236\u3002",
@@ -2839,7 +3355,7 @@ public sealed class MainWindow : Window
             "GpuToCpuDynamicBoost" => "GPU To CPU Dynamic Boost",
             "PowerSettingsReadFailedFormat" => "\u8bfb\u53d6\u529f\u8017\u8bbe\u7f6e\u5931\u8d25\uff1a{0}",
             "PowerSettingsWriteFailedFormat" => "\u5199\u5165\u529f\u8017\u8bbe\u7f6e\u5931\u8d25\uff1a{0}",
-            "RestoreCurrentModeDefaults" => "\u6062\u590d\u5f53\u524d\u6a21\u5f0f\u9ed8\u8ba4\u503c",
+            "RestoreCurrentModeDefaults" => "\u6062\u590d\u5f53\u524d\u6a21\u5f0f\u9ed8\u8ba4\u503c\uff08\u63d2\u7535\u65f6\uff09",
             "PowerSettingsCurrentModeUnavailable" => "\u65e0\u6cd5\u786e\u5b9a\u5f53\u524d\u6a21\u5f0f\uff0c\u4e0d\u80fd\u6062\u590d\u9ed8\u8ba4\u529f\u8017\u8bbe\u7f6e\u3002",
             "PowerSettingRangeFormat" => "\u201c{0}\u201d\u5fc5\u987b\u662f {1} \u5230 {2} \u4e4b\u95f4\u7684\u6574\u6570\u3002",
             "PowerSettingsTurboRequired" => "\u8bf7\u9009\u62e9 CPU Turbo Time Limit\u3002",
@@ -2868,9 +3384,63 @@ public sealed class MainWindow : Window
             "GpuCurve" => "GPU Curve",
             "TemperatureAxis" => "Temperature (\u00B0C)",
             "PowerSettings" => "Power settings",
+            "BatterySettings" => "Battery settings",
+            "BatteryInformation" => "Battery information",
             "DisplaySettings" => "Display settings",
             "SoundSettings" => "Sound settings",
             "OtherSettings" => "Other settings",
+            "BatteryChargeMode" => "Charging mode",
+            "BatteryChargeModeDescription" => "Choose the battery charging strategy. Conservation limits charge level, while rapid charge uses more power.",
+            "BatteryConservationMode" => "Conservation",
+            "BatteryNormalMode" => "Normal",
+            "BatteryRapidChargeMode" => "Rapid charge",
+            "OvernightBatteryCharging" => "Overnight battery charging",
+            "OvernightBatteryChargingDescription" => "When plugged in overnight, charge to 80% first and finish charging to 100% in the morning.",
+            "AlwaysOnUsb" => "Always on USB",
+            "AlwaysOnUsbDescription" => "Keep the designated USB port powered while shut down, sleeping, or hibernating.",
+            "AlwaysOnUsbOff" => "Off",
+            "AlwaysOnUsbSleeping" => "On while sleeping",
+            "AlwaysOnUsbAlways" => "Always on",
+            "FlipToStart" => "Flip to start",
+            "FlipToStartDescription" => "Turn the laptop on automatically when the lid is opened.",
+            "BatteryTemperature" => "Battery temperature",
+            "BatteryTemperatureDescription" => "Current battery temperature.",
+            "BatteryPower" => "Battery charge/discharge power",
+            "BatteryPowerDescription" => "(+) indicates charging and (-) indicates discharging.",
+            "BatteryMinimumPower" => "Minimum charge/discharge power",
+            "BatteryMinimumPowerDescription" => "Lowest power in the current continuous charging or discharging period.",
+            "BatteryMaximumPower" => "Maximum charge/discharge power",
+            "BatteryMaximumPowerDescription" => "Highest power in the current continuous charging or discharging period.",
+            "BatteryCurrentCapacity" => "Current capacity",
+            "BatteryCurrentCapacityDescription" => "Current battery capacity.",
+            "BatteryFullChargeCapacity" => "Full charge capacity",
+            "BatteryFullChargeCapacityDescription" => "Battery capacity when fully charged.",
+            "BatteryDesignCapacity" => "Design capacity",
+            "BatteryDesignCapacityDescription" => "Designed battery capacity.",
+            "BatteryHealth" => "Battery health",
+            "BatteryHealthDescription" => "Full charge capacity as a percentage of design capacity.",
+            "BatteryUsageTime" => "Battery usage time",
+            "BatteryUsageTimeDescription" => "Time since the laptop was disconnected from its power adapter.",
+            "BatteryUsageTimeFormat" => "{0} ({1})",
+            "BatteryCycleCount" => "Cycle count",
+            "BatteryCycleCountDescription" => "Battery charge and discharge cycle count.",
+            "BatteryManufactureDate" => "Manufacture date",
+            "BatteryManufactureDateDescription" => "Battery manufacture date.",
+            "BatteryFirstUseDate" => "First use date",
+            "BatteryFirstUseDateDescription" => "Date when the battery was first used.",
+            "GpuWorkingMode" => "GPU working mode",
+            "GpuModeHybrid" => "Hybrid mode",
+            "GpuModeIntegratedOnly" => "iGPU only",
+            "GpuModeHybridAuto" => "Hybrid auto",
+            "GpuModeDiscrete" => "Discrete graphics",
+            "GpuModeIntegratedDirect" => "Integrated graphics",
+            "GpuRestartRequiredTitle" => "Restart required",
+            "GpuRestartRequiredMessage" => "Switching to \"{0}\" requires a restart to take full effect. Choose when to restart.",
+            "RestartNow" => "Restart now",
+            "RestartLater" => "Restart later",
+            "RestartFailedFormat" => "Failed to start the restart: {0}",
+            "GpuModeSwitchFailedFormat" => "Failed to switch GPU mode: {0}",
+            "GpuModeUnavailableFormat" => "GPU mode is unavailable: {0}",
             "FullSpeed" => "Full speed",
             "EnablingFullSpeed" => "Enabling full speed...",
             "DisablingFullSpeed" => "Disabling full speed...",
@@ -2940,7 +3510,21 @@ public sealed class MainWindow : Window
             "Touchpad" => "Touchpad",
             "ReadFailed" => "Read failed",
             "EyeCareMode" => "Eye care mode",
+            "EyeCareModeVantage" => "Eye care mode (Vantage)",
             "EyeCareModeDescription" => "Adjust screen color temperature to help reduce eye strain.",
+            "EyeCareModePcManager" => "Eye care mode (Lenovo PC Manager)",
+            "EyeCareModePcManagerDescription" => "Uses Lenovo PC Manager's gamma color-temperature algorithm independently of Vantage eye care.",
+            "ColorTemperature" => "Color temperature",
+            "PcManagerColorTemperatureDescription" => "Moving right lowers the Kelvin value and increases warmth. Adjustment is disabled while eye care is on.",
+            "RestoreDefault" => "Restore default",
+            "SetDefaultValues" => "Set defaults",
+            "PcManagerEyeCareDefaultSettings" => "Lenovo PC Manager eye care defaults",
+            "PcManagerNormalDefault" => "Normal default",
+            "PcManagerNormalDefaultDescription" => "Used when eye care is turned off or defaults are restored in normal mode.",
+            "PcManagerEyeCareDefault" => "Eye care default",
+            "PcManagerEyeCareDefaultDescription" => "Used when eye care is turned on or defaults are restored in eye care mode.",
+            "PcManagerEyeCareStatusFormat" => "Current: {0} K; normal default: {1} K; eye care default: {2} K; PC Manager DLL: {3}",
+            "Restore" => "Restore",
             "ColorEffect" => "Color effect",
             "ColorEffectDescription" => "Choose the Vantage 5.x eye care color temperature profile.",
             "EyeCareSchedule" => "Schedule",
@@ -2973,7 +3557,7 @@ public sealed class MainWindow : Window
             "Yes" => "Yes",
             "No" => "No",
             "DolbyAtmos" => "Dolby Atmos",
-            "DolbyAtmosDescription" => "Switch the Dolby Atmos output sound profile.",
+            "DolbyAtmosDescription" => "Switch the Dolby Atmos output sound profile. Dolby Access is recommended for adjustments.",
             "SpeakerNoiseCancellation" => "Speaker noise cancellation",
             "SpeakerNoiseCancellationDescription" => "Filter other output sounds and only play human voice. Useful for online meetings with noisy speakers.",
             "SpeakerNoiseDriverControlled" => "Controlled by the Lenovo smart noise cancellation plugin.",
@@ -3014,7 +3598,7 @@ public sealed class MainWindow : Window
             "GpuToCpuDynamicBoost" => "GPU To CPU Dynamic Boost",
             "PowerSettingsReadFailedFormat" => "Failed to read power settings: {0}",
             "PowerSettingsWriteFailedFormat" => "Failed to write power settings: {0}",
-            "RestoreCurrentModeDefaults" => "Restore current mode defaults",
+            "RestoreCurrentModeDefaults" => "Restore current mode defaults (plugged in)",
             "PowerSettingsCurrentModeUnavailable" => "The current mode could not be determined, so its default power settings cannot be restored.",
             "PowerSettingRangeFormat" => "\"{0}\" must be an integer from {1} to {2}.",
             "PowerSettingsTurboRequired" => "Select a CPU Turbo Time Limit.",
@@ -3051,6 +3635,7 @@ public sealed class MainWindow : Window
         _saveButton.Content = T("Save");
         _refreshButton.Content = T("Refresh");
         _powerSettingsButton.Content = T("PowerSettings");
+        _batterySettingsButton.Content = T("BatterySettings");
         _displaySettingsButton.Content = T("DisplaySettings");
         _soundSettingsButton.Content = T("SoundSettings");
         _otherSettingsButton.Content = T("OtherSettings");
@@ -3101,6 +3686,8 @@ public sealed class MainWindow : Window
             Math.Max(0, Array.IndexOf(SwitchableItsModes, _displayedItsMode)));
         _itsModeCombo.SelectedIndex = Array.IndexOf(SwitchableItsModes, _displayedItsMode);
         _updatingItsModeCombo = false;
+        UpdateGpuModeItems(_gpuModes.ToArray(), force: true);
+        UpdateGpuModeCombo(_displayedGpuMode);
         _loadingSettings = false;
         ApplyStrategyVisibility();
         UpdateTrayMenu();

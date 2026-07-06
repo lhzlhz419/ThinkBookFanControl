@@ -201,7 +201,9 @@ internal sealed class OtherSettingsWindow : Window
 
             try
             {
-                var inputState = await Task.Run(InputSettingsController.ReadState);
+                var inputState = await Task.Run(
+                    () => InputSettingsController.ReadState(
+                        refreshWmiState: showReading));
                 ApplyInputState(inputState);
             }
             catch (Exception ex)

@@ -44,6 +44,10 @@ LibreHardwareMonitor and controls the two fans through Lenovo WMI methods.
 - Optional synchronized point dragging for both fan curves.
 - Five saved profiles.
 - Light/dark theme and Chinese/English UI.
+- Display settings support both Vantage eye care and the Lenovo PC Manager
+  gamma-based eye care mode without coupling their switches. The PC Manager
+  mode includes a reversed temperature slider, an editable Kelvin value, and
+  separate normal/eye-care defaults.
 - Tray menu, close-to-tray, minimize-to-tray, and optional Windows startup.
 - Restores firmware automatic fan control before exit.
 
@@ -70,5 +74,17 @@ The script creates two release folders under `dist`:
 
 - `ThinkBookFanControl-win-x64`: self-contained build, no .NET runtime install required.
 - `ThinkBookFanControl-win-x64-net9-runtime`: smaller build, requires .NET 9 Desktop Runtime.
+
+The build script also copies the required x64 files from installed Vantage
+display and sound add-ins into `VantageAddins` in each output directory. The
+app prefers these local copies and falls back to
+`C:\ProgramData\Lenovo\Vantage\Addins` when one is missing.
+Third-party add-in binaries are not committed to Git.
+Local copies replace only the add-in file lookup; the related Lenovo services,
+drivers, and audio components must still be installed.
+
+The repository includes the PC Manager x86 `WrapPlugin.dll` for the original
+`IsSupportColorTemperature` capability check. Color-temperature conversion and
+Gamma Ramp application are implemented in the app.
 
 See [BUILDING.md](BUILDING.md) for details.

@@ -71,7 +71,7 @@ internal sealed class PowerSettingsWindow : Window
         _settingsGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(64) });
 
         _cpuPl1 = AddSliderRow(0, _t("CpuPl1"), 30, 150);
-        _cpuPl2 = AddSliderRow(1, _t("CpuPl2"), 50, 200);
+        _cpuPl2 = AddSliderRow(1, _t("CpuPl2"), 30, 200);
         _cpuTemperatureLimit = AddSliderRow(2, _t("CpuTemperatureLimit"), 75, 105);
         AddComboRow(3, _t("CpuTurboTimeLimit"), _cpuTurboTimeLimitCombo);
         _gpuPowerBoost = AddSliderRow(4, _t("GpuPowerBoost"), 0, 15);

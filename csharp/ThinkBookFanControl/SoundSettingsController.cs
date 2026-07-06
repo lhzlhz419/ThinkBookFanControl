@@ -61,10 +61,12 @@ internal sealed record SoundSettingsState(
 
 internal static class SoundSettingsController
 {
-    private const string MultimediaAddinRoot =
-        @"C:\ProgramData\Lenovo\Vantage\Addins\MultimediaAddin";
-    private const string NoiseAddinRoot =
-        @"C:\ProgramData\Lenovo\Vantage\Addins\SmartNoiseCancelledAddin";
+    private const string MultimediaAddinName = "MultimediaAddin";
+    private const string NoiseAddinName = "SmartNoiseCancelledAddin";
+    private static readonly SemaphoreSlim PowerShellLock = new(1, 1);
+    private static readonly object ActiveProcessLock = new();
+    private static Process? ActivePowerShellProcess;
+    private static ChildProcessJob? ActivePowerShellJob;
     private static readonly SemaphoreSlim SoundHelperLock = new(1, 1);
     private static readonly object SoundHelperErrorLock = new();
     private static readonly StringBuilder SoundHelperErrors = new();
@@ -72,58 +74,51 @@ internal static class SoundSettingsController
 
     static SoundSettingsController()
     {
-        AppDomain.CurrentDomain.ProcessExit += (_, _) => StopSoundHelper();
+        AppDomain.CurrentDomain.ProcessExit += (_, _) => Shutdown();
     }
 
     public static SoundSettingsState ReadState()
     {
+        DolbyState dolby;
+        NoiseSettingsState noise;
+
         try
         {
-            return ParseSoundHelperState(RunSoundHelperRead());
+            dolby = ReadDolbyState();
         }
-        catch
+        catch (Exception ex)
         {
-            DolbyState dolby;
-            NoiseSettingsState noise;
-
-            try
-            {
-                dolby = ReadDolbyState();
-            }
-            catch (Exception ex)
-            {
-                dolby = new(false, false, DolbyProfile.Dynamic, ex.Message);
-            }
-
-            try
-            {
-                noise = ReadNoiseState();
-            }
-            catch (Exception ex)
-            {
-                noise = new(
-                    new(
-                        false,
-                        MicrophoneNoiseMode.Off,
-                        false,
-                        false,
-                        false,
-                        false,
-                        0,
-                        ex.Message),
-                    new(false, false, ex.Message));
-            }
-
-            return new(dolby, noise.SpeakerNoise, noise.MicrophoneNoise);
+            dolby = new(false, false, DolbyProfile.Dynamic, ex.Message);
         }
+
+        try
+        {
+            noise = ReadNoiseState();
+        }
+        catch (Exception ex)
+        {
+            noise = new(
+                new(
+                    false,
+                    MicrophoneNoiseMode.Off,
+                    false,
+                    false,
+                    false,
+                    false,
+                    0,
+                    ex.Message),
+                new(false, false, ex.Message));
+        }
+
+        return new(dolby, noise.SpeakerNoise, noise.MicrophoneNoise);
     }
 
     public static DolbyState SetDolbyState(
         bool enabled,
         DolbyProfile profile)
     {
-        var dllPath = FindLatestFile(
-            MultimediaAddinRoot,
+        var dllPath = LenovoVantageAddinLocator.FindLatestFile(
+            MultimediaAddinName,
             "DolbyHSASupport.dll")
             ?? throw new NotSupportedException(
                 "Lenovo Dolby HSA support is not installed.");
@@ -135,14 +130,32 @@ internal static class SoundSettingsController
             if ($client.Initialize() -ne 0) {
                 throw 'Dolby DAX RPC initialization failed.'
             }
-            $client.SetDolbyEnabled(${{enabled.ToString().ToLowerInvariant()}})
-            if (${{enabled.ToString().ToLowerInvariant()}}) {
-                $client.SetActiveProfile({{(int)profile}})
+            $targetEnabled = ${{enabled.ToString().ToLowerInvariant()}}
+            $targetProfile = {{(int)profile}}
+            $actualEnabled = $client.GetDolbyEnabled()
+            $actualProfile = $client.GetActiveProfile()
+            for ($attempt = 0; $attempt -lt 8; $attempt++) {
+                $client.SetDolbyEnabled($targetEnabled)
+                if ($targetEnabled) {
+                    Start-Sleep -Milliseconds 75
+                    $client.SetActiveProfile($targetProfile)
+                }
+                Start-Sleep -Milliseconds 150
+                $actualEnabled = $client.GetDolbyEnabled()
+                $actualProfile = $client.GetActiveProfile()
+                if ($actualEnabled -eq $targetEnabled -and
+                    (-not $targetEnabled -or
+                     $actualProfile -eq $targetProfile)) {
+                    break
+                }
             }
-            Start-Sleep -Milliseconds 100
+            if ($actualEnabled -ne $targetEnabled -or
+                ($targetEnabled -and $actualProfile -ne $targetProfile)) {
+                throw 'Dolby DAX did not confirm the requested state.'
+            }
             [Console]::Out.Write((@{
-                Enabled = $client.GetDolbyEnabled()
-                Profile = $client.GetActiveProfile()
+                Enabled = $actualEnabled
+                Profile = $actualProfile
             } | ConvertTo-Json -Compress))
             """;
 
@@ -155,30 +168,71 @@ internal static class SoundSettingsController
         if (!Enum.IsDefined(mode))
             throw new ArgumentOutOfRangeException(nameof(mode));
 
-        return RunNoiseRequest($$"""
+        var confirmed = RunNoiseRequest($$"""
             $setResult = $wrapper.SyncSendMsg(
                 'set_microphone_mode',
                 '{"microphone_mode":{{(int)mode}}}') | ConvertFrom-Json
             if ($setResult.error_code -ne 0) {
                 throw "Lenovo noise cancellation returned error $($setResult.error_code)."
             }
+            Start-Sleep -Milliseconds 150
             """).MicrophoneNoise;
+        if (confirmed.Mode != mode)
+        {
+            throw new InvalidOperationException(
+                "Lenovo noise cancellation did not confirm the microphone mode.");
+        }
+
+        return confirmed;
     }
 
     public static SpeakerNoiseState SetSpeakerNoiseEnabled(bool enabled)
     {
-        return RunNoiseRequest($$"""
-            [void]$wrapper.SyncSendMsg(
-                'set_speaker_mode',
-                '{"speaker_mode":{{(enabled ? 1 : 0)}}}')
+        var confirmed = RunNoiseRequest($$"""
+            $setResult = $wrapper.SyncSendMsg(
+                'set_speaker_status',
+                '{"speaker_status":{{(enabled ? 1 : 0)}}}') | ConvertFrom-Json
+            if ($setResult.error_code -ne 0) {
+                throw "Lenovo noise cancellation returned error $($setResult.error_code)."
+            }
+            Start-Sleep -Milliseconds 150
             """).SpeakerNoise;
+        if (confirmed.Enabled != enabled)
+        {
+            throw new InvalidOperationException(
+                "Lenovo noise cancellation did not confirm the speaker mode.");
+        }
+
+        return confirmed;
+    }
+
+    public static void Shutdown()
+    {
+        StopSoundHelper();
+        lock (ActiveProcessLock)
+        {
+            ActivePowerShellJob?.Dispose();
+            ActivePowerShellJob = null;
+            var process = ActivePowerShellProcess;
+            ActivePowerShellProcess = null;
+            if (process is not { HasExited: false })
+                return;
+
+            try
+            {
+                process.Kill(entireProcessTree: true);
+            }
+            catch
+            {
+            }
+        }
     }
 
     public static MicrophoneNoiseState RecordMicrophoneVoiceId(
         bool replaceExisting)
     {
-        var addinPath = FindLatestFile(
-            NoiseAddinRoot,
+        var addinPath = LenovoVantageAddinLocator.FindLatestFile(
+            NoiseAddinName,
             "SmartNoiseCancelledAddin.dll")
             ?? throw new NotSupportedException(
                 "Lenovo microphone noise cancellation is not installed.");
@@ -255,8 +309,8 @@ internal static class SoundSettingsController
 
     private static DolbyState ReadDolbyState()
     {
-        var dllPath = FindLatestFile(
-            MultimediaAddinRoot,
+        var dllPath = LenovoVantageAddinLocator.FindLatestFile(
+            MultimediaAddinName,
             "DolbyHSASupport.dll")
             ?? throw new NotSupportedException(
                 "Lenovo Dolby HSA support is not installed.");
@@ -294,8 +348,8 @@ internal static class SoundSettingsController
 
     private static NoiseSettingsState RunNoiseRequest(string requestScript)
     {
-        var addinPath = FindLatestFile(
-            NoiseAddinRoot,
+        var addinPath = LenovoVantageAddinLocator.FindLatestFile(
+            NoiseAddinName,
             "SmartNoiseCancelledAddin.dll")
             ?? throw new NotSupportedException(
                 "Lenovo microphone noise cancellation is not installed.");
@@ -588,11 +642,11 @@ internal static class SoundSettingsController
             return process;
 
         StopSoundHelper();
-        var dolbyPath = FindLatestFile(
-            MultimediaAddinRoot,
+        var dolbyPath = LenovoVantageAddinLocator.FindLatestFile(
+            MultimediaAddinName,
             "DolbyHSASupport.dll");
-        var noisePath = FindLatestFile(
-            NoiseAddinRoot,
+        var noisePath = LenovoVantageAddinLocator.FindLatestFile(
+            NoiseAddinName,
             "SmartNoiseCancelledAddin.dll");
         if (dolbyPath is null && noisePath is null)
         {
@@ -830,6 +884,9 @@ internal static class SoundSettingsController
         string operation = "Dolby control",
         int timeoutMilliseconds = 15000)
     {
+        PowerShellLock.Wait();
+        Process? process = null;
+        ChildProcessJob? job = null;
         var encoded = Convert.ToBase64String(
             Encoding.Unicode.GetBytes(script));
         var powershellPath = Path.Combine(
@@ -853,30 +910,64 @@ internal static class SoundSettingsController
         startInfo.ArgumentList.Add("-EncodedCommand");
         startInfo.ArgumentList.Add(encoded);
 
-        using var process = Process.Start(startInfo)
-            ?? throw new InvalidOperationException(
-                "Could not start Windows PowerShell.");
-        var outputTask = process.StandardOutput.ReadToEndAsync();
-        var errorTask = process.StandardError.ReadToEndAsync();
-        if (!process.WaitForExit(timeoutMilliseconds))
+        try
         {
-            process.Kill(entireProcessTree: true);
-            throw new TimeoutException($"{operation} request timed out.");
-        }
+            job = new ChildProcessJob();
+            process = Process.Start(startInfo)
+                ?? throw new InvalidOperationException(
+                    "Could not start Windows PowerShell.");
+            try
+            {
+                job.Assign(process);
+            }
+            catch
+            {
+                if (!process.HasExited)
+                    process.Kill(entireProcessTree: true);
+                throw;
+            }
+            lock (ActiveProcessLock)
+            {
+                ActivePowerShellProcess = process;
+                ActivePowerShellJob = job;
+            }
 
-        var output = outputTask.GetAwaiter().GetResult().Trim();
-        var error = NormalizePowerShellError(
-            errorTask.GetAwaiter().GetResult());
-        if (string.IsNullOrWhiteSpace(output) ||
-            (process.ExitCode != 0 && !acceptOutputOnFailure))
+            var outputTask = process.StandardOutput.ReadToEndAsync();
+            var errorTask = process.StandardError.ReadToEndAsync();
+            if (!process.WaitForExit(timeoutMilliseconds))
+            {
+                process.Kill(entireProcessTree: true);
+                throw new TimeoutException($"{operation} request timed out.");
+            }
+
+            var output = outputTask.GetAwaiter().GetResult().Trim();
+            var error = NormalizePowerShellError(
+                errorTask.GetAwaiter().GetResult());
+            if (string.IsNullOrWhiteSpace(output) ||
+                (process.ExitCode != 0 && !acceptOutputOnFailure))
+            {
+                throw new InvalidOperationException(
+                    string.IsNullOrWhiteSpace(error)
+                        ? $"{operation} returned no data."
+                        : error);
+            }
+
+            return output;
+        }
+        finally
         {
-            throw new InvalidOperationException(
-                string.IsNullOrWhiteSpace(error)
-                    ? $"{operation} returned no data."
-                    : error);
+            lock (ActiveProcessLock)
+            {
+                if (ReferenceEquals(ActivePowerShellProcess, process))
+                {
+                    ActivePowerShellProcess = null;
+                    ActivePowerShellJob = null;
+                }
+            }
+            job?.Dispose();
+            process?.Dispose();
+            PowerShellLock.Release();
         }
-
-        return output;
     }
 
     private static string NormalizePowerShellError(string error)
@@ -921,27 +1012,6 @@ internal static class SoundSettingsController
             match => ((char)Convert.ToInt32(
                 match.Groups[1].Value,
                 16)).ToString());
-
-    private static string? FindLatestFile(string root, string fileName)
-    {
-        if (!Directory.Exists(root))
-            return null;
-
-        return Directory.EnumerateDirectories(root)
-            .Select(directory => new
-            {
-                Directory = directory,
-                Version = ParseVersion(Path.GetFileName(directory))
-            })
-            .OrderByDescending(item => item.Version)
-            .Select(item => Path.Combine(item.Directory, fileName))
-            .FirstOrDefault(File.Exists);
-    }
-
-    private static Version ParseVersion(string value) =>
-        Version.TryParse(value, out var version)
-            ? version
-            : new Version(0, 0);
 
     private static string EscapePowerShell(string value) =>
         value.Replace("'", "''", StringComparison.Ordinal);

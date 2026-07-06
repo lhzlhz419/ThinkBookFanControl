@@ -17,7 +17,6 @@ internal sealed record PowerSettingsState(
 
 internal static class PowerSettingsController
 {
-    private const string NamespacePath = @"root\wmi";
     private const uint CpuPl1Id = 0x01020000;
     private const uint CpuPl2Id = 0x01010000;
     private const uint CpuTemperatureLimitId = 0x01040000;
@@ -91,7 +90,7 @@ internal static class PowerSettingsController
     private static void Validate(PowerSettingsState state)
     {
         RequireRange(nameof(state.CpuPl1), state.CpuPl1, 30, 150);
-        RequireRange(nameof(state.CpuPl2), state.CpuPl2, 50, 200);
+        RequireRange(nameof(state.CpuPl2), state.CpuPl2, 30, 200);
         RequireRange(nameof(state.CpuTemperatureLimit), state.CpuTemperatureLimit, 75, 105);
         if (!TurboTimeLimits.Contains(state.CpuTurboTimeLimit))
             throw new ArgumentOutOfRangeException(nameof(state.CpuTurboTimeLimit), state.CpuTurboTimeLimit, "Unsupported CPU turbo time limit.");
@@ -108,17 +107,7 @@ internal static class PowerSettingsController
     }
 
     private static ManagementObject GetActiveOtherMethod()
-    {
-        using var searcher = new ManagementObjectSearcher(NamespacePath, "SELECT * FROM LENOVO_OTHER_METHOD");
-        foreach (ManagementObject item in searcher.Get())
-        {
-            if (IsActive(item))
-                return item;
-            item.Dispose();
-        }
-
-        throw new InvalidOperationException("No active LENOVO_OTHER_METHOD instance found.");
-    }
+        => LenovoWmi.GetActiveInstance("LENOVO_OTHER_METHOD");
 
     private static int ReadFeatureValue(ManagementObject other, uint id)
     {
@@ -227,11 +216,6 @@ internal static class PowerSettingsController
 
         value = null;
         return false;
-    }
-
-    private static bool IsActive(ManagementBaseObject item)
-    {
-        return item.Properties["Active"] is null || Convert.ToBoolean(item["Active"]);
     }
 
     private static string DescribeException(Exception exception)

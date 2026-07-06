@@ -84,12 +84,21 @@ internal static class InputSettingsController
     private const string LenovoUtilityClass = "LENOVO_UTILITY_DATA";
     private const uint PrecisionTouchpadDataType = 0x12;
     private const uint PrecisionTouchpadMinimumVersion = 0x18;
+    private static readonly TimeSpan WmiFailureCacheDuration =
+        TimeSpan.FromSeconds(30);
+    private static readonly object WmiCacheLock = new();
+    private static bool? _fnCtrlSwapSupported;
+    private static ToggleSettingState? _cachedFnCtrlSwapState;
+    private static DateTimeOffset _fnCtrlSwapCacheExpiresAt;
+    private static bool? _precisionTouchpadSupported;
+    private static ToggleSettingState? _cachedTouchpadCapabilityFailure;
+    private static DateTimeOffset _touchpadFailureCacheExpiresAt;
 
-    public static InputSettingsState ReadState() => new(
+    public static InputSettingsState ReadState(bool refreshWmiState = false) => new(
         TryRead(ReadFunctionLock),
         TryRead(() => ReadOsdState(capsLock: true)),
         TryRead(() => ReadOsdState(capsLock: false)),
-        TryRead(ReadFnCtrlSwap),
+        TryRead(() => ReadFnCtrlSwap(refreshWmiState)),
         TryRead(ReadTouchpad));
 
     public static ToggleSettingState SetState(InputSettingKind kind, bool enabled) => kind switch
@@ -146,15 +155,37 @@ internal static class InputSettingsController
         throw new InvalidOperationException("The Fn Lock state did not change.");
     }
 
-    private static ToggleSettingState ReadFnCtrlSwap()
+    private static ToggleSettingState ReadFnCtrlSwap(bool forceRefresh)
     {
-        using var instance = GetBiosAssistantInstance();
-        var capability = InvokeUInt32(instance, "GetCapabilityValue", null, "Data");
-        if ((capability & WmiSuccessMask) == 0 ||
-            (capability & FnCtrlCapabilityMask) == 0)
+        lock (WmiCacheLock)
         {
-            return ToggleSettingState.Unsupported();
+            if (_cachedFnCtrlSwapState is not null &&
+                !forceRefresh &&
+                (_cachedFnCtrlSwapState.Error is null ||
+                 DateTimeOffset.UtcNow < _fnCtrlSwapCacheExpiresAt))
+            {
+                return _cachedFnCtrlSwapState;
+            }
+
+            try
+            {
+                using var instance = GetBiosAssistantInstance();
+                return CacheFnCtrlSwapState(ReadFnCtrlSwap(instance));
+            }
+            catch (Exception ex)
+            {
+                return CacheFnCtrlSwapState(
+                    ToggleSettingState.Failed(ex),
+                    WmiFailureCacheDuration);
+            }
         }
+    }
+
+    private static ToggleSettingState ReadFnCtrlSwap(
+        ManagementObject instance)
+    {
+        if (!IsFnCtrlSwapSupported(instance))
+            return ToggleSettingState.Unsupported();
 
         using var input = instance.GetMethodParameters("GetValue");
         input["IndexData"] = FnCtrlIndex;
@@ -167,36 +198,56 @@ internal static class InputSettingsController
 
     private static ToggleSettingState SetFnCtrlSwap(bool enabled)
     {
-        using var instance = GetBiosAssistantInstance();
-        var capability = InvokeUInt32(instance, "GetCapabilityValue", null, "Data");
-        if ((capability & WmiSuccessMask) == 0 ||
-            (capability & FnCtrlCapabilityMask) == 0)
+        lock (WmiCacheLock)
         {
-            return ToggleSettingState.Unsupported();
+            using var instance = GetBiosAssistantInstance();
+            if (!IsFnCtrlSwapSupported(instance))
+                return CacheFnCtrlSwapState(ToggleSettingState.Unsupported());
+
+            using var input = instance.GetMethodParameters("SetValue");
+            input["IndexData"] = FnCtrlIndex;
+            input["ValueData"] = enabled ? 1u : 0u;
+            var result = InvokeUInt32(instance, "SetValue", input, "ReturnData");
+            if ((result & WmiSuccessMask) == 0)
+            {
+                throw new InvalidOperationException(
+                    "LENOVO_BIOS_ASSISTANT.SetValue failed.");
+            }
+
+            Thread.Sleep(100);
+            return CacheFnCtrlSwapState(ReadFnCtrlSwap(instance));
         }
-
-        using var input = instance.GetMethodParameters("SetValue");
-        input["IndexData"] = FnCtrlIndex;
-        input["ValueData"] = enabled ? 1u : 0u;
-        var result = InvokeUInt32(instance, "SetValue", input, "ReturnData");
-        if ((result & WmiSuccessMask) == 0)
-            throw new InvalidOperationException("LENOVO_BIOS_ASSISTANT.SetValue failed.");
-
-        Thread.Sleep(100);
-        return ReadFnCtrlSwap();
     }
 
-    private static ManagementObject GetBiosAssistantInstance()
+    private static bool IsFnCtrlSwapSupported(ManagementObject instance)
     {
-        using var searcher = new ManagementObjectSearcher(
-            BiosAssistantScope,
-            $"SELECT * FROM {BiosAssistantClass}");
-        using var instances = searcher.Get();
-        foreach (ManagementObject instance in instances)
-            return instance;
+        if (_fnCtrlSwapSupported.HasValue)
+            return _fnCtrlSwapSupported.Value;
 
-        throw new NotSupportedException($"{BiosAssistantClass} has no instances.");
+        var capability = InvokeUInt32(
+            instance,
+            "GetCapabilityValue",
+            null,
+            "Data");
+        _fnCtrlSwapSupported =
+            (capability & WmiSuccessMask) != 0 &&
+            (capability & FnCtrlCapabilityMask) != 0;
+        return _fnCtrlSwapSupported.Value;
     }
+
+    private static ToggleSettingState CacheFnCtrlSwapState(
+        ToggleSettingState state,
+        TimeSpan? duration = null)
+    {
+        _cachedFnCtrlSwapState = state;
+        _fnCtrlSwapCacheExpiresAt = duration.HasValue
+            ? DateTimeOffset.UtcNow + duration.Value
+            : DateTimeOffset.MaxValue;
+        return state;
+    }
+
+    private static ManagementObject GetBiosAssistantInstance() =>
+        LenovoWmi.GetActiveInstance(BiosAssistantClass);
 
     private static uint InvokeUInt32(
         ManagementObject instance,
@@ -306,8 +357,29 @@ internal static class InputSettingsController
 
     private static ToggleSettingState ReadTouchpad()
     {
-        if (!IsPrecisionTouchpadSupported())
-            return ToggleSettingState.Unsupported();
+        lock (WmiCacheLock)
+        {
+            if (_cachedTouchpadCapabilityFailure is not null &&
+                DateTimeOffset.UtcNow < _touchpadFailureCacheExpiresAt)
+            {
+                return _cachedTouchpadCapabilityFailure;
+            }
+
+            try
+            {
+                if (!IsPrecisionTouchpadSupported())
+                    return ToggleSettingState.Unsupported();
+                _cachedTouchpadCapabilityFailure = null;
+            }
+            catch (Exception ex)
+            {
+                _cachedTouchpadCapabilityFailure =
+                    ToggleSettingState.Failed(ex);
+                _touchpadFailureCacheExpiresAt =
+                    DateTimeOffset.UtcNow + WmiFailureCacheDuration;
+                return _cachedTouchpadCapabilityFailure;
+            }
+        }
 
         return ReadTouchpadRegistry();
     }
@@ -345,27 +417,36 @@ internal static class InputSettingsController
 
     private static bool IsPrecisionTouchpadSupported()
     {
-        using var searcher = new ManagementObjectSearcher(
-            BiosAssistantScope,
-            $"SELECT * FROM {LenovoUtilityClass}");
-        using var instances = searcher.Get();
-        foreach (ManagementObject instance in instances)
+        lock (WmiCacheLock)
         {
-            using (instance)
-            using (var input = instance.GetMethodParameters("GetIfSupportOrVersion"))
-            {
-                input["datatype"] = PrecisionTouchpadDataType;
-                var version = InvokeUInt32(
-                    instance,
-                    "GetIfSupportOrVersion",
-                    input,
-                    "Data");
-                if (version >= PrecisionTouchpadMinimumVersion)
-                    return true;
-            }
-        }
+            if (_precisionTouchpadSupported.HasValue)
+                return _precisionTouchpadSupported.Value;
 
-        return false;
+            using var searcher = new ManagementObjectSearcher(
+                BiosAssistantScope,
+                $"SELECT * FROM {LenovoUtilityClass}");
+            using var instances = searcher.Get();
+            foreach (ManagementObject instance in instances)
+            {
+                using (instance)
+                using (var input = instance.GetMethodParameters(
+                           "GetIfSupportOrVersion"))
+                {
+                    input["datatype"] = PrecisionTouchpadDataType;
+                    var version = InvokeUInt32(
+                        instance,
+                        "GetIfSupportOrVersion",
+                        input,
+                        "Data");
+                    _precisionTouchpadSupported =
+                        version >= PrecisionTouchpadMinimumVersion;
+                    return _precisionTouchpadSupported.Value;
+                }
+            }
+
+            _precisionTouchpadSupported = false;
+            return false;
+        }
     }
 
     private static void SendCtrlWinF24()

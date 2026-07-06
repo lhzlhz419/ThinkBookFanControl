@@ -101,4 +101,7 @@ public sealed class AppSettings
     public bool StartToTray { get; set; }
     public bool MinimizeToTray { get; set; }
     public bool CloseToTray { get; set; }
+    public string PendingGpuMode { get; set; } = "";
+    public int PcManagerNormalDefaultTemperature { get; set; } = 6600;
+    public int PcManagerEyeCareDefaultTemperature { get; set; } = 3500;
 }

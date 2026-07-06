@@ -65,35 +65,40 @@ internal sealed record ColorManagementState(
 
 internal sealed record DisplaySettingsState(
     EyeCareState EyeCare,
+    PcManagerEyeCareState PcManagerEyeCare,
     ColorManagementState ColorManagement);
 
 internal static class DisplaySettingsController
 {
-    private const string SmartInteractAddinRoot =
-        @"C:\ProgramData\Lenovo\Vantage\Addins\SmartInteractAddin";
-    private const string SmartColorAddinRoot =
-        @"C:\ProgramData\Lenovo\Vantage\Addins\SmartColorAddin";
+    private const string SmartInteractAddinName = "SmartInteractAddin";
+    private const string SmartColorAddinName = "SmartColorAddin";
     private static readonly SemaphoreSlim EyeCareHelperLock = new(1, 1);
     private static readonly object EyeCareHelperErrorLock = new();
     private static readonly StringBuilder EyeCareHelperErrors = new();
     private static Process? EyeCareHelperProcess;
+    private static ChildProcessJob? EyeCareHelperJob;
     private static readonly SemaphoreSlim ColorHelperLock = new(1, 1);
     private static readonly object ColorHelperErrorLock = new();
     private static readonly StringBuilder ColorHelperErrors = new();
     private static Process? ColorHelperProcess;
+    private static ChildProcessJob? ColorHelperJob;
 
     static DisplaySettingsController()
     {
-        AppDomain.CurrentDomain.ProcessExit += (_, _) =>
-        {
-            StopEyeCareHelper();
-            StopColorHelper();
-        };
+        AppDomain.CurrentDomain.ProcessExit += (_, _) => Shutdown();
     }
 
-    public static DisplaySettingsState ReadState()
+    public static void Shutdown()
+    {
+        StopEyeCareHelper();
+        StopColorHelper();
+    }
+
+    public static DisplaySettingsState ReadState(
+        PcManagerEyeCareDefaults defaults)
     {
         EyeCareState eyeCare;
+        PcManagerEyeCareState pcManagerEyeCare;
         ColorManagementState colorManagement;
 
         try
@@ -113,6 +118,8 @@ internal static class DisplaySettingsController
                 ex.Message);
         }
 
+        pcManagerEyeCare = PcManagerEyeCareController.ReadState(defaults);
+
         try
         {
             colorManagement = ReadColorManagementState();
@@ -130,7 +137,7 @@ internal static class DisplaySettingsController
                 ex.Message);
         }
 
-        return new(eyeCare, colorManagement);
+        return new(eyeCare, pcManagerEyeCare, colorManagement);
     }
 
     public static EyeCareState SetEyeCareState(
@@ -486,9 +493,6 @@ internal static class DisplaySettingsController
         EyeCareHelperLock.Wait();
         try
         {
-            if (string.Equals(action, "read", StringComparison.OrdinalIgnoreCase))
-                StopEyeCareHelper();
-
             var process = EnsureEyeCareHelper();
             var request = JsonSerializer.Serialize(new
             {
@@ -563,12 +567,13 @@ internal static class DisplaySettingsController
 
     private static Process EnsureEyeCareHelper()
     {
-        if (EyeCareHelperProcess is { HasExited: false } process)
-            return process;
+        if (EyeCareHelperProcess is { HasExited: false } existingProcess)
+            return existingProcess;
 
         StopEyeCareHelper();
+        Process? process = null;
         var (addinPath, addinDirectory) = FindRequiredAddin(
-            SmartInteractAddinRoot,
+            SmartInteractAddinName,
             "SmartInteractAddin.dll",
             "Lenovo eye care display control is not installed.");
         var helperScript = $$"""
@@ -658,6 +663,7 @@ internal static class DisplaySettingsController
                             $result = $type.GetMethod(
                                 'ECM5XSetCurrentSettings',
                                 $flags).Invoke($night, @($list))
+                            Start-Sleep -Milliseconds 300
                             Write-Response $true (ConvertTo-Map $result) ''
                         }
                         'exit' {
@@ -697,9 +703,22 @@ internal static class DisplaySettingsController
         startInfo.ArgumentList.Add("-EncodedCommand");
         startInfo.ArgumentList.Add(encoded);
 
-        process = Process.Start(startInfo)
-            ?? throw new InvalidOperationException(
-                "Could not start Windows PowerShell.");
+        var job = new ChildProcessJob();
+        try
+        {
+            process = Process.Start(startInfo)
+                ?? throw new InvalidOperationException(
+                    "Could not start Windows PowerShell.");
+            job.Assign(process);
+            EyeCareHelperJob = job;
+        }
+        catch
+        {
+            if (process is { HasExited: false })
+                process.Kill(entireProcessTree: true);
+            job.Dispose();
+            throw;
+        }
         process.ErrorDataReceived += (_, args) =>
         {
             if (string.IsNullOrWhiteSpace(args.Data))
@@ -759,6 +778,8 @@ internal static class DisplaySettingsController
         }
         finally
         {
+            EyeCareHelperJob?.Dispose();
+            EyeCareHelperJob = null;
             process.Dispose();
         }
     }
@@ -845,12 +866,13 @@ internal static class DisplaySettingsController
 
     private static Process EnsureColorHelper()
     {
-        if (ColorHelperProcess is { HasExited: false } process)
-            return process;
+        if (ColorHelperProcess is { HasExited: false } existingProcess)
+            return existingProcess;
 
         StopColorHelper();
+        Process? process = null;
         var (addinPath, addinDirectory) = FindRequiredAddin(
-            SmartColorAddinRoot,
+            SmartColorAddinName,
             "SmartColorAddin.dll",
             "Lenovo color management is not installed.");
         var helperScript = $$"""
@@ -931,9 +953,22 @@ internal static class DisplaySettingsController
         startInfo.ArgumentList.Add("-EncodedCommand");
         startInfo.ArgumentList.Add(encoded);
 
-        process = Process.Start(startInfo)
-            ?? throw new InvalidOperationException(
-                "Could not start Windows PowerShell.");
+        var job = new ChildProcessJob();
+        try
+        {
+            process = Process.Start(startInfo)
+                ?? throw new InvalidOperationException(
+                    "Could not start Windows PowerShell.");
+            job.Assign(process);
+            ColorHelperJob = job;
+        }
+        catch
+        {
+            if (process is { HasExited: false })
+                process.Kill(entireProcessTree: true);
+            job.Dispose();
+            throw;
+        }
         process.ErrorDataReceived += (_, args) =>
         {
             if (string.IsNullOrWhiteSpace(args.Data))
@@ -993,6 +1028,8 @@ internal static class DisplaySettingsController
         }
         finally
         {
+            ColorHelperJob?.Dispose();
+            ColorHelperJob = null;
             process.Dispose();
         }
     }
@@ -1099,38 +1136,19 @@ internal static class DisplaySettingsController
 
     private static (string AddinPath, string AddinDirectory)
         FindRequiredAddin(
-            string root,
+            string addinName,
             string fileName,
             string notSupportedMessage)
     {
-        var addinPath = FindLatestFile(root, fileName)
+        var addinPath = LenovoVantageAddinLocator.FindLatestFile(
+                addinName,
+                fileName)
             ?? throw new NotSupportedException(notSupportedMessage);
         var addinDirectory = Path.GetDirectoryName(addinPath)
             ?? throw new InvalidOperationException(
                 "The Lenovo addin path is invalid.");
         return (addinPath, addinDirectory);
     }
-
-    private static string? FindLatestFile(string root, string fileName)
-    {
-        if (!Directory.Exists(root))
-            return null;
-
-        return Directory.EnumerateDirectories(root)
-            .Select(directory => new
-            {
-                Directory = directory,
-                Version = ParseVersion(Path.GetFileName(directory))
-            })
-            .OrderByDescending(item => item.Version)
-            .Select(item => Path.Combine(item.Directory, fileName))
-            .FirstOrDefault(File.Exists);
-    }
-
-    private static Version ParseVersion(string value) =>
-        Version.TryParse(value, out var version)
-            ? version
-            : new Version(0, 0);
 
     private static string EscapePowerShell(string value) =>
         value.Replace("'", "''", StringComparison.Ordinal);

@@ -115,6 +115,20 @@ public static class CurveProfileStore
             defaults.StartToTray = loaded.StartToTray;
             defaults.MinimizeToTray = loaded.MinimizeToTray;
             defaults.CloseToTray = loaded.CloseToTray;
+            defaults.PendingGpuMode = loaded.PendingGpuMode is
+                nameof(GpuWorkingMode.Hybrid) or
+                nameof(GpuWorkingMode.IntegratedOnly) or
+                nameof(GpuWorkingMode.HybridAuto)
+                ? loaded.PendingGpuMode
+                : string.Empty;
+            defaults.PcManagerNormalDefaultTemperature =
+                NormalizeColorTemperature(
+                    loaded.PcManagerNormalDefaultTemperature,
+                    defaults.PcManagerNormalDefaultTemperature);
+            defaults.PcManagerEyeCareDefaultTemperature =
+                NormalizeColorTemperature(
+                    loaded.PcManagerEyeCareDefaultTemperature,
+                    defaults.PcManagerEyeCareDefaultTemperature);
             return defaults;
         }
         catch
@@ -133,6 +147,9 @@ public static class CurveProfileStore
     }
 
     public static int SnapRpm(double value) => (int)Math.Round(value / 100.0) * 100;
+
+    private static int NormalizeColorTemperature(int value, int fallback) =>
+        value is >= 2000 and <= 11200 ? value : fallback;
 
     public static int ClampRpm(double value, int minimum, int maximum)
     {

@@ -27,3 +27,5 @@ Desktop.ini
 # Keep the project-local LHM DLL because the C# app currently depends on it.
 *.dll
 !csharp/ThinkBookFanControl/lib/LibreHardwareMonitorLib.dll
+!csharp/ThinkBookFanControl/lib/LenovoPcManager/
+!csharp/ThinkBookFanControl/lib/LenovoPcManager/WrapPlugin.dll

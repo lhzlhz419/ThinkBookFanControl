@@ -40,6 +40,9 @@
 - 可勾选同步转速，拖动一个风扇曲线点时同步移动另一个风扇的对应点。
 - 支持 5 套配置文件。
 - 支持深色/浅色主题和中文/英文界面。
+- 显示设置同时支持 Vantage 护眼模式和联想电脑管家 Gamma
+  护眼模式；两者互不联动。电脑管家模式提供反向色温滑块、
+  可编辑 Kelvin 值以及普通/护眼两套默认值。
 - 支持托盘菜单、最小化到托盘、关闭时最小化、开机自启。
 - 退出程序前会先恢复固件自动风扇控制。
 
@@ -64,5 +67,14 @@
 
 - `ThinkBookFanControl-win-x64`：自包含版本，不需要目标电脑预装 .NET 运行时。
 - `ThinkBookFanControl-win-x64-net9-runtime`：体积较小，需要目标电脑已安装 .NET 9 Desktop Runtime。
+
+构建脚本还会把本机已安装的 Vantage 显示和声音插件中实际使用的 x64
+文件复制到发布目录下的 `VantageAddins`。程序运行时优先使用这些本地副本，缺失时再回退到
+`C:\ProgramData\Lenovo\Vantage\Addins`。第三方插件文件不会提交到 Git。
+本地副本只替代插件文件路径，相关 Lenovo 服务、驱动和音频组件仍需存在。
+
+仓库包含电脑管家 x86 `WrapPlugin.dll`，用于调用原版
+`IsSupportColorTemperature` 能力检测；实际色温计算和 Gamma Ramp
+写入由程序内置实现。
 
 更多构建说明见 [BUILDING.md](BUILDING.md)。
