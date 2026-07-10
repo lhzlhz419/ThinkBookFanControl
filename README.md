@@ -44,6 +44,8 @@ LibreHardwareMonitor and controls the two fans through Lenovo WMI methods.
 - Optional synchronized point dragging for both fan curves.
 - Five saved profiles.
 - Light/dark theme and Chinese/English UI.
+- Warranty dates, coverage status, and elapsed warranty progress at the bottom
+  of Other settings.
 - Display settings support both Vantage eye care and the Lenovo PC Manager
   gamma-based eye care mode without coupling their switches. The PC Manager
   mode includes a reversed temperature slider, an editable Kelvin value, and
@@ -61,6 +63,11 @@ Full speed is a global `FNST` override for both fans. On exit, the app clears
 feature `0x04020000` before writing both manual fan targets back to `0`.
 
 Administrator permission is required at runtime.
+
+Opening Other settings sends the device serial number to Lenovo Baiying's
+warranty lookup API, with Lenovo Support as a fallback. Results are cached per device and local day in
+`~\.thinkbook_fan_control\warranty_cache.csharp.json`; the cache stores only a
+SHA-256 digest of the serial number and the warranty dates, not the plain serial.
 
 ## Build
 
