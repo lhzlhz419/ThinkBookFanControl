@@ -96,6 +96,15 @@ public sealed class MainWindow : Window
     private readonly Button _displaySettingsButton = new() { MinWidth = 96, Margin = new Thickness(0, 0, 6, 0) };
     private readonly Button _soundSettingsButton = new() { MinWidth = 96, Margin = new Thickness(0, 0, 6, 0) };
     private readonly Button _otherSettingsButton = new() { MinWidth = 96 };
+    private readonly Button _deviceModelButton = new()
+    {
+        Padding = new Thickness(4, 1, 4, 3),
+        HorizontalAlignment = HorizontalAlignment.Right,
+        HorizontalContentAlignment = HorizontalAlignment.Right,
+        Background = Brushes.Transparent,
+        BorderThickness = new Thickness(0),
+        Cursor = Cursors.Hand
+    };
     private readonly Button _fixedModeHotkeyButton = new() { MinWidth = 96, Margin = new Thickness(0, 0, 8, 0) };
     private readonly CheckBox _fullSpeedCheck = new() { VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 10, 0) };
     private readonly CheckBox _syncFanSpeedsCheck = new() { VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 10, 0) };
@@ -286,6 +295,7 @@ public sealed class MainWindow : Window
         Closing += OnClosing;
         Closed += (_, _) => OnClosed();
         Loaded += async (_, _) => await RefreshItsModeAsync();
+        Loaded += async (_, _) => await LoadDeviceModelAsync();
         Loaded += async (_, _) =>
         {
             await RefreshGpuModeAsync();
@@ -396,8 +406,16 @@ public sealed class MainWindow : Window
 
         _otherSettingsButton.Click += (_, _) => ShowOtherSettingsWindow();
         settingsActions.Children.Add(_otherSettingsButton);
-        Grid.SetColumn(settingsActions, 1);
-        row3.Children.Add(settingsActions);
+        _deviceModelButton.Click += (_, _) => ShowDeviceInformationWindow();
+        _deviceModelButton.ToolTip = T("OpenDeviceInformation");
+        var deviceAndSettings = new StackPanel
+        {
+            HorizontalAlignment = HorizontalAlignment.Right
+        };
+        deviceAndSettings.Children.Add(_deviceModelButton);
+        deviceAndSettings.Children.Add(settingsActions);
+        Grid.SetColumn(deviceAndSettings, 1);
+        row3.Children.Add(deviceAndSettings);
         panel.Children.Add(row3);
 
         return panel;
@@ -437,6 +455,30 @@ public sealed class MainWindow : Window
             Owner = this
         };
         ShowSettingsDialog(window);
+    }
+
+    private void ShowDeviceInformationWindow()
+    {
+        var window = new DeviceInformationWindow(T, IsDark, FontFamily, FontSize)
+        {
+            Owner = this
+        };
+        ShowSettingsDialog(window);
+    }
+
+    private async Task LoadDeviceModelAsync()
+    {
+        try
+        {
+            var identity = await Task.Run(DeviceInformationService.ReadIdentity);
+            _deviceModelButton.Content = string.IsNullOrWhiteSpace(identity.Model)
+                ? T("DeviceInformation")
+                : identity.Model;
+        }
+        catch
+        {
+            _deviceModelButton.Content = T("DeviceInformation");
+        }
     }
 
     private void ShowDisplaySettingsWindow()
@@ -3139,6 +3181,33 @@ public sealed class MainWindow : Window
             "DisplaySettings" => "\u663e\u793a\u8bbe\u7f6e",
             "SoundSettings" => "\u58f0\u97f3\u8bbe\u7f6e",
             "OtherSettings" => "\u5176\u5b83\u8bbe\u7f6e",
+            "DeviceInformation" => "\u8bbe\u5907\u8be6\u7ec6\u4fe1\u606f",
+            "OpenDeviceInformation" => "\u6253\u5f00\u8bbe\u5907\u8be6\u7ec6\u4fe1\u606f",
+            "ReadingDeviceInformation" => "\u6b63\u5728\u8bfb\u53d6\u8bbe\u5907\u4fe1\u606f\u2026",
+            "DeviceInformationReadFailedFormat" => "\u8bbe\u5907\u4fe1\u606f\u8bfb\u53d6\u5931\u8d25\uff1a{0}",
+            "Device" => "\u8bbe\u5907",
+            "DeviceName" => "\u8bbe\u5907\u540d\u79f0",
+            "DeviceModel" => "\u8bbe\u5907\u578b\u53f7",
+            "ProductNumber" => "\u4ea7\u54c1\u7f16\u53f7",
+            "SerialNumber" => "\u5e8f\u5217\u53f7",
+            "BiosVersion" => "BIOS \u7248\u672c",
+            "EcVersion" => "EC \u7248\u672c",
+            "DeviceId" => "\u8bbe\u5907 ID",
+            "ProductId" => "\u4ea7\u54c1 ID",
+            "CpuTopologyFormat" => "{0} \u6838\u5fc3 / {1} \u7ebf\u7a0b",
+            "VideoMemoryFormat" => "\u663e\u5b58\uff1a{0}",
+            "SharedGraphicsMemory" => "\u4f7f\u7528\u5171\u4eab\u7cfb\u7edf\u5185\u5b58",
+            "Memory" => "\u5185\u5b58",
+            "InstalledMemoryFormat" => "\u5df2\u5b89\u88c5 {0}\uff08\u53ef\u7528 {1}\uff09",
+            "Storage" => "\u5b58\u50a8\u5668",
+            "UsedTotalFormat" => "\u5df2\u7528 {0} / \u603b\u8ba1 {1}",
+            "TotalStorageFormat" => "\u5206\u533a\u603b\u5bb9\u91cf\uff1a{0}",
+            "Motherboard" => "\u4e3b\u677f",
+            "Displays" => "\u663e\u793a\u5668",
+            "Display" => "\u663e\u793a",
+            "WarrantyStartDate" => "\u5f00\u59cb\u65e5\u671f",
+            "WarrantyEndDate" => "\u7ed3\u675f\u65e5\u671f",
+            "WarrantyProgress" => "\u5df2\u7528\u4fdd\u4fee\u671f",
             "WarrantyInformation" => "\u4fdd\u4fee\u4fe1\u606f",
             "WarrantyLoading" => "\u67e5\u8be2\u4e2d",
             "WarrantyInCoverage" => "\u5728\u4fdd",
@@ -3399,6 +3468,33 @@ public sealed class MainWindow : Window
             "DisplaySettings" => "Display settings",
             "SoundSettings" => "Sound settings",
             "OtherSettings" => "Other settings",
+            "DeviceInformation" => "Device information",
+            "OpenDeviceInformation" => "Open device information",
+            "ReadingDeviceInformation" => "Reading device information...",
+            "DeviceInformationReadFailedFormat" => "Failed to read device information: {0}",
+            "Device" => "Device",
+            "DeviceName" => "Device name",
+            "DeviceModel" => "Model",
+            "ProductNumber" => "Product number",
+            "SerialNumber" => "Serial number",
+            "BiosVersion" => "BIOS version",
+            "EcVersion" => "EC version",
+            "DeviceId" => "Device ID",
+            "ProductId" => "Product ID",
+            "CpuTopologyFormat" => "{0} cores / {1} threads",
+            "VideoMemoryFormat" => "VRAM: {0}",
+            "SharedGraphicsMemory" => "Uses shared system memory",
+            "Memory" => "Memory",
+            "InstalledMemoryFormat" => "Installed {0} ({1} usable)",
+            "Storage" => "Storage",
+            "UsedTotalFormat" => "{0} used / {1} total",
+            "TotalStorageFormat" => "Partition capacity: {0}",
+            "Motherboard" => "Motherboard",
+            "Displays" => "Displays",
+            "Display" => "Display",
+            "WarrantyStartDate" => "Start date",
+            "WarrantyEndDate" => "End date",
+            "WarrantyProgress" => "Warranty elapsed",
             "WarrantyInformation" => "Warranty information",
             "WarrantyLoading" => "Checking",
             "WarrantyInCoverage" => "Covered",
@@ -3659,6 +3755,10 @@ public sealed class MainWindow : Window
         _displaySettingsButton.Content = T("DisplaySettings");
         _soundSettingsButton.Content = T("SoundSettings");
         _otherSettingsButton.Content = T("OtherSettings");
+        _deviceModelButton.ToolTip = T("OpenDeviceInformation");
+        if (_deviceModelButton.Content is null ||
+            _deviceModelButton.Content.ToString() is "Device information" or "\u8bbe\u5907\u8be6\u7ec6\u4fe1\u606f")
+            _deviceModelButton.Content = T("DeviceInformation");
         _syncFanSpeedsCheck.Content = T("SyncFanSpeeds");
         _fixedSyncFanSpeedsCheck.Content = T("FixedSyncFanSpeeds");
         _autoDetectGamesCheck.Content = T("AutoDetectGames");
@@ -3749,6 +3849,7 @@ public sealed class MainWindow : Window
         _fullSpeedCheck.Foreground = IsDark ? Brush("#ffffff") : muted;
         foreach (var value in new[] { _cpuTempText, _cpuPowerText, _gpuTempText, _gpuPowerText, _vramTempText, _fan1Text, _fan2Text, _targetText })
             value.Foreground = text;
+        _deviceModelButton.Foreground = Brush(IsDark ? "#8db8ff" : "#2563eb");
 
         _cpuChart.SetTheme(IsDark);
         _gpuChart.SetTheme(IsDark);

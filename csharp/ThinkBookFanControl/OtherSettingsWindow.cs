@@ -1,7 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Globalization;
-using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
@@ -17,7 +15,6 @@ internal sealed class OtherSettingsWindow : Window
     private readonly Func<string, string> _t;
     private readonly Func<TimeSpan> _refreshInterval;
     private readonly DispatcherTimer _refreshTimer;
-    private readonly CancellationTokenSource _lifetimeCts = new();
     private readonly ComboBox _brightnessCombo = new() { Width = 128 };
     private readonly CheckBox _autoOffToggle = new()
     {
@@ -27,15 +24,6 @@ internal sealed class OtherSettingsWindow : Window
         Margin = new Thickness(0, 0, 0, 8)
     };
     private readonly Dictionary<InputSettingKind, CheckBox> _inputToggles = [];
-    private Border _warrantyCard = null!;
-    private Border _warrantyStatusBadge = null!;
-    private TextBlock _warrantyStatusText = null!;
-    private Border _warrantyProgressTrack = null!;
-    private Border _warrantyProgressFill = null!;
-    private TextBlock _warrantyStartDateText = null!;
-    private TextBlock _warrantyEndDateText = null!;
-    private int _warrantyProgressPercentage;
-    private WarrantyState _warrantyState = WarrantyState.Unavailable;
     private bool _isDark;
     private KeyboardBacklightState? _currentState;
     private InputSettingsState? _inputState;
@@ -76,16 +64,12 @@ internal sealed class OtherSettingsWindow : Window
         Loaded += async (_, _) =>
         {
             SyncRefreshTimerInterval();
-            var warrantyTask = LoadWarrantyAsync();
             await LoadCurrentStateAsync(showReading: true);
             _refreshTimer.Start();
-            await warrantyTask;
         };
         Closed += (_, _) =>
         {
             _refreshTimer.Stop();
-            _lifetimeCts.Cancel();
-            _lifetimeCts.Dispose();
         };
     }
 
@@ -102,7 +86,7 @@ internal sealed class OtherSettingsWindow : Window
         var grid = new Grid();
         grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
         grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-        for (var row = 0; row < 8; row++)
+        for (var row = 0; row < 7; row++)
             grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
 
         AddSettingRow(grid, 0, _t("KeyboardBacklightBrightness"), _brightnessCombo);
@@ -113,10 +97,6 @@ internal sealed class OtherSettingsWindow : Window
         AddInputSettingRow(grid, 5, _t("FnCtrlSwap"), InputSettingKind.FnCtrlSwap);
         AddInputSettingRow(grid, 6, _t("Touchpad"), InputSettingKind.Touchpad);
 
-        var warrantyCard = BuildWarrantyCard();
-        Grid.SetRow(warrantyCard, 7);
-        Grid.SetColumnSpan(warrantyCard, 2);
-        grid.Children.Add(warrantyCard);
 
         var closeButton = new Button
         {
@@ -143,113 +123,6 @@ internal sealed class OtherSettingsWindow : Window
         root.Children.Add(closeButton);
         return root;
     }
-
-    private UIElement BuildWarrantyCard()
-    {
-        _warrantyStatusText = new TextBlock
-        {
-            Text = _t("WarrantyLoading"),
-            FontSize = 12,
-            VerticalAlignment = VerticalAlignment.Center
-        };
-        _warrantyStatusBadge = new Border
-        {
-            MinWidth = 42,
-            Padding = new Thickness(8, 3, 8, 3),
-            CornerRadius = new CornerRadius(12, 12, 0, 12),
-            HorizontalAlignment = HorizontalAlignment.Right,
-            Child = _warrantyStatusText
-        };
-
-        var header = new Grid();
-        header.ColumnDefinitions.Add(new ColumnDefinition
-        {
-            Width = new GridLength(1, GridUnitType.Star)
-        });
-        header.ColumnDefinitions.Add(new ColumnDefinition
-        {
-            Width = GridLength.Auto
-        });
-        var title = new TextBlock
-        {
-            Text = _t("WarrantyInformation"),
-            FontSize = 18,
-            FontWeight = FontWeights.SemiBold,
-            VerticalAlignment = VerticalAlignment.Center
-        };
-        Grid.SetColumn(title, 0);
-        header.Children.Add(title);
-        Grid.SetColumn(_warrantyStatusBadge, 1);
-        header.Children.Add(_warrantyStatusBadge);
-
-        _warrantyProgressFill = new Border
-        {
-            Height = 6,
-            Width = 0,
-            HorizontalAlignment = HorizontalAlignment.Left,
-            CornerRadius = new CornerRadius(3),
-            Background = new LinearGradientBrush(
-                ColorFrom("#5898fd"),
-                ColorFrom("#45c4ee"),
-                0)
-        };
-        _warrantyProgressTrack = new Border
-        {
-            Height = 6,
-            CornerRadius = new CornerRadius(3),
-            Margin = new Thickness(0, 12, 0, 0),
-            Child = _warrantyProgressFill
-        };
-        _warrantyProgressTrack.SizeChanged += (_, _) =>
-            UpdateWarrantyProgressWidth();
-
-        _warrantyStartDateText = CreateWarrantyDateText(
-            HorizontalAlignment.Left,
-            TextAlignment.Left);
-        _warrantyEndDateText = CreateWarrantyDateText(
-            HorizontalAlignment.Right,
-            TextAlignment.Right);
-        var dates = new Grid { Margin = new Thickness(0, 8, 0, 0) };
-        dates.ColumnDefinitions.Add(new ColumnDefinition
-        {
-            Width = new GridLength(1, GridUnitType.Star)
-        });
-        dates.ColumnDefinitions.Add(new ColumnDefinition
-        {
-            Width = new GridLength(1, GridUnitType.Star)
-        });
-        Grid.SetColumn(_warrantyStartDateText, 0);
-        dates.Children.Add(_warrantyStartDateText);
-        Grid.SetColumn(_warrantyEndDateText, 1);
-        dates.Children.Add(_warrantyEndDateText);
-
-        var content = new StackPanel();
-        content.Children.Add(header);
-        content.Children.Add(_warrantyProgressTrack);
-        content.Children.Add(dates);
-
-        _warrantyCard = new Border
-        {
-            Margin = new Thickness(0, 10, 0, 0),
-            Padding = new Thickness(12),
-            BorderThickness = new Thickness(1),
-            CornerRadius = new CornerRadius(12),
-            Child = content
-        };
-        SetWarrantyLoading();
-        return _warrantyCard;
-    }
-
-    private TextBlock CreateWarrantyDateText(
-        HorizontalAlignment alignment,
-        TextAlignment textAlignment) => new()
-        {
-            Text = _t("NoInformation"),
-            FontSize = 12,
-            HorizontalAlignment = alignment,
-            TextAlignment = textAlignment,
-            TextTrimming = TextTrimming.CharacterEllipsis
-        };
 
     private static void AddSettingRow(Grid grid, int row, string label, UIElement control)
     {
@@ -545,119 +418,6 @@ internal sealed class OtherSettingsWindow : Window
         }
     }
 
-    private async Task LoadWarrantyAsync()
-    {
-        SetWarrantyLoading();
-        try
-        {
-            var snapshot = await WarrantyService.GetWarrantyAsync(
-                _lifetimeCts.Token);
-            if (!_lifetimeCts.IsCancellationRequested)
-                ApplyWarrantySnapshot(snapshot);
-        }
-        catch (OperationCanceledException)
-        {
-        }
-        catch (Exception ex)
-        {
-            if (!_lifetimeCts.IsCancellationRequested)
-                ApplyWarrantySnapshot(WarrantySnapshot.Unavailable(ex.Message));
-        }
-    }
-
-    private void SetWarrantyLoading()
-    {
-        _warrantyState = WarrantyState.Unavailable;
-        _warrantyStatusText.Text = _t("WarrantyLoading");
-        _warrantyStartDateText.Text = _t("NoInformation");
-        _warrantyEndDateText.Text = _t("NoInformation");
-        _warrantyProgressPercentage = 0;
-        _warrantyCard.ToolTip = null;
-        UpdateWarrantyProgressWidth();
-        ApplyWarrantyColors();
-    }
-
-    private void ApplyWarrantySnapshot(WarrantySnapshot snapshot)
-    {
-        _warrantyState = snapshot.State;
-        _warrantyStatusText.Text = _t(snapshot.State switch
-        {
-            WarrantyState.InWarranty => "WarrantyInCoverage",
-            WarrantyState.Expired => "WarrantyExpired",
-            WarrantyState.NotStarted => "WarrantyNotStarted",
-            _ => "WarrantyUnavailable"
-        });
-        _warrantyStartDateText.Text = FormatWarrantyDate(snapshot.StartDate);
-        _warrantyEndDateText.Text = FormatWarrantyDate(snapshot.EndDate);
-        _warrantyProgressPercentage = snapshot.ProgressPercentage;
-
-        var tooltipParts = new List<string>();
-        if (snapshot.IsStale)
-            tooltipParts.Add(_t("WarrantyCached"));
-        if (!string.IsNullOrWhiteSpace(snapshot.Error))
-        {
-            tooltipParts.Add(string.Format(
-                _t("WarrantyQueryFailedFormat"),
-                snapshot.Error));
-        }
-
-        _warrantyCard.ToolTip = tooltipParts.Count == 0
-            ? null
-            : string.Join(Environment.NewLine, tooltipParts);
-        ApplyWarrantyColors();
-        UpdateWarrantyProgressWidth();
-    }
-
-    private string FormatWarrantyDate(DateOnly? date) =>
-        date.HasValue
-            ? date.Value.ToString(
-                _t("WarrantyDateFormat"),
-                CultureInfo.InvariantCulture)
-            : _t("NoInformation");
-
-    private void UpdateWarrantyProgressWidth()
-    {
-        if (_warrantyProgressTrack is null || _warrantyProgressFill is null)
-            return;
-
-        _warrantyProgressFill.Width = Math.Max(
-            0,
-            _warrantyProgressTrack.ActualWidth *
-            _warrantyProgressPercentage /
-            100.0);
-    }
-
-    private void ApplyWarrantyColors()
-    {
-        if (_warrantyCard is null)
-            return;
-
-        var cardBackground = Brush(_isDark ? "#1f2937" : "#ffffff");
-        var cardBorder = Brush(_isDark ? "#374151" : "#e5e7eb");
-        var secondaryText = Brush(_isDark ? "#9ca3af" : "#8c8c8c");
-        var progressTrack = Brush(_isDark ? "#374151" : "#f1f1f1");
-        var statusBackground = _warrantyState == WarrantyState.InWarranty
-            ? Brush(_isDark ? "#334c75" : "#e8f0fe")
-            : Brush(_isDark ? "#374151" : "#f3f4f6");
-        var statusText = _warrantyState == WarrantyState.InWarranty
-            ? Brush(_isDark ? "#8db8ff" : "#3a78f2")
-            : Brush(_isDark ? "#d1d5db" : "#6b7280");
-
-        _warrantyCard.Background = cardBackground;
-        _warrantyCard.BorderBrush = cardBorder;
-        _warrantyStatusBadge.Background = statusBackground;
-        _warrantyStatusText.Foreground = statusText;
-        _warrantyStartDateText.Foreground = secondaryText;
-        _warrantyEndDateText.Foreground = secondaryText;
-        _warrantyProgressTrack.Background = progressTrack;
-        _warrantyProgressFill.Background = _warrantyState == WarrantyState.Expired
-            ? progressTrack
-            : new LinearGradientBrush(
-                ColorFrom("#5898fd"),
-                ColorFrom("#45c4ee"),
-                0);
-    }
-
     private TimeSpan CurrentRefreshInterval()
     {
         var interval = _refreshInterval();
@@ -720,7 +480,6 @@ internal sealed class OtherSettingsWindow : Window
         _autoOffToggle.Foreground = text;
         foreach (var toggle in _inputToggles.Values)
             toggle.Foreground = text;
-        ApplyWarrantyColors();
     }
 
     private static SolidColorBrush Brush(string hex)
@@ -729,8 +488,5 @@ internal sealed class OtherSettingsWindow : Window
         brush.Freeze();
         return brush;
     }
-
-    private static Color ColorFrom(string hex) =>
-        (Color)ColorConverter.ConvertFromString(hex);
 
 }
