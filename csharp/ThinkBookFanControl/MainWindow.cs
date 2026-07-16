@@ -183,9 +183,9 @@ public sealed class MainWindow : Window
     private bool _resumeFullSpeedAfterSleep;
     private readonly SemaphoreSlim _fanIoLock = new(1, 1);
     // WM_POWERBROADCAST must complete synchronously, so it cannot await the
-    // semaphore above. This lock serializes that path with every Lenovo WMI
-    // fan read and write performed on background threads.
-    private readonly object _fanWmiLock = new();
+    // semaphore above. Match the proven dev path by serializing WMI writes
+    // without making the sleep callback wait behind a periodic RPM read.
+    private readonly object _fanWmiWriteLock = new();
     private FanTargets? _lastTarget;
     private FanTargets? _lastAppliedTarget;
     private FanTargets? _queuedTarget;
@@ -825,8 +825,7 @@ public sealed class MainWindow : Window
             FanSnapshot fans;
             try
             {
-                fans = await Task.Run(() => ExecuteFanWmiOperation(
-                    _fanController.ReadSnapshot));
+                fans = await Task.Run(() => _fanController.ReadSnapshot());
             }
             finally
             {
@@ -1630,14 +1629,8 @@ public sealed class MainWindow : Window
 
     private void ExecuteFanWmiOperation(Action operation)
     {
-        lock (_fanWmiLock)
+        lock (_fanWmiWriteLock)
             operation();
-    }
-
-    private T ExecuteFanWmiOperation<T>(Func<T> operation)
-    {
-        lock (_fanWmiLock)
-            return operation();
     }
 
     private void BeginSuspendFanControlForSleep()
