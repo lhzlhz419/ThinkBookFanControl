@@ -4,8 +4,11 @@ using System.IO;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Markup;
 using System.Windows.Media;
+using System.Windows.Media.Animation;
 using System.Windows.Media.Imaging;
+using System.Windows.Shapes;
 
 namespace ThinkBookFanControl;
 
@@ -21,7 +24,7 @@ internal sealed class BootLogoCustomizationWindow : Window
     private readonly Button _reset = new();
     private readonly Button _confirm = new();
     private readonly Button _close = new();
-    private readonly ProgressBar _busy = new();
+    private readonly FrameworkElement _busy;
     private BiosLogoState? _state;
     private string? _selectedPath;
     private byte[]? _selectedImage;
@@ -48,6 +51,7 @@ internal sealed class BootLogoCustomizationWindow : Window
         ShowInTaskbar = false;
         FontFamily = fontFamily;
         FontSize = fontSize;
+        _busy = CreateSpinner(44, Brush("#8b95a5"));
         Content = BuildLayout();
         ApplyTheme();
         Loaded += async (_, _) => await LoadStateAsync();
@@ -67,9 +71,6 @@ internal sealed class BootLogoCustomizationWindow : Window
         _preview.Background = Brushes.Black;
         _preview.ClipToBounds = true;
 
-        _busy.IsIndeterminate = true;
-        _busy.Width = 110;
-        _busy.Height = 6;
         _busy.Visibility = Visibility.Collapsed;
         _busy.HorizontalAlignment = HorizontalAlignment.Center;
         _busy.VerticalAlignment = VerticalAlignment.Center;
@@ -89,7 +90,7 @@ internal sealed class BootLogoCustomizationWindow : Window
         _customize.Click += (_, _) => SelectImage();
         ConfigureButton(_reset, _t("ResetToDefault"));
         _reset.Click += (_, _) => SelectDefault();
-        ConfigureButton(_confirm, _t("Confirm"), primary: true);
+        ConfigureButton(_confirm, _t("Confirm"));
         _confirm.Click += async (_, _) => await ApplyAsync();
         _confirm.IsEnabled = false;
 
@@ -108,6 +109,8 @@ internal sealed class BootLogoCustomizationWindow : Window
         var footer = new Grid();
         footer.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
         footer.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        _reset.HorizontalAlignment = HorizontalAlignment.Left;
+        _reset.MinWidth = 152;
         footer.Children.Add(_reset);
         var right = new StackPanel { Orientation = Orientation.Horizontal };
         right.Children.Add(_close);
@@ -285,15 +288,11 @@ internal sealed class BootLogoCustomizationWindow : Window
 
         if (_showLoading.IsChecked == true)
         {
-            _preview.Children.Add(new ProgressBar
-            {
-                IsIndeterminate = true,
-                Width = 72,
-                Height = 6,
-                HorizontalAlignment = HorizontalAlignment.Center,
-                VerticalAlignment = VerticalAlignment.Bottom,
-                Margin = new Thickness(0, 0, 0, 28)
-            });
+            var bootSpinner = CreateSpinner(38, Brush("#30343b"));
+            bootSpinner.HorizontalAlignment = HorizontalAlignment.Center;
+            bootSpinner.VerticalAlignment = VerticalAlignment.Bottom;
+            bootSpinner.Margin = new Thickness(0, 0, 0, 24);
+            _preview.Children.Add(bootSpinner);
         }
         _preview.Children.Add(_busy);
     }
@@ -320,17 +319,13 @@ internal sealed class BootLogoCustomizationWindow : Window
         if (!busy) UpdateDirtyState();
     }
 
-    private void ConfigureButton(Button button, string text, bool primary = false)
+    private void ConfigureButton(Button button, string text)
     {
         button.Content = text;
         button.MinWidth = 112;
         button.Height = 40;
         button.Margin = new Thickness(8, 0, 0, 0);
-        if (primary)
-        {
-            button.Background = Brush("#86bdf8");
-            button.Foreground = Brush("#111827");
-        }
+        button.Padding = new Thickness(18, 4, 18, 4);
     }
 
     private void ApplyTheme()
@@ -338,12 +333,86 @@ internal sealed class BootLogoCustomizationWindow : Window
         Background = Brush(_isDark ? "#18181b" : "#f8fafc");
         Foreground = Brush(_isDark ? "#e5e7eb" : "#111827");
         _showLoading.Foreground = Foreground;
-        foreach (var button in new[] { _customize, _reset, _close })
+        foreach (var button in new[] { _customize, _reset, _close, _confirm })
         {
-            button.Background = Brush(_isDark ? "#34343c" : "#e5e7eb");
-            button.Foreground = Foreground;
-            button.BorderBrush = Brush(_isDark ? "#4b4b55" : "#aeb6c2");
+            button.Style = CreateButtonStyle();
         }
+    }
+
+    private Style CreateButtonStyle()
+    {
+        var normal = Brush(_isDark ? "#374151" : "#e5e7eb");
+        var hover = Brush(_isDark ? "#465365" : "#d7dce3");
+        var pressed = Brush(_isDark ? "#2b3442" : "#c7cdd6");
+        var borderBrush = Brush(_isDark ? "#4b5563" : "#aeb6c2");
+
+        var border = new FrameworkElementFactory(typeof(Border));
+        border.SetValue(Border.BackgroundProperty, new TemplateBindingExtension(Button.BackgroundProperty));
+        border.SetValue(Border.BorderBrushProperty, new TemplateBindingExtension(Button.BorderBrushProperty));
+        border.SetValue(Border.BorderThicknessProperty, new TemplateBindingExtension(Button.BorderThicknessProperty));
+        var presenter = new FrameworkElementFactory(typeof(ContentPresenter));
+        presenter.SetValue(HorizontalAlignmentProperty, HorizontalAlignment.Center);
+        presenter.SetValue(VerticalAlignmentProperty, VerticalAlignment.Center);
+        presenter.SetValue(ContentPresenter.ContentProperty, new TemplateBindingExtension(ContentControl.ContentProperty));
+        presenter.SetValue(ContentPresenter.MarginProperty, new TemplateBindingExtension(Control.PaddingProperty));
+        border.AppendChild(presenter);
+
+        var template = new ControlTemplate(typeof(Button)) { VisualTree = border };
+        var hoverTrigger = new Trigger { Property = Button.IsMouseOverProperty, Value = true };
+        hoverTrigger.Setters.Add(new Setter(Button.BackgroundProperty, hover));
+        template.Triggers.Add(hoverTrigger);
+        var pressedTrigger = new Trigger { Property = Button.IsPressedProperty, Value = true };
+        pressedTrigger.Setters.Add(new Setter(Button.BackgroundProperty, pressed));
+        template.Triggers.Add(pressedTrigger);
+        var disabledTrigger = new Trigger { Property = Button.IsEnabledProperty, Value = false };
+        disabledTrigger.Setters.Add(new Setter(Button.OpacityProperty, 0.42));
+        template.Triggers.Add(disabledTrigger);
+
+        var style = new Style(typeof(Button));
+        style.Setters.Add(new Setter(Button.BackgroundProperty, normal));
+        style.Setters.Add(new Setter(Button.ForegroundProperty, Foreground));
+        style.Setters.Add(new Setter(Button.BorderBrushProperty, borderBrush));
+        style.Setters.Add(new Setter(Button.BorderThicknessProperty, new Thickness(1)));
+        style.Setters.Add(new Setter(Button.TemplateProperty, template));
+        return style;
+    }
+
+    private static FrameworkElement CreateSpinner(double size, Brush color)
+    {
+        const int dotCount = 8;
+        var canvas = new Canvas
+        {
+            Width = size,
+            Height = size,
+            RenderTransformOrigin = new Point(0.5, 0.5)
+        };
+        var dotSize = Math.Max(3, size * 0.11);
+        var radius = (size - dotSize) / 2;
+        var center = size / 2;
+        for (var index = 0; index < dotCount; index++)
+        {
+            var angle = index * Math.PI * 2 / dotCount;
+            var dot = new Ellipse
+            {
+                Width = dotSize,
+                Height = dotSize,
+                Fill = color,
+                Opacity = 0.2 + 0.8 * (index + 1) / dotCount
+            };
+            Canvas.SetLeft(dot, center + Math.Sin(angle) * radius - dotSize / 2);
+            Canvas.SetTop(dot, center - Math.Cos(angle) * radius - dotSize / 2);
+            canvas.Children.Add(dot);
+        }
+
+        var rotation = new RotateTransform();
+        canvas.RenderTransform = rotation;
+        rotation.BeginAnimation(
+            RotateTransform.AngleProperty,
+            new DoubleAnimation(0, 360, TimeSpan.FromMilliseconds(900))
+            {
+                RepeatBehavior = RepeatBehavior.Forever
+            });
+        return canvas;
     }
 
     private static SolidColorBrush Brush(string hex)
