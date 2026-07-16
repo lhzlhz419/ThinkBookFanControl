@@ -1,14 +1,13 @@
 using Microsoft.Win32;
 using System;
+using System.Diagnostics;
 using System.IO;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Markup;
 using System.Windows.Media;
-using System.Windows.Media.Animation;
 using System.Windows.Media.Imaging;
-using System.Windows.Shapes;
 
 namespace ThinkBookFanControl;
 
@@ -289,10 +288,14 @@ internal sealed class BootLogoCustomizationWindow : Window
 
         if (_showLoading.IsChecked == true)
         {
-            var bootSpinner = CreateSpinner(46, Brush("#111216"));
-            bootSpinner.HorizontalAlignment = HorizontalAlignment.Center;
+            // Match Vantage's MUI CircularProgress overlay exactly: size=32,
+            // left=46%, bottom=10%, margin-bottom=-1rem (10 px in Vantage).
+            var bootSpinner = CreateSpinner(32, Brush(_isDark ? "#18181b" : "#ffffff"));
+            bootSpinner.HorizontalAlignment = HorizontalAlignment.Left;
             bootSpinner.VerticalAlignment = VerticalAlignment.Bottom;
-            bootSpinner.Margin = new Thickness(0, 0, 0, 24);
+            var previewWidth = _preview.ActualWidth > 0 ? _preview.ActualWidth : 704;
+            var bottom = Math.Max(0, _preview.Height * 0.10 - 10);
+            bootSpinner.Margin = new Thickness(previewWidth * 0.46, 0, 0, bottom);
             _preview.Children.Add(bootSpinner);
         }
         _preview.Children.Add(_busy);
@@ -384,55 +387,136 @@ internal sealed class BootLogoCustomizationWindow : Window
     }
 
     private static FrameworkElement CreateSpinner(double size, Brush color)
+        => new MuiCircularProgress(size, color);
+
+    /// <summary>
+    /// Pixel-equivalent WPF rendering of the MUI CircularProgress used by
+    /// Vantage's LogoDiyDialog. MUI uses a 44-unit SVG, thickness 5.5,
+    /// a 1.4-second root rotation, and a 1.4-second ease-in-out dash animation.
+    /// </summary>
+    private sealed class MuiCircularProgress : FrameworkElement
     {
-        var stroke = Math.Max(5, size * 0.12);
-        var radius = (size - stroke) / 2;
-        var center = size / 2;
-        static Point PointOnCircle(double center, double radius, double degrees)
+        private const double SvgSize = 44;
+        private const double SvgThickness = 5.5;
+        private const double SvgRadius = (SvgSize - SvgThickness) / 2;
+        private const double Circumference = 2 * Math.PI * SvgRadius;
+        private readonly Stopwatch _clock = new();
+        private readonly Pen _pen;
+
+        public MuiCircularProgress(double size, Brush color)
+        {
+            Width = size;
+            Height = size;
+            _pen = new Pen(color, SvgThickness * size / SvgSize)
+            {
+                StartLineCap = PenLineCap.Round,
+                EndLineCap = PenLineCap.Round
+            };
+            _pen.Freeze();
+            Loaded += OnLoaded;
+            Unloaded += OnUnloaded;
+        }
+
+        private void OnLoaded(object sender, RoutedEventArgs e)
+        {
+            _clock.Restart();
+            CompositionTarget.Rendering += OnRendering;
+        }
+
+        private void OnUnloaded(object sender, RoutedEventArgs e)
+        {
+            CompositionTarget.Rendering -= OnRendering;
+            _clock.Stop();
+        }
+
+        private void OnRendering(object? sender, EventArgs e) => InvalidateVisual();
+
+        protected override void OnRender(DrawingContext drawingContext)
+        {
+            base.OnRender(drawingContext);
+            if (ActualWidth <= 0 || ActualHeight <= 0) return;
+
+            var seconds = _clock.Elapsed.TotalSeconds;
+            var rootRotation = seconds % 1.4 / 1.4 * 360.0;
+            var dashProgress = seconds % 1.4 / 1.4;
+            double dashLength;
+            double dashOffset;
+            if (dashProgress <= 0.5)
+            {
+                var eased = EaseInOut(dashProgress * 2);
+                dashLength = Lerp(1, 100, eased);
+                dashOffset = Lerp(0, -15, eased);
+            }
+            else
+            {
+                var eased = EaseInOut((dashProgress - 0.5) * 2);
+                dashLength = Lerp(100, 1, eased);
+                dashOffset = Lerp(-15, -126, eased);
+            }
+
+            var sweep = Math.Clamp(dashLength / Circumference * 360, 0.1, 359.9);
+            var start = rootRotation - dashOffset / Circumference * 360;
+            var radius = Math.Min(ActualWidth, ActualHeight) / 2 - _pen.Thickness / 2;
+            var center = new Point(ActualWidth / 2, ActualHeight / 2);
+            var startPoint = PointOnCircle(center, radius, start);
+            var endPoint = PointOnCircle(center, radius, start + sweep);
+
+            var geometry = new StreamGeometry();
+            using (var context = geometry.Open())
+            {
+                context.BeginFigure(startPoint, false, false);
+                context.ArcTo(
+                    endPoint,
+                    new Size(radius, radius),
+                    0,
+                    sweep > 180,
+                    SweepDirection.Clockwise,
+                    true,
+                    false);
+            }
+            geometry.Freeze();
+            drawingContext.DrawGeometry(null, _pen, geometry);
+        }
+
+        private static Point PointOnCircle(Point center, double radius, double degrees)
         {
             var radians = degrees * Math.PI / 180;
             return new Point(
-                center + Math.Cos(radians) * radius,
-                center + Math.Sin(radians) * radius);
+                center.X + Math.Cos(radians) * radius,
+                center.Y + Math.Sin(radians) * radius);
         }
 
-        var figure = new PathFigure
-        {
-            StartPoint = PointOnCircle(center, radius, 100),
-            IsClosed = false,
-            IsFilled = false
-        };
-        figure.Segments.Add(new ArcSegment
-        {
-            Point = PointOnCircle(center, radius, 30),
-            Size = new Size(radius, radius),
-            IsLargeArc = true,
-            SweepDirection = SweepDirection.Clockwise
-        });
-        var geometry = new PathGeometry(new[] { figure });
-        geometry.Freeze();
-        var spinner = new System.Windows.Shapes.Path
-        {
-            Width = size,
-            Height = size,
-            Data = geometry,
-            Stroke = color,
-            StrokeThickness = stroke,
-            StrokeStartLineCap = PenLineCap.Round,
-            StrokeEndLineCap = PenLineCap.Round,
-            RenderTransformOrigin = new Point(0.5, 0.5)
-        };
+        private static double Lerp(double from, double to, double amount) =>
+            from + (to - from) * amount;
 
-        var rotation = new RotateTransform();
-        spinner.RenderTransform = rotation;
-        rotation.BeginAnimation(
-            RotateTransform.AngleProperty,
-            new DoubleAnimation(0, 360, TimeSpan.FromMilliseconds(850))
+        // CSS ease-in-out = cubic-bezier(.42, 0, .58, 1).
+        private static double EaseInOut(double progress)
+        {
+            var parameter = progress;
+            for (var index = 0; index < 6; index++)
             {
-                RepeatBehavior = RepeatBehavior.Forever,
-                FillBehavior = FillBehavior.HoldEnd
-            });
-        return spinner;
+                var x = Cubic(parameter, 0.42, 0.58) - progress;
+                var derivative = CubicDerivative(parameter, 0.42, 0.58);
+                if (Math.Abs(derivative) < 1e-7) break;
+                parameter = Math.Clamp(parameter - x / derivative, 0, 1);
+            }
+            return Cubic(parameter, 0, 1);
+        }
+
+        private static double Cubic(double value, double first, double second)
+        {
+            var inverse = 1 - value;
+            return 3 * inverse * inverse * value * first +
+                   3 * inverse * value * value * second + value * value * value;
+        }
+
+        private static double CubicDerivative(double value, double first, double second)
+        {
+            var inverse = 1 - value;
+            return 3 * inverse * inverse * first +
+                   6 * inverse * value * (second - first) +
+                   3 * value * value * (1 - second);
+        }
     }
 
     private static SolidColorBrush Brush(string hex)
