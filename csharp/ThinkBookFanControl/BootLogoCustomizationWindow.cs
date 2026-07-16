@@ -93,6 +93,7 @@ internal sealed class BootLogoCustomizationWindow : Window
         ConfigureButton(_confirm, _t("Confirm"));
         _confirm.Click += async (_, _) => await ApplyAsync();
         _confirm.IsEnabled = false;
+        _confirm.IsDefault = true;
 
         ConfigureButton(_close, _t("Close"));
         _close.MinWidth = 90;
@@ -288,7 +289,7 @@ internal sealed class BootLogoCustomizationWindow : Window
 
         if (_showLoading.IsChecked == true)
         {
-            var bootSpinner = CreateSpinner(38, Brush("#30343b"));
+            var bootSpinner = CreateSpinner(46, Brush("#111216"));
             bootSpinner.HorizontalAlignment = HorizontalAlignment.Center;
             bootSpinner.VerticalAlignment = VerticalAlignment.Bottom;
             bootSpinner.Margin = new Thickness(0, 0, 0, 24);
@@ -341,10 +342,11 @@ internal sealed class BootLogoCustomizationWindow : Window
 
     private Style CreateButtonStyle()
     {
-        var normal = Brush(_isDark ? "#374151" : "#e5e7eb");
-        var hover = Brush(_isDark ? "#465365" : "#d7dce3");
-        var pressed = Brush(_isDark ? "#2b3442" : "#c7cdd6");
-        var borderBrush = Brush(_isDark ? "#4b5563" : "#aeb6c2");
+        var normal = Brush("#e5e5e5");
+        var hover = Brush("#f2f2f2");
+        var pressed = Brush("#cccccc");
+        var borderBrush = Brush("#7a7a7a");
+        var focusBrush = Brush("#1683e8");
 
         var border = new FrameworkElementFactory(typeof(Border));
         border.SetValue(Border.BackgroundProperty, new TemplateBindingExtension(Button.BackgroundProperty));
@@ -365,12 +367,16 @@ internal sealed class BootLogoCustomizationWindow : Window
         pressedTrigger.Setters.Add(new Setter(Button.BackgroundProperty, pressed));
         template.Triggers.Add(pressedTrigger);
         var disabledTrigger = new Trigger { Property = Button.IsEnabledProperty, Value = false };
-        disabledTrigger.Setters.Add(new Setter(Button.OpacityProperty, 0.42));
+        disabledTrigger.Setters.Add(new Setter(Button.OpacityProperty, 0.55));
         template.Triggers.Add(disabledTrigger);
+        var focusTrigger = new Trigger { Property = Button.IsDefaultedProperty, Value = true };
+        focusTrigger.Setters.Add(new Setter(Button.BorderBrushProperty, focusBrush));
+        focusTrigger.Setters.Add(new Setter(Button.BorderThicknessProperty, new Thickness(2)));
+        template.Triggers.Add(focusTrigger);
 
         var style = new Style(typeof(Button));
         style.Setters.Add(new Setter(Button.BackgroundProperty, normal));
-        style.Setters.Add(new Setter(Button.ForegroundProperty, Foreground));
+        style.Setters.Add(new Setter(Button.ForegroundProperty, Brush("#111111")));
         style.Setters.Add(new Setter(Button.BorderBrushProperty, borderBrush));
         style.Setters.Add(new Setter(Button.BorderThicknessProperty, new Thickness(1)));
         style.Setters.Add(new Setter(Button.TemplateProperty, template));
@@ -379,40 +385,54 @@ internal sealed class BootLogoCustomizationWindow : Window
 
     private static FrameworkElement CreateSpinner(double size, Brush color)
     {
-        const int dotCount = 8;
-        var canvas = new Canvas
+        var stroke = Math.Max(5, size * 0.12);
+        var radius = (size - stroke) / 2;
+        var center = size / 2;
+        static Point PointOnCircle(double center, double radius, double degrees)
+        {
+            var radians = degrees * Math.PI / 180;
+            return new Point(
+                center + Math.Cos(radians) * radius,
+                center + Math.Sin(radians) * radius);
+        }
+
+        var figure = new PathFigure
+        {
+            StartPoint = PointOnCircle(center, radius, 100),
+            IsClosed = false,
+            IsFilled = false
+        };
+        figure.Segments.Add(new ArcSegment
+        {
+            Point = PointOnCircle(center, radius, 30),
+            Size = new Size(radius, radius),
+            IsLargeArc = true,
+            SweepDirection = SweepDirection.Clockwise
+        });
+        var geometry = new PathGeometry(new[] { figure });
+        geometry.Freeze();
+        var spinner = new System.Windows.Shapes.Path
         {
             Width = size,
             Height = size,
+            Data = geometry,
+            Stroke = color,
+            StrokeThickness = stroke,
+            StrokeStartLineCap = PenLineCap.Round,
+            StrokeEndLineCap = PenLineCap.Round,
             RenderTransformOrigin = new Point(0.5, 0.5)
         };
-        var dotSize = Math.Max(3, size * 0.11);
-        var radius = (size - dotSize) / 2;
-        var center = size / 2;
-        for (var index = 0; index < dotCount; index++)
-        {
-            var angle = index * Math.PI * 2 / dotCount;
-            var dot = new Ellipse
-            {
-                Width = dotSize,
-                Height = dotSize,
-                Fill = color,
-                Opacity = 0.2 + 0.8 * (index + 1) / dotCount
-            };
-            Canvas.SetLeft(dot, center + Math.Sin(angle) * radius - dotSize / 2);
-            Canvas.SetTop(dot, center - Math.Cos(angle) * radius - dotSize / 2);
-            canvas.Children.Add(dot);
-        }
 
         var rotation = new RotateTransform();
-        canvas.RenderTransform = rotation;
+        spinner.RenderTransform = rotation;
         rotation.BeginAnimation(
             RotateTransform.AngleProperty,
-            new DoubleAnimation(0, 360, TimeSpan.FromMilliseconds(900))
+            new DoubleAnimation(0, 360, TimeSpan.FromMilliseconds(850))
             {
-                RepeatBehavior = RepeatBehavior.Forever
+                RepeatBehavior = RepeatBehavior.Forever,
+                FillBehavior = FillBehavior.HoldEnd
             });
-        return canvas;
+        return spinner;
     }
 
     private static SolidColorBrush Brush(string hex)
