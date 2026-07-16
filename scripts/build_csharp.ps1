@@ -23,47 +23,6 @@ $frameworkDependentZip = "$frameworkDependentPublishDir.zip"
 $publishBuildDir = Join-Path $root ".tmp\csharp-publish-bin"
 $legacyOutputDir = Join-Path $root "csharp\ThinkBookFanControl\bin\$Configuration\net9.0-windows\win-x64"
 $checkedInVantageAddinsRoot = Join-Path $root "csharp\ThinkBookFanControl\lib\VantageAddins"
-$vantageInstalledAddinsRoot = "C:\ProgramData\Lenovo\Vantage\Addins"
-$vantageAddinCopyRules = [ordered]@{
-    SmartInteractAddin = @{
-        Files = @("*")
-        Directories = @("data", "x64")
-        ExcludeFiles = @()
-    }
-    SmartColorAddin = @{
-        Files = @("*")
-        Directories = @("x64")
-        ExcludeFiles = @()
-    }
-    MultimediaAddin = @{
-        Files = @(
-            "DolbyHSASupport.dll",
-            "concrt140.dll",
-            "msvcp140*.dll",
-            "vccorlib140.dll",
-            "vcruntime140*.dll",
-            "License.pdf",
-            "PackageMetaData.xml",
-            "ThirdPartyNotice.md"
-        )
-        Directories = @()
-        ExcludeFiles = @()
-    }
-    SmartNoiseCancelledAddin = @{
-        Files = @("*")
-        Directories = @("Resources", "x64")
-        ExcludeFiles = @("ElevocControlSDK_ARM64.dll")
-    }
-    LenovoProductivitySystemAddin = @{
-        Files = @(
-            "BiosUtility.dll",
-            "PackageMetaData.xml",
-            "ThirdPartyNotices.txt"
-        )
-        Directories = @()
-        ExcludeFiles = @()
-    }
-}
 
 function Assert-SafePath {
     param([Parameter(Mandatory)][string]$Path)
@@ -94,74 +53,26 @@ function Remove-SafeFile {
     }
 }
 
-function Get-LatestVantageAddinDirectory {
-    param([Parameter(Mandatory)][string]$AddinName)
-
-    $addinRoot = Join-Path $vantageInstalledAddinsRoot $AddinName
-    if (-not (Test-Path -LiteralPath $addinRoot -PathType Container)) {
-        return $null
-    }
-
-    return Get-ChildItem -LiteralPath $addinRoot -Directory |
-        Sort-Object {
-            $version = $null
-            if ([Version]::TryParse($_.Name, [ref]$version)) {
-                return $version
-            }
-            return [Version]"0.0"
-        } -Descending |
-        Select-Object -First 1
-}
-
-function Copy-VantageAddins {
+function Copy-CheckedInVantageAddins {
     param([Parameter(Mandatory)][string]$DestinationDirectory)
+
+    if (-not (Test-Path -LiteralPath $checkedInVantageAddinsRoot -PathType Container)) {
+        throw "Checked-in Vantage add-ins were not found: $checkedInVantageAddinsRoot"
+    }
 
     $safeDestination = Assert-SafePath $DestinationDirectory
     $localAddinsRoot = Join-Path $safeDestination "VantageAddins"
     Remove-SafeDirectory $localAddinsRoot
     New-Item -ItemType Directory -Path $localAddinsRoot -Force | Out-Null
 
-    if (Test-Path -LiteralPath $checkedInVantageAddinsRoot -PathType Container) {
-        Get-ChildItem -LiteralPath $checkedInVantageAddinsRoot |
-            Copy-Item -Destination $localAddinsRoot -Recurse -Force
-    }
+    Get-ChildItem -LiteralPath $checkedInVantageAddinsRoot |
+        Copy-Item -Destination $localAddinsRoot -Recurse -Force
 
-    foreach ($entry in $vantageAddinCopyRules.GetEnumerator()) {
-        $addinName = $entry.Key
-        $rule = $entry.Value
-        $sourceDirectory = Get-LatestVantageAddinDirectory $addinName
-        if ($null -eq $sourceDirectory) {
-            Write-Warning "Vantage addin is not installed and was not bundled: $addinName"
-            continue
-        }
-
-        $targetAddinRoot = Join-Path $localAddinsRoot $addinName
-        $targetVersionDirectory = Join-Path $targetAddinRoot $sourceDirectory.Name
-        New-Item -ItemType Directory -Path $targetVersionDirectory -Force | Out-Null
-
-        foreach ($pattern in $rule.Files) {
-            Get-ChildItem -LiteralPath $sourceDirectory.FullName -File |
-                Where-Object {
-                    $_.Name -like $pattern -and
-                    $_.Name -notin $rule.ExcludeFiles
-                } |
-                Copy-Item -Destination $targetVersionDirectory -Force
-        }
-
-        foreach ($directoryName in $rule.Directories) {
-            $sourceChild = Join-Path $sourceDirectory.FullName $directoryName
-            if (Test-Path -LiteralPath $sourceChild -PathType Container) {
-                Copy-Item -LiteralPath $sourceChild `
-                    -Destination $targetVersionDirectory -Recurse -Force
-            }
-        }
-
-        $bundledFiles = Get-ChildItem $targetVersionDirectory -Recurse -File
-        $bundledSizeMb = [Math]::Round(
-            (($bundledFiles | Measure-Object Length -Sum).Sum / 1MB),
-            2)
-        Write-Host "Bundled Vantage addin: $addinName $($sourceDirectory.Name) ($($bundledFiles.Count) files, $bundledSizeMb MB)"
-    }
+    $bundledFiles = Get-ChildItem $localAddinsRoot -Recurse -File
+    $bundledSizeMb = [Math]::Round(
+        (($bundledFiles | Measure-Object Length -Sum).Sum / 1MB),
+        2)
+    Write-Host "Bundled checked-in Vantage files ($($bundledFiles.Count) files, $bundledSizeMb MB)"
 }
 
 $info = dotnet --info 2>&1 | Out-String
@@ -186,12 +97,12 @@ if ($Publish) {
     if ($LASTEXITCODE -ne 0) {
         exit $LASTEXITCODE
     }
-    Copy-VantageAddins $selfContainedPublishDir
+    Copy-CheckedInVantageAddins $selfContainedPublishDir
     dotnet publish $project -c $Configuration -r win-x64 --self-contained false -o $frameworkDependentPublishDir /p:PublishSingleFile=false "/p:BaseOutputPath=$publishBuildDir/"
     if ($LASTEXITCODE -ne 0) {
         exit $LASTEXITCODE
     }
-    Copy-VantageAddins $frameworkDependentPublishDir
+    Copy-CheckedInVantageAddins $frameworkDependentPublishDir
     Compress-Archive -LiteralPath $selfContainedPublishDir -DestinationPath $selfContainedZip -CompressionLevel Optimal
     Compress-Archive -LiteralPath $frameworkDependentPublishDir -DestinationPath $frameworkDependentZip -CompressionLevel Optimal
     Write-Host "Publish output (self-contained): $selfContainedPublishDir"
@@ -203,7 +114,7 @@ if ($Publish) {
     if ($LASTEXITCODE -ne 0) {
         exit $LASTEXITCODE
     }
-    Copy-VantageAddins $legacyOutputDir
+    Copy-CheckedInVantageAddins $legacyOutputDir
 }
 
 if ($LASTEXITCODE -ne 0) {

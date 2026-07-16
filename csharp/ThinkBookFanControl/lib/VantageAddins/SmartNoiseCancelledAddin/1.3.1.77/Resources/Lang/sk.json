@@ -1,0 +1,104 @@
+﻿{
+    "Titles": {
+        "SmartShare": "Smart Share"
+    },
+    "StartedWindow": {
+        "MainTitle":"Poďme spárovať vaše príslušenstvo pomocou funkcie Smart Share",
+        "Content": "Príslušenstvo Bluetooth (myš, slúchadlá atď.) môžete jednoducho pripojiť k počítaču tým, že ho k nemu priložíte.",
+        "ContentGetStarted":"Príslušenstvo Bluetooth (myš, slúchadlá atď.) môžete jednoducho pripojiť k počítaču tým, že ho k nemu priložíte. Ak chcete začať, povoľte Bluetooth.",
+        "StartedButton1": "Začať",
+        "StartedButton2": "Povoliť Bluetooth",
+        "DelayButton1": "Odložiť",
+        "DelayButton2": "Pripomenúť neskôr",
+        "DelayButton3": "Odmietnuť"
+    },
+    "TapToPairWindow": {
+        "MainTitle": "Dvojnásobné priloženie príslušenstva Bluetooth",
+        "Prompt":"Viac sa dozviete v aplikácii {0}.",
+        "TipLink": "Aplikácia Lenovo Smart Share",
+        "Subtitle1": "1. Zapnite Bluetooth svojho príslušenstva",
+        "SubContent1": "Prepnite príslušenstvo do režimu párovania Bluetooth.",
+        "Subtitle2": "2. Dvakrát ho priložte k počítaču",
+        "SubContent2": "Dvakrát jemne priložte príslušenstvo k ľubovoľnej strane počítača, aby ste ho spárovali.",
+        "ListTitle": "Priložené zariadenia",
+        "ListConnectionPrompt":"Nejaké ďalšie príslušenstvo na spárovanie? Priložte ho.",
+        "MultipleDevicePrompts":"Viac zariadení v okolí.",
+        "MultipleDeviceTitles":"Ktoré zariadenie chcete spárovať?",
+        "DeviceNotFound":"Nevidíte svoje zariadenie?",
+        "UnpairPrompt":"Naozaj chcete zrušiť párovanie so zariadením {0}?",
+        "BluetoothAbnormality":"Ak chcete pokračovať, uistite sa, že je Bluetooth zapnutý.",
+        "UnpairingDevice":"Ruší sa párovanie zariadenia {0}",
+        "SomethingWrong":"Niečo sa pokazilo.",
+        "ClosePrompt":"Ste si istí, že chcete skončiť?",
+        "ClosePromptDescription":"Všetky spárované zariadenia zostanú spárované, zatiaľ čo čakajúce zariadenia sa zrušia."
+    },
+    "EnjoyWindow": {
+        "Title": "Párovanie je dokončené!",
+        "UnpairedTitle":"Párovanie zariadení dvojitým priložením",
+        "Content":"Ak chcete v budúcnosti pridať ďalšie zariadenia, uistite sa, že v počítači je zapnuté rozhranie Bluetooth a že príslušenstvo je v režime párovania. Potom ich stačí dvakrát priložiť k počítaču.",
+        "Content1":"Ak chcete v budúcnosti pridať ďalšie zariadenia, uistite sa, že v počítači je zapnuté rozhranie Bluetooth a že príslušenstvo je v režime párovania. Potom príslušenstvo stačí priložiť k počítaču.",
+        "CheckboxText":"Povoľte pre zariadenia párovanie priložením v budúcnosti."
+    },
+    "MatchingWindow": {
+        "Title": "Opätovným priložením spárujete",
+        "Title1": "Opätovným priložením potvrďte párovanie",
+        "Title2": "Ktoré zariadenie chcete spárovať?",
+        "PairCanceled":"Párovanie bolo zrušené.",
+        "SomeWrong":"Niečo sa pokazilo",
+        "PairingCompletionPrompt1":"Máte ďalšie príslušenstvo na spárovanie?{0}Dvakrát ho priložte.",
+        "PairingCompletionPrompt2":"Máte ďalšie príslušenstvo na spárovanie?{0}Priložte ho.",
+        "BottomTip1": "Ak sa nepokúšate spárovať príslušenstvo Bluetooth, párovanie priložením môžete vypnúť v aplikácii {0}.",
+        "BottomTip2": "Viac sa dozviete v aplikácii {0}.",
+        "BottomTipLink": "Aplikácia Lenovo Smart Share",
+        "DeviceScanningInProgress":"Identifikácia priloženého zariadenia",
+        "DeviceBTAbnormality":"Niečo sa pokazilo. Skontrolujte, či je rozhranie Bluetooth zapnuté, a skúste to znova.",
+        "ClosePrompt":"Naozaj chcete zatvoriť?",
+        "Selectable":"Voliteľné",
+        "NotSelectable":"Nie je voliteľné",
+        "PairFailed":"Párovanie sa nepodarilo. Skúste to znova.",
+        "BTAbnormality":"Skontrolujte, či je rozhranie Bluetooth zapnuté, a skúste to znova."
+    },
+    "Icon":{
+        "Close":"Zatvoriť",
+        "BluetoothGIF":"Animované pulzujúce logo Bluetooth naznačujúce prebiehajúce aktívne skenovanie alebo detekciu zariadenia.",
+        "InstructionalGIF":"Animácia jednotlivých krokov zobrazujúca postup: Zapnite Bluetooth príslušenstva a potom ho dvakrát priložte k počítaču, čím spustíte párovanie."
+    },
+    "DeviceType":{
+        "Settings":"Nastavenia",
+        "Devices":"Zariadenia",
+        "Mouse":"Myš",
+        "Headphone":"Slúchadlo"
+    },
+    "ScrollBar":{
+        "Up":"Hore",
+        "Down":"Dole",
+        "ScrollPosition":"Posúvať sa medzi pozíciami"
+    },
+    "Button":{
+        "Pair":"Párovať",
+        "Cancel":"Zrušiť",
+        "Unpair":"Zrušiť párovanie",
+        "TryAgain":"Skúste to znova",
+        "Finish":"Dokončiť",
+        "Refresh":"Obnoviť",
+        "QuitSmartShare":"Ukončiť funkciu Smart Share",
+        "Quit":"Ukončiť",
+        "GoBack":"Vrátiť sa späť",
+        "SmartShareSettings":"Nastavenia aplikácie Smart Share",
+        "Done":"Hotovo",
+        "OpenSmartShareApp":"Otvoriť aplikáciu Smart Share"
+    },
+    "PairTypeName":{
+        "DeviceScanningInProgress": "Identifikácia priloženého zariadenia…",
+        "NoDeviceFound":"Akékoľvek známe podrobnosti o zariadení",
+        "Canceling":"Ruší sa…",
+        "Cancelled":"Párovanie bolo zrušené.",
+        "Failed":"Párovanie so zariadením {0} zlyhalo",
+        "MatchingFailed": "Párovanie zlyhalo",
+        "Pairing":"Párovanie",
+        "Canceling2":"Zrušenie",
+        "Paired":"Spárované",
+        "Unpairing":"Zrušenie párovania",
+        "PairedSuccessfully":"Úspešne spárované!"
+    }
+}

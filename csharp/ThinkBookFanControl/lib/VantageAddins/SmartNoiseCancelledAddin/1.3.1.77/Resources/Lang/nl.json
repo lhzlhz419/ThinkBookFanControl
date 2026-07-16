@@ -1,0 +1,104 @@
+﻿{
+    "Titles": {
+        "SmartShare": "Smart Share"
+    },
+    "StartedWindow": {
+        "MainTitle":"We gaan uw accessoires koppelen met Smart Share",
+        "Content": "Verbind eenvoudig uw Bluetooth-accessoires (muis, hoofdtelefoon, enz.) door ermee tegen uw pc te tikken.",
+        "ContentGetStarted":"Verbind eenvoudig uw Bluetooth-accessoires (muis, hoofdtelefoon, enz.) door ermee tegen uw pc te tikken. Schakel Bluetooth in om aan de slag te gaan.",
+        "StartedButton1": "Aan de slag",
+        "StartedButton2": "Bluetooth inschakelen",
+        "DelayButton1": "Sluimeren",
+        "DelayButton2": "Later herinneren",
+        "DelayButton3": "Sluiten"
+    },
+    "TapToPairWindow": {
+        "MainTitle": "Tik nu tweemaal met uw Bluetooth-accessoire",
+        "Prompt":"Meer informatie vindt u in de {0}.",
+        "TipLink": "Lenovo Smart Share-app",
+        "Subtitle1": "1. Schakel de Bluetooth van uw accessoire in",
+        "SubContent1": "Zet uw accessoire in de Bluetooth-koppelingsmodus.",
+        "Subtitle2": "2. Tik er tweemaal mee tegen uw pc",
+        "SubContent2": "Raak met uw accessoire voorzichtig twee keer een zijkant van uw pc aan om dit te koppelen.",
+        "ListTitle": "Aangetikte apparaten",
+        "ListConnectionPrompt":"Zijn er nog andere accessoires om te koppelen? Tik er nu mee.",
+        "MultipleDevicePrompts":"Meerdere apparaten in de buurt.",
+        "MultipleDeviceTitles":"Welk apparaat wilt u koppelen?",
+        "DeviceNotFound":"Staat uw apparaat er niet bij?",
+        "UnpairPrompt":"Weet u zeker dat u de koppeling met {0} wilt verbreken?",
+        "BluetoothAbnormality":"Om door te gaan, moet u ervoor zorgen dat Bluetooth is ingeschakeld.",
+        "UnpairingDevice":"Koppeling met apparaat {0} verbreken",
+        "SomethingWrong":"Er is iets misgegaan.",
+        "ClosePrompt":"Weet u zeker dat u wilt stoppen?",
+        "ClosePromptDescription":"Alle gekoppelde apparaten blijven gekoppeld, terwijl apparaten in behandeling worden geannuleerd."
+    },
+    "EnjoyWindow": {
+        "Title": "Koppelen voltooid!",
+        "UnpairedTitle":"Apparaten koppelen door tweemaal te tikken",
+        "Content":"Als u in de toekomst meer apparaten wilt toevoegen, moet u ervoor zorgen dat Bluetooth is ingeschakeld op uw pc en dat uw accessoires in de koppelingsmodus staan. Tik er vervolgens twee keer mee tegen uw pc!",
+        "Content1":"Als u in de toekomst meer apparaten wilt toevoegen, moet u ervoor zorgen dat Bluetooth is ingeschakeld op uw pc en dat uw accessoires in de koppelingsmodus staan. Tik er vervolgens mee tegen uw pc!",
+        "CheckboxText":"Schakel tikken om apparaten te verbinden in voor in de toekomst."
+    },
+    "MatchingWindow": {
+        "Title": "Tik nogmaals om te koppelen",
+        "Title1": "Tik nogmaals om het koppelen te bevestigen",
+        "Title2": "Welk apparaat wilt u koppelen?",
+        "PairCanceled":"Koppeling geannuleerd.",
+        "SomeWrong":"Er is iets misgegaan",
+        "PairingCompletionPrompt1":"Wilt u andere accessoires koppelen?{0}Tik er nu tweemaal mee.",
+        "PairingCompletionPrompt2":"Wilt u andere accessoires koppelen?{0}Tik er nu mee.",
+        "BottomTip1": "Als u niet probeert een Bluetooth-accessoire te koppelen, kunt u Tikken om te koppelen uitschakelen in de {0}.",
+        "BottomTip2": "Meer informatie vindt u in de {0}.",
+        "BottomTipLink": "Lenovo Smart Share-app",
+        "DeviceScanningInProgress":"Aangetikt apparaat identificeren",
+        "DeviceBTAbnormality":"Er is iets misgegaan. Zorg ervoor dat Bluetooth is ingeschakeld en probeer het opnieuw.",
+        "ClosePrompt":"Weet u zeker dat u wilt sluiten?",
+        "Selectable":"Selecteerbaar",
+        "NotSelectable":"Niet selecteerbaar",
+        "PairFailed":"Koppelen mislukt. Probeer het opnieuw.",
+        "BTAbnormality":"Zorg ervoor dat Bluetooth is ingeschakeld en probeer het opnieuw."
+    },
+    "Icon":{
+        "Close":"Sluiten",
+        "BluetoothGIF":"Het geanimeerde Bluetooth-logo pulseert om aan te geven dat er actieve apparaatdetectie of -scanning aan de gang is.",
+        "InstructionalGIF":"Stapsgewijze animatie met: \"Schakel de Bluetooth van uw accessoire in en Tik er tweemaal mee tegen uw pc\" om het koppelen te starten."
+    },
+    "DeviceType":{
+        "Settings":"Instellingen",
+        "Devices":"Apparaten",
+        "Mouse":"Muis",
+        "Headphone":"Hoofdtelefoon"
+    },
+    "ScrollBar":{
+        "Up":"Omhoog",
+        "Down":"Omlaag",
+        "ScrollPosition":"Scrolpositie"
+    },
+    "Button":{
+        "Pair":"Koppelen",
+        "Cancel":"Annuleren",
+        "Unpair":"Ontkoppelen",
+        "TryAgain":"Probeer het opnieuw",
+        "Finish":"Voltooien",
+        "Refresh":"Vernieuwen",
+        "QuitSmartShare":"Smart Share afsluiten",
+        "Quit":"Afsluiten",
+        "GoBack":"Ga terug",
+        "SmartShareSettings":"Smart Share-instellingen",
+        "Done":"Gereed",
+        "OpenSmartShareApp":"Smart Share-app openen"
+    },
+    "PairTypeName":{
+        "DeviceScanningInProgress": "Aangetikt apparaat identificeren...",
+        "NoDeviceFound":"Gegevens van alle bekende apparaten",
+        "Canceling":"Annuleren...",
+        "Cancelled":"Koppelen geannuleerd.",
+        "Failed":"Koppelen van {0} mislukt",
+        "MatchingFailed": "Koppelen mislukt",
+        "Pairing":"Koppelen",
+        "Canceling2":"Annuleren",
+        "Paired":"Gekoppeld",
+        "Unpairing":"Ontkoppelen",
+        "PairedSuccessfully":"Koppelen geslaagd!"
+    }
+}

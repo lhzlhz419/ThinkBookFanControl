@@ -1,0 +1,208 @@
+{
+	"colormachine": [
+		{
+			"familyname": [ "Yoga Slim 7 14APU8" ],
+			"mtcode": [ "83AA" ],
+			"panelid": [ "LEN8AAE" ],
+			"color": "xrite"
+		},
+		{
+			"familyname": [ "ThinkBook 16p G4 IRH" ],
+			"mtcode": [ "21J8" ],
+			"panelid": [ "AUOF1A7", "CSO1626" ],
+			"color": "xrite"
+		},
+		{
+			"familyname": [ "ThinkBook Plus G4 IRU" ],
+			"mtcode": [ "21JJ" ],
+			"panelid": [ "LEN8391" ],
+			"color": "xrite"
+		},
+		{
+			"familyname": [ "ThinkBook 16p G5 IRX" ],
+			"mtcode": [ "21N5" ],
+			"panelid": [ "AUOF1A7", "CSO1626" ],
+			"color": "xrite"
+		},
+		{
+			"familyname": [ "Yoga Pro 7 14ASP9" ],
+			"mtcode": [ "83HN" ],
+			"panelid": [ "LEN8AC1" ],
+			"color": "xrite"
+		},
+		{
+			"familyname": [ "Yoga Pro 7 14IMH9" ],
+			"mtcode": [ "83E2" ],
+			"panelid": [ "LEN8AC1" ],
+			"color": "xrite"
+		},
+		{
+			"familyname": [ "Yoga Slim 7 15ILL9" ],
+			"mtcode": [ "83HM" ],
+			"panelid": [ "LEN8B11" ],
+			"color": "xrite"
+		},
+		{
+			"familyname": [ "Yoga Pro 9 16IAH10" ],
+			"mtcode": [ "83L0" ],
+			"panelid": [ "SDC4205", "SDC420C", "SDC4218" ],
+			"color": "xrite"
+		},
+		{
+			"familyname": [ "Yoga Pro 7 14AKP10", "Yoga Pro 7 14ASP10", "Yoga Pro 7 14IAH10" ],
+			"mtcode": [ "83KG", "83LX", "83KF" ],
+			"panelid": [ "LEN8AC2", "LEN8AC7" ],
+			"color": "xrite"
+		},
+		{
+			"familyname": [ "Yoga Slim 7 14ILL10", "Slim 7 14ILL10", "Yoga Slim 7 14AKP10" ],
+			"mtcode": [ "83JX", "83MC", "83JY", "83NM" ],
+			"panelid": [ "LEN8AC3", "LEN88AE" ],
+			"color": "xrite"
+		},
+		{
+			"familyname": [ "IdeaPad Pro 5 14IAH10", "IdeaPad Pro 5 14AKP10", "IdeaPad Pro 5 14ASP10" ],
+			"mtcode": [ "83JK", "83JL", "83LR" ],
+			"panelid": [ "LEN8AC3", "LEN8A10" ],
+			"color": "xrite"
+		},
+		{
+			"familyname": [ "IdeaPad Pro 5 16AKP10", "IdeaPad Pro 5 16ASP10", "IdeaPad Pro 5 16IAH10" ],
+			"mtcode": [ "83JN", "83LS", "83JM" ],
+			"panelid": [ "LEN8BAD" ],
+			"color": "xrite"
+		},
+		{
+			"familyname": [ "Yoga Slim 9 14ILL10" ],
+			"mtcode": [ "83CX" ],
+			"panelid": [ "LEN8BA5" ],
+			"color": "xrite"
+		},
+		{
+			"familyname": [ "ThinkBook 16p G6 IAX" ],
+			"mtcode": [ "21R0" ],
+			"panelid": [ "SDC420B", "SDC420A", "AUO27B5", "CSW165B", "CSW167A", "CMN1678", "BOE0DD9", "BOE0D20", "CSW1659", "TMA2039", "CSW168A", "CMN1682", "BOE380C" ],
+			"color": "xrite"
+		},
+		{
+			"familyname": [ "ThinkBook 16p G6 ADR", "ThinkBook 16p G6 AFR" ],
+			"mtcode": [ "21U0", "21U1" ],
+			"panelid": [ "BOE0D20", "CSW1659", "TMA2039" ],
+			"color": "xrite"
+		},
+		{
+			"familyname": [ "Yoga Pro 7 15IPH11", "Yoga Pro 7 15N1V11", "Yoga Pro 7 15N1X11", "Lenovo Pro 7 15N1X11" ],
+			"mtcode": [ "83SN", "83ST", "83SR", "83SS" ],
+			"panelid": [ "LEN8A14", "LEN8B11", "EDO3115", "EDO3015", "SDC4231", "LEN8A17" ],
+			"color": "xrite"
+		},
+		{
+			"familyname": [ "IdeaPad Pro 5 14AGP11", "Yoga 9 2-in-1 14IPH11", "IdeaPad Pro 5 14IPH11", "IdeaPad Slim 5 14AGP11", "IdeaPad Slim 5 14AHP11", "IdeaPad Slim 5 14IPH11" ],
+			"mtcode": [ "83SG", "83SE", "83SH", "83S1", "83S3", "83S5" ],
+			"panelid": [ "LEN8AD6", "LEN8A10" ],
+			"color": "xrite"
+		},
+		{
+			"familyname": [ "IdeaPad Pro 5 16IPH11", "IdeaPad Pro 5 16AGP11", "IdeaPad Slim 5 16AGP11", "IdeaPad Slim 5 16AHP11", "IdeaPad Slim 5 16IPH11" ],
+			"mtcode": [ "83SK", "83SJ", "83S2", "83S4", "83S6" ],
+			"panelid": [ "LEN8BAF" ],
+			"color": "xrite"
+		},
+		{
+			"familyname": [ "Yoga Slim 7 14IPH11", "Lenovo Slim 7 14IPH11", "Yoga Slim 7 14AGP11" ],
+			"mtcode": [ "83QM", "83QN", "83QS", "83QU" ],
+			"panelid": [ "LEN88AE", "LEN8AD6", "LEN8A10" ],
+			"color": "xrite"
+		},
+		{
+			"familyname": [ "Yoga Slim 7 14IPH11", "Lenovo Slim 7 14IPH11", "Yoga Slim 7 14AGP11" ],
+			"mtcode": [ "83TD", "83TC" ],
+			"panelid": [ "LEN8AD6", "LEN8A10" ],
+			"color": "xrite"
+		},
+		{
+			"familyname": [ "Yoga 7 2-in-1 14IPH11", "Yoga 7 2-in-1 14AGP11" ],
+			"mtcode": [ "83QM", "83QN", "83TC", "83TD", "83QS" ],
+			"panelid": [ "LEN8AD6", "LEN8A10" ],
+			"color": "xrite"
+		},
+		{
+			"familyname": [ "Yoga 7 2-in-1 16IPH11", "Yoga 7 2-in-1 16AGP11" ],
+			"mtcode": [ "83TE", "83TF" ],
+			"panelid": [ "LEN8BAF" ],
+			"color": "xrite"
+		},
+		{
+			"familyname": [ "ThinkBook 14 G8+ IPH", "ZhaoYang X7-14 IPH", "Zhaoyang Yue Plus 14 IPH", "ThinkBook 14 G8+ AHP", "ThinkBook 14 G8+ AGP" ],
+			"mtcode": [ "21VG", "83UA", "21VR", "21VB" ],
+			"panelid": [ "LEN8AD7", "LEN8AD8", "LEN8AD9", "CSW146D", "TMA2099", "BOE0DC7" ],
+			"color": "xrite"
+		},
+		{
+			"familyname": [ "ThinkBook 16 G8+ IPH", "ThinkBook 16 G8+ IPD", "ZhaoYang X7-16 IPH", "ZhaoYang Yue Plus 16 IPH", "ThinkBook 16 G8+ AHP", "ThinkBook 16 G8+ AGP" ],
+			"mtcode": [ "21VH", "21VJ", "83UB", "21VS", "21VF" ],
+			"panelid": [ "CSW167A", "CMN1678", "BOE0DD9", "LEN8BB1", "LEN8BB2", "LEN8BB3", "CSW168A", "CMN1682", "BOE380C" ],
+			"color": "xrite"
+		},
+		{
+			"familyname": [ "Yoga Pro 9 16IPH11", "Lenovo Pro 9 16IPH11", "Pro 9 16IPH11" ],
+			"mtcode": [ "83SF", "83U9" ],
+			"panelid": [ "BOE3805", "SDC4232", "SDC423D" ],
+			"color": "xrite"
+		},
+		{
+			"familyname": [ "ThinkBook 16p G7 IAR" ],
+			"mtcode": [ "21YG" ],
+			"panelid": [ "SDC420B", "SDC420A", "AUO27B5", "CSW165B", "CSW167A", "CMN1678", "BOE0DD9", "BOE0D20", "CSW1659", "TMA2039", "CSW168A", "CMN1682", "BOE380C" ],
+			"color": "xrite"
+		},
+		{
+			"familyname": [ "ThinkBook Plus G7 IPH", "ThinkBook Plus G7 Auto Twist" ],
+			"mtcode": [ "22A9" ],
+			"panelid": [ "LEN8A18" ],
+			"color": "xrite"
+		},
+		{
+			"familyname": [ "Yoga 9 2-in-1 14IPH11" ],
+			"mtcode": [ "83SE" ],
+			"panelid": [ "LEN8A10" ],
+			"color": "xrite"
+		},
+		{
+			"familyname": [ "IdeaPad Slim 5 14IMH10" ],
+			"mtcode": [ "83V6" ],
+			"panelid": [ "LEN8AC3" ],
+			"color": "xrite"
+		},
+		{
+			"familyname": [ "IdeaPad Slim 5 16IMH10" ],
+			"mtcode": [ "83V7" ],
+			"panelid": [ "LEN8BAD" ],
+			"color": "xrite"
+		},
+		{
+			"familyname": [ "Yoga Pro 7 15ASH11", "YOGA Pro 15 ASH11" ],
+			"mtcode": [ "83W5" ],
+			"panelid": [ "LEN8A14", "LEN8B11", "EDO3115", "SDC4231", "EDO3015" ],
+			"color": "xrite"
+		},
+		{
+			"familyname": [ "Yoga Slim 7 14ILL11", "Lenovo Slim 7 14ILL11" ],
+			"mtcode": [ "83R0", "83QW", "83QV" ],
+			"panelid": [ "LEN88AE", "LEN8AD6", "LEN8A10" ],
+			"color": "xrite"
+		},
+		{
+			"familyname": [ "IdeaPad Slim 5 Ultra 14ILL11", "XiaoXin Ultra 14 ILL11" ],
+			"mtcode": [ "83VX" ],
+			"panelid": [ "LEN8A10" ],
+			"color": "xrite"
+		},
+		{
+			"familyname": [ "ThinkBook 14x ILL", "ZhaoYang X5 Air 14 ILL", "ZhaoYang Yue Air 14 ILL", "ThinkBook X G3 ILL" ],
+			"mtcode": [ "22BG", "83VY", "22BH", "22BS" ],
+			"panelid": [ "LEN8ADA", "LEN8ADB" ],
+			"color": "xrite"
+		}
+	]
+}

@@ -22,8 +22,8 @@ Outputs:
 - `dist\ThinkBookFanControl-win-x64-net9-runtime`
   Smaller build. Use this when the target computer already has .NET 9 Desktop Runtime.
 
-When available, the build script copies the latest installed versions of these
-Lenovo Vantage add-ins into `VantageAddins` in each build or publish directory:
+The build script copies the checked-in files for these Lenovo Vantage add-ins
+into `VantageAddins` in each build or publish directory:
 
 - `SmartInteractAddin`
 - `SmartColorAddin`
@@ -31,18 +31,16 @@ Lenovo Vantage add-ins into `VantageAddins` in each build or publish directory:
 - `SmartNoiseCancelledAddin`
 - `LenovoProductivitySystemAddin` (BIOS advanced-toolkit native interface)
 
-Lenovo-authored DLLs used by these rules are checked into
-`csharp\ThinkBookFanControl\lib\VantageAddins` and are always copied first.
-This makes the Lenovo binary inputs available when building on a machine that
-does not have the matching Vantage add-ins installed. Lenovo Vantage and
-Lenovo PC Manager are not required to compile or publish the project.
+All files selected by the former installed-add-in copy rules are checked into
+`csharp\ThinkBookFanControl\lib\VantageAddins`, including required non-Lenovo
+runtime dependencies, configuration, resources, and license notices. Builds do
+not read `C:\ProgramData\Lenovo\Vantage\Addins`, so Lenovo Vantage and Lenovo PC
+Manager are not required to compile or publish the project.
 
 Only the x64 files and feature-specific dependencies used by the app are
-copied. ARM64/x86 binaries, localization resources, and unrelated Multimedia
-components are omitted. When Vantage is installed, required non-Lenovo native
-dependencies, config files, resources, and license notices are copied from the
-local installation and remain ignored by Git. At runtime the app searches the
-local copy first, then the installed Vantage add-in directory.
+included. ARM64/x86 binaries, localization resources, and unrelated Multimedia
+components are omitted. At runtime the app searches the bundled copy first,
+then the installed Vantage add-in directory.
 Bundling add-in files does not replace the Lenovo services, drivers, or audio
 components used by those add-ins.
 

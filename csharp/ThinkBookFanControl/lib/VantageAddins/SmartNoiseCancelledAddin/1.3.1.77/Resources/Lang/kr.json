@@ -1,0 +1,104 @@
+﻿{
+    "Titles": {
+        "SmartShare": "Smart Share"
+    },
+    "StartedWindow": {
+        "MainTitle":"Smart Share를 사용하여 액세서리를 페어링해 봅시다",
+        "Content": "Bluetooth 액세서리(마우스, 헤드폰 등)를 PC에 탭하여 쉽게 연결할 수 있습니다.",
+        "ContentGetStarted":"Bluetooth 액세서리(마우스, 헤드폰 등)를 PC에 탭하여 쉽게 연결할 수 있습니다. Bluetooth를 활성화하여 시작하세요.",
+        "StartedButton1": "시작",
+        "StartedButton2": "Bluetooth 사용",
+        "DelayButton1": "스누즈",
+        "DelayButton2": "나중에 알림",
+        "DelayButton3": "닫기"
+    },
+    "TapToPairWindow": {
+        "MainTitle": "지금 Bluetooth 액세서리를 두 번 탭하세요",
+        "Prompt":"{0}에서 자세히 알아보십시오.",
+        "TipLink": "Lenovo Smart Share 앱",
+        "Subtitle1": "1. 액세서리의 Bluetooth를 켭니다",
+        "SubContent1": "액세서리를 Bluetooth 페어링 모드로 전환합니다.",
+        "Subtitle2": "2. 액세서리를 PC에 두 번 탭하세요",
+        "SubContent2": "PC의 양 면 중 하나를 두 번 살짝 터치해 페어링해 주세요.",
+        "ListTitle": "탭하여 연결된 장치",
+        "ListConnectionPrompt":"페어링할 다른 액세서리가 있습니까? 지금 탭하십시오.",
+        "MultipleDevicePrompts":"근처에 여러 장치가 있습니다.",
+        "MultipleDeviceTitles":"어떤 장치를 페어링하시겠습니까?",
+        "DeviceNotFound":"장치가 보이지 않습니까?",
+        "UnpairPrompt":"{0} 페어링을 해제하시겠습니까?",
+        "BluetoothAbnormality":"계속하려면 Bluetooth가 켜져 있는지 확인하십시오.",
+        "UnpairingDevice":"장치 {0} 페어링 해제 중",
+        "SomethingWrong":"문제가 발생했습니다.",
+        "ClosePrompt":"정말로 종료하시겠습니까?",
+        "ClosePromptDescription":"페어링된 모든 장치는 페어링된 상태로 유지되며 보류 중인 장치는 취소됩니다."
+    },
+    "EnjoyWindow": {
+        "Title": "페어링 완료!",
+        "UnpairedTitle":"두 번 탭하여 장치 페어링",
+        "Content":"나중에 더 많은 장치를 추가하려면 PC에 Bluetooth가 켜져 있고 액세서리가 페어링 모드에 있는지 확인하십시오. 그런 다음 장치를 PC에 두 번 탭해 주세요!",
+        "Content1":"나중에 더 많은 장치를 추가하려면 PC에 Bluetooth가 켜져 있고 액세서리가 페어링 모드에 있는지 확인하십시오. 그런 다음 장치를 PC에 가볍게 탭하기만 하면 됩니다!",
+        "CheckboxText":"향후 장치에 대해 탭하여 페어링 기능을 사용합니다."
+    },
+    "MatchingWindow": {
+        "Title": "다시 탭하여 페어링",
+        "Title1": "다시 탭하여 페어링을 확인합니다.",
+        "Title2": "어떤 장치를 페어링하시겠습니까?",
+        "PairCanceled":"페어링이 취소되었습니다.",
+        "SomeWrong":"문제가 발생했습니다",
+        "PairingCompletionPrompt1":"다른 액세서리를 페어링하시겠습니까?{0}지금 두 번 탭하세요.",
+        "PairingCompletionPrompt2":"다른 액세서리를 페어링하시겠습니까?{0}지금 탭하세요.",
+        "BottomTip1": "Bluetooth 액세서리를 페어링하지 않는 경우 {0}에서 탭하여 페어링 기능을 사용 중지할 수 있습니다.",
+        "BottomTip2": "{0}에서 자세히 알아보십시오.",
+        "BottomTipLink": "Lenovo Smart Share 앱",
+        "DeviceScanningInProgress":"탭하여 연결된 장치 식별",
+        "DeviceBTAbnormality":"문제가 발생했습니다. Bluetooth가 켜져 있는지 확인하고 다시 시도하십시오.",
+        "ClosePrompt":"정말로 닫으시겠습니까?",
+        "Selectable":"선택 가능",
+        "NotSelectable":"선택 불가",
+        "PairFailed":"페어링에 실패했습니다. 다시 시도하십시오.",
+        "BTAbnormality":"Bluetooth가 켜져 있는지 확인하고 다시 시도하십시오."
+    },
+    "Icon":{
+        "Close":"닫기",
+        "BluetoothGIF":"활성 장치 스캔 또는 감지가 진행 중임을 나타내기 위해 움직이는 Bluetooth 로고가 깜박입니다.",
+        "InstructionalGIF":"단계별 애니메이션: \"액세서리의 Bluetooth를 켠 후 PC에 두 번 탭\"하여 페어링을 시작하세요."
+    },
+    "DeviceType":{
+        "Settings":"설정",
+        "Devices":"장치",
+        "Mouse":"마우스",
+        "Headphone":"헤드폰"
+    },
+    "ScrollBar":{
+        "Up":"위",
+        "Down":"아래",
+        "ScrollPosition":"스크롤 위치"
+    },
+    "Button":{
+        "Pair":"페어링",
+        "Cancel":"취소",
+        "Unpair":"페어링 해제",
+        "TryAgain":"다시 시도",
+        "Finish":"마침",
+        "Refresh":"새로 고침",
+        "QuitSmartShare":"Smart Share 종료",
+        "Quit":"종료",
+        "GoBack":"뒤로 이동",
+        "SmartShareSettings":"Smart Share 설정",
+        "Done":"완료",
+        "OpenSmartShareApp":"Smart Share 앱 열기"
+    },
+    "PairTypeName":{
+        "DeviceScanningInProgress": "탭하여 연결된 장치 식별 중…",
+        "NoDeviceFound":"식별된 모든 장치 세부 정보",
+        "Canceling":"취소 중…",
+        "Cancelled":"페어링이 취소되었습니다.",
+        "Failed":"{0} 페어링 실패",
+        "MatchingFailed": "페어링 실패",
+        "Pairing":"페어링",
+        "Canceling2":"취소 중",
+        "Paired":"페어링됨",
+        "Unpairing":"페어링 해제 중",
+        "PairedSuccessfully":"페어링 완료!"
+    }
+}

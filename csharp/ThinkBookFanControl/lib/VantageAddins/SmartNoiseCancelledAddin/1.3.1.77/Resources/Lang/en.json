@@ -1,0 +1,104 @@
+{
+    "Titles": {
+        "SmartShare": "Smart Share"
+    },
+    "StartedWindow": {
+        "MainTitle":"Let’s pair your accessories using Smart Share",
+        "Content": "Easily connect your Bluetooth accessories (mouse, headphones, etc.) by tapping them to your PC.",
+        "ContentGetStarted":"Easily connect your Bluetooth accessories (mouse, headphones, etc.) by tapping them to your PC. Enable Bluetooth to get started.",
+        "StartedButton1": "Get started",
+        "StartedButton2": "Enable Bluetooth",
+        "DelayButton1": "Snooze",
+        "DelayButton2": "Remind me later",
+        "DelayButton3": "Dismiss"
+    },
+    "TapToPairWindow": {
+        "MainTitle": "Double-tap your Bluetooth accessories now",
+        "Prompt":"Learn more in the {0}.",
+        "TipLink": "Lenovo Smart Share app",
+        "Subtitle1": "1. Turn on your accessory’s Bluetooth",
+        "SubContent1": "Put your accessory in Bluetooth pairing mode.",
+        "Subtitle2": "2. Double-tap it to your PC",
+        "SubContent2": "Gently touch your accessory twice to either side of your PC to pair.",
+        "ListTitle": "Tapped Device(s)",
+        "ListConnectionPrompt":"Any other accessories to pair? Tap them now.",
+        "MultipleDevicePrompts":"Multiple devices nearby.",
+        "MultipleDeviceTitles":"Which device do you want to pair?",
+        "DeviceNotFound":"Don’t see your device?",
+        "UnpairPrompt":"Are you sure you want to unpair {0}?",
+        "BluetoothAbnormality":"To continue, please ensure that your Bluetooth is on.",
+        "UnpairingDevice":"Unpairing device {0}",
+        "SomethingWrong":"Something went wrong.",
+        "ClosePrompt":"Are you sure you want to quit?",
+        "ClosePromptDescription":"Any paired devices will remain paired while pending devices will cancel."
+    },
+    "EnjoyWindow": {
+        "Title": "Pairing complete!",
+        "UnpairedTitle":"Pair devices with a double tap",
+        "Content":"To add more devices in the future, ensure that your PC has Bluetooth turned on and that your accessories are in pairing mode. Then, simply double tap them to your PC!",
+        "Content1":"To add more devices in the future, ensure that your PC has Bluetooth turned on and that your accessories are in pairing mode. Then, simply tap them to your PC!",
+        "CheckboxText":"Enable tap to pair for devices in the future."
+    },
+    "MatchingWindow": {
+        "Title": "Tap again to pair",
+        "Title1": "Tap again to confirm pairing",
+        "Title2": "Which device do you want to pair?",
+        "PairCanceled":"Pair canceled.",
+        "SomeWrong":"Something went wrong",
+        "PairingCompletionPrompt1":"Any other accessories to pair?{0}Double-tap them now.",
+        "PairingCompletionPrompt2":"Any other accessories to pair?{0}Tap them now.",
+        "BottomTip1": "If you are not attempting to pair a Bluetooth accessory, you can disable Tap to Pair in the {0}.",
+        "BottomTip2": "Learn more in the {0}.",
+        "BottomTipLink": "Lenovo Smart Share app",
+        "DeviceScanningInProgress":"Identifying tapped device",
+        "DeviceBTAbnormality":"Something went wrong. Please ensure your Bluetooth is on and try again.",
+        "ClosePrompt":"Are you sure you want to close?",
+        "Selectable":"Selectable",
+        "NotSelectable":"Not Selectable",
+        "PairFailed":"The pair failed. Please try again.",
+        "BTAbnormality":"Please ensure your Bluetooth is on and try again."
+    },
+    "Icon":{
+        "Close":"Close",
+        "BluetoothGIF":"Animated Bluetooth logo pulsing to indicate active device scanning or detection in progress.",
+        "InstructionalGIF":"Step-by-step animation showing: 'Turn on your accessory’s Bluetooth and then Double-tap it to your PC' to initiate pairing."
+    },
+    "DeviceType":{
+        "Settings":"Settings",
+        "Devices":"Devices",
+        "Mouse":"Mouse",
+        "Headphone":"Headphone"
+    },
+    "ScrollBar":{
+        "Up":"Up",
+        "Down":"Down",
+        "ScrollPosition":"Scroll Position"
+    },
+    "Button":{
+        "Pair":"Pair",
+        "Cancel":"Cancel",
+        "Unpair":"Unpair",
+        "TryAgain":"Try again",
+        "Finish":"Finish",
+        "Refresh":"Refresh",
+        "QuitSmartShare":"Quit Smart Share",
+        "Quit":"Quit",
+        "GoBack":"Go back",
+        "SmartShareSettings":"Smart Share Settings",
+        "Done":"Done",
+        "OpenSmartShareApp":"Open Smart Share app"
+    },
+    "PairTypeName":{
+        "DeviceScanningInProgress": "Identifying tapped device...",
+        "NoDeviceFound":"Any known device details",
+        "Canceling":"Canceling...",
+        "Cancelled":"Paring canceled.",
+        "Failed":"Failed to pair {0}",
+        "MatchingFailed": "Failed to pair",
+        "Pairing":"Pairing",
+        "Canceling2":"Canceling",
+        "Paired":"Paired",
+        "Unpairing":"Unpairing",
+        "PairedSuccessfully":"paired successfully!"
+    }
+}

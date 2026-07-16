@@ -1,0 +1,104 @@
+﻿{
+    "Titles": {
+        "SmartShare": "Smart Share"
+    },
+    "StartedWindow": {
+        "MainTitle":"Vamos emparelhar os acessórios utilizando o Smart Share",
+        "Content": "Ligue facilmente os seus acessórios Bluetooth (rato, auscultadores, etc.) encostando-os ao seu PC.",
+        "ContentGetStarted":"Ligue facilmente os seus acessórios Bluetooth (rato, auscultadores, etc.) encostando-os ao seu PC. Ative o Bluetooth para começar.",
+        "StartedButton1": "Começar",
+        "StartedButton2": "Ativar Bluetooth",
+        "DelayButton1": "Suspender temporariamente",
+        "DelayButton2": "Lembrar mais tarde",
+        "DelayButton3": "Dispensar"
+    },
+    "TapToPairWindow": {
+        "MainTitle": "Encoste os acessórios Bluetooth duas vezes agora",
+        "Prompt":"Saiba mais na {0}.",
+        "TipLink": "aplicação Lenovo Smart Share",
+        "Subtitle1": "1. Ative o Bluetooth do acessório",
+        "SubContent1": "Coloque o acessório no modo de emparelhamento Bluetooth.",
+        "Subtitle2": "2. Encoste-o duas vezes ao PC",
+        "SubContent2": "Encoste suavemente o acessório duas vezes em qualquer um dos lados do PC para o emparelhar.",
+        "ListTitle": "Dispositivos emparelhados por toque",
+        "ListConnectionPrompt":"Pretende emparelhar algum outro acessório? Encoste-o agora.",
+        "MultipleDevicePrompts":"Vários dispositivos nas proximidades.",
+        "MultipleDeviceTitles":"Que dispositivo pretende emparelhar?",
+        "DeviceNotFound":"Não vê o dispositivo?",
+        "UnpairPrompt":"Tem a certeza de que pretende desemparelhar {0}?",
+        "BluetoothAbnormality":"Para continuar, certifique-se de que o Bluetooth está ligado.",
+        "UnpairingDevice":"A desemparelhar o dispositivo {0}",
+        "SomethingWrong":"Ocorreu um problema.",
+        "ClosePrompt":"Tem a certeza de que pretende sair?",
+        "ClosePromptDescription":"Todos os dispositivos emparelhados permanecerão emparelhados enquanto os dispositivos pendentes serão cancelados."
+    },
+    "EnjoyWindow": {
+        "Title": "Emparelhamento concluído!",
+        "UnpairedTitle":"Emparelhar dispositivos com duplo toque",
+        "Content":"Para adicionar mais dispositivos no futuro, certifique-se de que o seu PC tem o Bluetooth ligado e que os seus acessórios estão no modo de emparelhamento. Em seguida, encoste-os duas vezes ao PC.",
+        "Content1":"Para adicionar mais dispositivos no futuro, certifique-se de que o seu PC tem o Bluetooth ligado e que os seus acessórios estão no modo de emparelhamento. Em seguida, basta encostá-los ao seu PC.",
+        "CheckboxText":"Ative emparelhamento por toque para dispositivos futuros."
+    },
+    "MatchingWindow": {
+        "Title": "Toque novamente para emparelhar",
+        "Title1": "Toque novamente para confirmar o emparelhamento",
+        "Title2": "Que dispositivo pretende emparelhar?",
+        "PairCanceled":"Emparelhamento cancelado.",
+        "SomeWrong":"Algo correu mal",
+        "PairingCompletionPrompt1":"Pretende emparelhar algum outro acessório?{0}Encoste-os duas vezes agora.",
+        "PairingCompletionPrompt2":"Pretende emparelhar algum outro acessório?{0}Encoste-os agora.",
+        "BottomTip1": "Se não estiver a tentar emparelhar um acessório Bluetooth, pode desativar a função Tocar para emparelhar em {0}.",
+        "BottomTip2": "Saiba mais sobre {0}.",
+        "BottomTipLink": "Aplicação Lenovo Smart Share",
+        "DeviceScanningInProgress":"A identificar o dispositivo emparelhado por toque",
+        "DeviceBTAbnormality":"Ocorreu um problema. Certifique-se de que o Bluetooth está ligado e tente novamente.",
+        "ClosePrompt":"Tem a certeza de que pretende fechar?",
+        "Selectable":"Selecionável",
+        "NotSelectable":"Não selecionável",
+        "PairFailed":"O emparelhamento falhou. Tente novamente.",
+        "BTAbnormality":"Certifique-se de que o Bluetooth está ligado e tente novamente."
+    },
+    "Icon":{
+        "Close":"Fechar",
+        "BluetoothGIF":"Logótipo Bluetooth animado a pulsar para indicar a verificação ativa do dispositivo ou a deteção em curso.",
+        "InstructionalGIF":"Animação passo a passo que mostra: “Ligue o Bluetooth do acessório” e, em seguida, “Encoste-o duas vezes ao PC” para iniciar o emparelhamento."
+    },
+    "DeviceType":{
+        "Settings":"Definições",
+        "Devices":"Dispositivos",
+        "Mouse":"Rato",
+        "Headphone":"Auscultadores"
+    },
+    "ScrollBar":{
+        "Up":"Para cima",
+        "Down":"Para baixo",
+        "ScrollPosition":"Posição de deslocamento"
+    },
+    "Button":{
+        "Pair":"Emparelhar",
+        "Cancel":"Cancelar",
+        "Unpair":"Desemparelhar",
+        "TryAgain":"Tentar novamente",
+        "Finish":"Concluir",
+        "Refresh":"Atualizar",
+        "QuitSmartShare":"Sair do Smart Share",
+        "Quit":"Sair",
+        "GoBack":"Retroceder",
+        "SmartShareSettings":"Definições Smart Share",
+        "Done":"Concluído",
+        "OpenSmartShareApp":"Abrir a aplicação Smart Share"
+    },
+    "PairTypeName":{
+        "DeviceScanningInProgress": "A identificar o dispositivo emparelhado por toque...",
+        "NoDeviceFound":"Quaisquer detalhes conhecidos do dispositivo",
+        "Canceling":"A cancelar...",
+        "Cancelled":"Emparelhamento cancelado.",
+        "Failed":"Falha ao emparelhar {0}",
+        "MatchingFailed": "Falha ao emparelhar",
+        "Pairing":"A emparelhar",
+        "Canceling2":"A cancelar",
+        "Paired":"Emparelhado",
+        "Unpairing":"A desemparelhar",
+        "PairedSuccessfully":"emparelhamento com êxito!"
+    }
+}

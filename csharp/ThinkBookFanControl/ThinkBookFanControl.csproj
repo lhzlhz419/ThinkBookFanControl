@@ -22,7 +22,7 @@
       <TargetPath>LenovoPcManager\WrapPlugin.dll</TargetPath>
     </Content>
 
-    <Content Include="lib\VantageAddins\**\*.dll">
+    <Content Include="lib\VantageAddins\**\*">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <TargetPath>VantageAddins\%(RecursiveDir)%(Filename)%(Extension)</TargetPath>
     </Content>

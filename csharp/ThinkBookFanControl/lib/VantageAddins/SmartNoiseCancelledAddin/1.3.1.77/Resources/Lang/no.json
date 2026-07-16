@@ -1,0 +1,104 @@
+﻿{
+    "Titles": {
+        "SmartShare": "Smart Share"
+    },
+    "StartedWindow": {
+        "MainTitle":"La oss koble tilbehøret ditt sammen med Smart Share",
+        "Content": "Du kan enkelt koble til Bluetooth-tilbehør (mus, hodetelefoner og så videre) ved å berøre PC-en med dem.",
+        "ContentGetStarted":"Du kan enkelt koble til Bluetooth-tilbehør (mus, hodetelefoner og så videre) ved å berøre PC-en med dem. Aktiver Bluetooth for å komme i gang.",
+        "StartedButton1": "Kom i gang",
+        "StartedButton2": "Aktiver Bluetooth",
+        "DelayButton1": "Slumre",
+        "DelayButton2": "Minn meg på det senere",
+        "DelayButton3": "Lukk"
+    },
+    "TapToPairWindow": {
+        "MainTitle": "Berør to ganger med Bluetooth-tilbehøret nå",
+        "Prompt":"Finn ut mer i {0}.",
+        "TipLink": "Lenovo Smart Share-appen",
+        "Subtitle1": "1. Slå på tilbehørets Bluetooth",
+        "SubContent1": "Sett tilbehøret i Bluetooth-sammenkoblingsmodus.",
+        "Subtitle2": "2. Berør PC-en to ganger med det",
+        "SubContent2": "Berør tilbehøret forsiktig en av sidene av PC-en for å koble sammen.",
+        "ListTitle": "Berørte enheter",
+        "ListConnectionPrompt":"Vil du koble sammen noe annet? Berør med dem nå.",
+        "MultipleDevicePrompts":"Flere enheter i nærheten.",
+        "MultipleDeviceTitles":"Hvilken enhet vil du koble sammen?",
+        "DeviceNotFound":"Ser du ikke enheten din?",
+        "UnpairPrompt":"Er du sikker på at du vil oppheve sammenkoblingen med {0}?",
+        "BluetoothAbnormality":"For å fortsette må du sørge for at Bluetooth er på.",
+        "UnpairingDevice":"Opphever sammenkobling med enhet {0}",
+        "SomethingWrong":"Noe gikk galt.",
+        "ClosePrompt":"Er du sikker på at du vil avslutte?",
+        "ClosePromptDescription":"Alle sammenkoblede enheter forblir sammenkoblet, mens ventende enheter avbrytes."
+    },
+    "EnjoyWindow": {
+        "Title": "Sammenkobling fullført!",
+        "UnpairedTitle":"Koble sammen enheter med to berøringer",
+        "Content":"Hvis du vil legge til flere enheter i fremtiden, må du kontrollere at Bluetooth er aktivert på PC-en, og at tilbehøret er i sammenkoblingsmodus. Berør deretter PC-en to ganger med dem!",
+        "Content1":"Hvis du vil legge til flere enheter i fremtiden, må du kontrollere at Bluetooth er aktivert på PC-en, og at tilbehøret er i sammenkoblingsmodus. Deretter berører du bare PC-en!",
+        "CheckboxText":"Aktiver berør for å koble sammen enheter i fremtiden."
+    },
+    "MatchingWindow": {
+        "Title": "Berør på nytt for å koble sammen",
+        "Title1": "Berør på nytt for å bekrefte sammenkobling",
+        "Title2": "Hvilken enhet vil du koble sammen?",
+        "PairCanceled":"Sammenkobling avbrutt.",
+        "SomeWrong":"Noe gikk galt",
+        "PairingCompletionPrompt1":"Har du annet tilbehør som skal kobles sammen?{0}Berør to ganger med dem nå.",
+        "PairingCompletionPrompt2":"Har du annet tilbehør som skal kobles sammen?{0}Berør med dem nå.",
+        "BottomTip1": "Hvis du ikke prøver å koble sammen et Bluetooth-tilbehør, kan du deaktivere Berør for å koble sammen i {0}.",
+        "BottomTip2": "Finn ut mer i {0}.",
+        "BottomTipLink": "Lenovo Smart Share-appen",
+        "DeviceScanningInProgress":"Identifisere berørt enhet",
+        "DeviceBTAbnormality":"Noe gikk galt. Kontroller at Bluetooth er på, og prøv på nytt.",
+        "ClosePrompt":"Er du sikker på at du vil lukke?",
+        "Selectable":"Kan velges",
+        "NotSelectable":"Kan ikke velges",
+        "PairFailed":"Sammenkoblingen mislyktes. Prøv på nytt.",
+        "BTAbnormality":"Kontroller at Bluetooth er på, og prøv på nytt."
+    },
+    "Icon":{
+        "Close":"Lukk",
+        "BluetoothGIF":"Animert Bluetooth-logo som pulserer for å indikere at aktivt enhetssøk eller -gjenkjenning pågår.",
+        "InstructionalGIF":"Trinnvis animasjon som viser: Slå på tilbehørets Bluetooth, og Berør PC-en to ganger med det for å starte sammenkoblingen."
+    },
+    "DeviceType":{
+        "Settings":"Innstillinger",
+        "Devices":"Enheter",
+        "Mouse":"Mus",
+        "Headphone":"Hodetelefoner"
+    },
+    "ScrollBar":{
+        "Up":"Opp",
+        "Down":"Ned",
+        "ScrollPosition":"Rulleposisjon"
+    },
+    "Button":{
+        "Pair":"Koble sammen",
+        "Cancel":"Avbryt",
+        "Unpair":"Opphev sammenkobling",
+        "TryAgain":"Prøv på nytt",
+        "Finish":"Ferdig",
+        "Refresh":"Oppdater",
+        "QuitSmartShare":"Avslutt Smart Share",
+        "Quit":"Avslutt",
+        "GoBack":"Gå tilbake",
+        "SmartShareSettings":"Smart Share-innstillinger",
+        "Done":"Ferdig",
+        "OpenSmartShareApp":"Åpne Smart Share-appen"
+    },
+    "PairTypeName":{
+        "DeviceScanningInProgress": "Identifiserer berørt enhet ...",
+        "NoDeviceFound":"Alle kjente enhetsdetaljer",
+        "Canceling":"Avbryter ...",
+        "Cancelled":"Sammenkobling avbrutt.",
+        "Failed":"Sammenkoblingen med {0} mislyktes",
+        "MatchingFailed": "Sammenkoblingen mislyktes",
+        "Pairing":"Sammenkobling",
+        "Canceling2":"Avbryter",
+        "Paired":"Sammenkoblet",
+        "Unpairing":"Opphever sammenkobling",
+        "PairedSuccessfully":"er koblet sammen!"
+    }
+}

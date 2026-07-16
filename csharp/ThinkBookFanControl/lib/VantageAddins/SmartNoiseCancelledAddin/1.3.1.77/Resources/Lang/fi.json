@@ -1,0 +1,104 @@
+﻿{
+    "Titles": {
+        "SmartShare": "Smart Share"
+    },
+    "StartedWindow": {
+        "MainTitle":"Muodostetaan lisälaitteiden pariliitokset Smart Sharen avulla",
+        "Content": "Yhdistä Bluetooth-lisälaitteet (hiiri, kuulokkeet jne.) helposti napauttamalla niillä tietokonetta.",
+        "ContentGetStarted":"Yhdistä Bluetooth-lisälaitteet (hiiri, kuulokkeet jne.) helposti napauttamalla niillä tietokonetta. Aloita ottamalla Bluetooth käyttöön.",
+        "StartedButton1": "Aloita",
+        "StartedButton2": "Ota Bluetooth käyttöön",
+        "DelayButton1": "Torkuta",
+        "DelayButton2": "Muistuta myöhemmin",
+        "DelayButton3": "Hylkää"
+    },
+    "TapToPairWindow": {
+        "MainTitle": "Kaksoisnapauta Bluetooth-lisälaitteita nyt",
+        "Prompt":"Lue lisää {0}.",
+        "TipLink": "Lenovo Smart Share ‑sovelluksessa",
+        "Subtitle1": "1. Ota lisälaitteen Bluetooth käyttöön",
+        "SubContent1": "Aseta lisälaite Bluetooth-pariliitostilaan.",
+        "Subtitle2": "2. Kaksoisnapauta sillä tietokonetta",
+        "SubContent2": "Muodosta pariliitos koskettamalla lisälaitteella kevyesti tietokoneen jompaakumpaa kylkeä.",
+        "ListTitle": "Napautetut laitteet",
+        "ListConnectionPrompt":"Onko muita yhdistettäviä laitteita? Napauta ne nyt.",
+        "MultipleDevicePrompts":"Useita laitteita lähellä.",
+        "MultipleDeviceTitles":"Mille laitteelle haluat muodostaa pariliitoksen?",
+        "DeviceNotFound":"Etkö näe laitettasi?",
+        "UnpairPrompt":"Haluatko varmasti poistaa laitteen {0} pariliitoksen?",
+        "BluetoothAbnormality":"Jatka varmistamalla, että Bluetooth on käytössä.",
+        "UnpairingDevice":"Puretaan pariliitosta laitteeseen {0}",
+        "SomethingWrong":"Jokin meni vikaan.",
+        "ClosePrompt":"Haluatko varmasti lopettaa?",
+        "ClosePromptDescription":"Pareiksi liitettyjen laitteiden pariliitos säilyy, kun taas odottavien laitteiden pariliitos peruutetaan."
+    },
+    "EnjoyWindow": {
+        "Title": "Pariliitos on valmis!",
+        "UnpairedTitle":"Muodosta pariliitos kaksoisnapauttamalla",
+        "Content":"Jos haluat lisätä laitteita tulevaisuudessa, varmista, että tietokoneessasi on Bluetooth käytössä ja että lisälaitteet ovat pariliitostilassa. Kaksoisnapauta sitten niillä tietokonettasi!",
+        "Content1":"Jos haluat lisätä laitteita tulevaisuudessa, varmista, että tietokoneessasi on Bluetooth käytössä ja että lisälaitteet ovat pariliitostilassa. Sitten vain napautat niillä tietokonettasi.",
+        "CheckboxText":"Ota pariliitoksen muodostaminen napauttamalla käyttöön tulevia laitteita varten."
+    },
+    "MatchingWindow": {
+        "Title": "Muodosta laitepari napauttamalla uudelleen",
+        "Title1": "Vahvista pariliitos napauttamalla uudelleen",
+        "Title2": "Mille laitteelle haluat muodostaa pariliitoksen?",
+        "PairCanceled":"Pariliitos peruutettu.",
+        "SomeWrong":"Jotain meni pieleen",
+        "PairingCompletionPrompt1":"Haluatko muodostaa pariliitoksen muiden lisälaitteiden välille?{0}Kaksoisnapauta niitä nyt.",
+        "PairingCompletionPrompt2":"Haluatko muodostaa pariliitoksen muiden lisälaitteiden välille?{0}Napauta niitä nyt.",
+        "BottomTip1": "Jos et yritä muodostaa laiteparia Bluetooth-lisälaitteen kanssa, voit poistaa Muodosta laitepari napauttamalla -toiminnon {0} käytöstä.",
+        "BottomTip2": "Lue lisää {0}.",
+        "BottomTipLink": "Lenovo Smart Share ‑sovelluksessa",
+        "DeviceScanningInProgress":"Tunnistetaan napautettua laitetta",
+        "DeviceBTAbnormality":"Jokin meni vikaan. Varmista, että Bluetooth on käytössä, ja yritä uudelleen.",
+        "ClosePrompt":"Haluatko varmasti sulkea?",
+        "Selectable":"Valittavissa",
+        "NotSelectable":"Ei valittavissa",
+        "PairFailed":"Pariliitoksen muodostaminen epäonnistui. Yritä uudelleen.",
+        "BTAbnormality":"Varmista, että Bluetooth on käytössä, ja yritä uudelleen."
+    },
+    "Icon":{
+        "Close":"Sulje",
+        "BluetoothGIF":"Animoitu Bluetooth-logo sykähtelee sen merkiksi, että aktiivisten laitteiden skannaus tai tunnistus on käynnissä.",
+        "InstructionalGIF":"Vaiheittainen animaatio, jossa näkyy \"Ota lisälaitteessa Bluetooth käyttöön ja aloita sitten laiteparin muodostaminen napauttamalla lisälaitteella tietokonettasi.\" pariliitoksen muodostamisen aloittamiseksi."
+    },
+    "DeviceType":{
+        "Settings":"Asetukset",
+        "Devices":"Laitteet",
+        "Mouse":"Hiiri",
+        "Headphone":"Kuulokkeet"
+    },
+    "ScrollBar":{
+        "Up":"Ylös",
+        "Down":"Alas",
+        "ScrollPosition":"Vierityspaikka"
+    },
+    "Button":{
+        "Pair":"Muodosta laitepari",
+        "Cancel":"Peruuta",
+        "Unpair":"Pura laitepari",
+        "TryAgain":"Yritä uudelleen",
+        "Finish":"Valmis",
+        "Refresh":"Päivitä",
+        "QuitSmartShare":"Lopeta Smart Share",
+        "Quit":"Lopeta",
+        "GoBack":"Siirry taaksepäin",
+        "SmartShareSettings":"Smart Share -asetukset",
+        "Done":"Valmis",
+        "OpenSmartShareApp":"Avaa Smart Share -sovellus"
+    },
+    "PairTypeName":{
+        "DeviceScanningInProgress": "Tunnistetaan napautettua laitetta...",
+        "NoDeviceFound":"Kaikki tunnetut laitetiedot",
+        "Canceling":"Peruutetaan...",
+        "Cancelled":"Pariliitoksen muodostaminen peruutettiin.",
+        "Failed":"Pariliitoksen muodostaminen laitteeseen {0} epäonnistui",
+        "MatchingFailed": "Pariliitoksen muodostaminen epäonnistui",
+        "Pairing":"Pariliitos",
+        "Canceling2":"Peruutetaan",
+        "Paired":"Liitetty pariksi",
+        "Unpairing":"Puretaan laiteparia",
+        "PairedSuccessfully":"pariliitetty onnistuneesti!"
+    }
+}

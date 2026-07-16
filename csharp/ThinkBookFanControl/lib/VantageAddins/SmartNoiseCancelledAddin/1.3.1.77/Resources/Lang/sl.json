@@ -1,0 +1,104 @@
+﻿{
+    "Titles": {
+        "SmartShare": "Smart Share"
+    },
+    "StartedWindow": {
+        "MainTitle":"Povežimo vašo dodatno opremo s funkcijo Smart Share",
+        "Content": "Dodatno opremo Bluetooth (miško, slušalke itd.) lahko preprosto povežete tako, da se z njo dotaknete računalnika.",
+        "ContentGetStarted":"Dodatno opremo Bluetooth (miško, slušalke itd.) lahko preprosto povežete tako, da se z njo dotaknete računalnika. Za začetek omogočite Bluetooth.",
+        "StartedButton1": "Začnite",
+        "StartedButton2": "Omogoči Bluetooth",
+        "DelayButton1": "Dremež",
+        "DelayButton2": "Opomni me pozneje",
+        "DelayButton3": "Opusti"
+    },
+    "TapToPairWindow": {
+        "MainTitle": "Zdaj se dvakrat dotaknite svojih dodatnih naprav Bluetooth",
+        "Prompt":"Preberite več: {0}.",
+        "TipLink": "aplikacija Lenovo Smart Share",
+        "Subtitle1": "1. Vklopite Bluetooth v dodatni opremi",
+        "SubContent1": "Preklopite dodatno opremo v način seznanjanja za Bluetooth.",
+        "Subtitle2": "2. Dvakrat se dotaknite računalnika",
+        "SubContent2": "Za seznanitev se z dodatno opremo rahlo dvakrat dotaknite ene od stranic računalnika.",
+        "ListTitle": "Naprave, s katerimi ste se dotaknili",
+        "ListConnectionPrompt":"Ali imate še drugo dodatno opremo za seznanitev? Zdaj se dotaknite z njo.",
+        "MultipleDevicePrompts":"V bližini je več naprav.",
+        "MultipleDeviceTitles":"Katero napravo želite seznaniti?",
+        "DeviceNotFound":"Ali ne vidite svoje naprave?",
+        "UnpairPrompt":"Ali ste prepričani, da želite prekiniti seznanitev z napravo {0}?",
+        "BluetoothAbnormality":"Če želite nadaljevati, se prepričajte, da je Bluetooth vklopljen.",
+        "UnpairingDevice":"Prekinitev seznanitve naprave {0}",
+        "SomethingWrong":"Prišlo je do težave.",
+        "ClosePrompt":"Ste prepričani, da želite prenehati?",
+        "ClosePromptDescription":"Vse seznanjene naprave bodo ostale seznanjene, medtem ko bodo čakajoče naprave preklicane."
+    },
+    "EnjoyWindow": {
+        "Title": "Seznanjanje je končano!",
+        "UnpairedTitle":"Seznanite naprave z dvojnim dotikom",
+        "Content":"Če želite v prihodnje dodati več naprav, preverite, ali je v računalniku vklopljen Bluetooth in ali je dodatna oprema v načinu seznanjanja. Nato se z njimi preprosto dvakrat dotaknite računalnika.",
+        "Content1":"Če želite v prihodnje dodati več naprav, preverite, ali je v računalniku vklopljen Bluetooth in ali je dodatna oprema v načinu seznanjanja. Nato se z njimi dotaknite računalnika.",
+        "CheckboxText":"Omogočite dotik za seznanjanje naprav v prihodnje."
+    },
+    "MatchingWindow": {
+        "Title": "Znova se dotaknite za seznanitev",
+        "Title1": "Znova se dotaknite za potrditev seznanitve",
+        "Title2": "Katero napravo želite seznaniti?",
+        "PairCanceled":"Seznanjanje je preklicano.",
+        "SomeWrong":"do napake",
+        "PairingCompletionPrompt1":"Ali želite seznaniti še drugo dodatno opremo?{0}Zdaj se z njo dvakrat dotaknite.",
+        "PairingCompletionPrompt2":"Ali želite seznaniti še kakšno dodatno opremo?{0}Zdaj se z njo dotaknite.",
+        "BottomTip1": "Če ne poskušate seznaniti dodatne opreme Bluetooth, lahko funkcijo »Dotik za seznanjanje« onemogočite v {0}.",
+        "BottomTip2": "Preberite več: {0}.",
+        "BottomTipLink": "aplikacija Lenovo Smart Share",
+        "DeviceScanningInProgress":"Prepoznavanje naprave, s katero ste se dotaknili",
+        "DeviceBTAbnormality":"Prišlo je do težave. Prepričajte se, da je Bluetooth vklopljen, in poskusite znova.",
+        "ClosePrompt":"Ali ste prepričani, da želite zapreti?",
+        "Selectable":"Možnost izbire",
+        "NotSelectable":"Ni mogoče izbrati",
+        "PairFailed":"Seznanjanje ni uspelo. Poskusite znova.",
+        "BTAbnormality":"Prepričajte se, da je Bluetooth vklopljen, in poskusite znova."
+    },
+    "Icon":{
+        "Close":"Blizu",
+        "BluetoothGIF":"Animirani logotip Bluetooth utripa, kar označuje, da poteka aktivno iskanje ali zaznavanje naprave.",
+        "InstructionalGIF":"Animacija po korakih, ki prikazuje: »Vklopite Bluetooth v dodatni opremi in se nato z njo dvakrat dotaknite računalnika«, da začnete seznanjanje."
+    },
+    "DeviceType":{
+        "Settings":"Nastavitve",
+        "Devices":"Naprave",
+        "Mouse":"Miška",
+        "Headphone":"Slušalke"
+    },
+    "ScrollBar":{
+        "Up":"Gor",
+        "Down":"Dol",
+        "ScrollPosition":"Položaj drsenja"
+    },
+    "Button":{
+        "Pair":"Seznani",
+        "Cancel":"Prekliči",
+        "Unpair":"Prekliči seznanitev",
+        "TryAgain":"Poskusi znova",
+        "Finish":"Dokončaj",
+        "Refresh":"Osveži",
+        "QuitSmartShare":"Zaprite Smart Share",
+        "Quit":"Zapri",
+        "GoBack":"Nazaj",
+        "SmartShareSettings":"Nastavitve za Smart Share",
+        "Done":"Končano",
+        "OpenSmartShareApp":"Odprite aplikacijo Smart Share"
+    },
+    "PairTypeName":{
+        "DeviceScanningInProgress": "Prepoznavanje naprave, s katero ste se dotaknili ...",
+        "NoDeviceFound":"Vse znane podrobnosti o napravi",
+        "Canceling":"Preklicevanje ...",
+        "Cancelled":"Seznanjanje je preklicano.",
+        "Failed":"Seznanjanje ni uspelo za {0}",
+        "MatchingFailed": "Seznanjanje ni uspelo",
+        "Pairing":"Seznanjanje",
+        "Canceling2":"Preklic",
+        "Paired":"Seznanjeno",
+        "Unpairing":"Preklic seznanitve",
+        "PairedSuccessfully":"uspešno seznanjeno!"
+    }
+}

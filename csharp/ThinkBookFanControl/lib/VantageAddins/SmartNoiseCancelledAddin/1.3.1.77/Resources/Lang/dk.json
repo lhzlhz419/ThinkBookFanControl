@@ -1,0 +1,104 @@
+﻿{
+    "Titles": {
+        "SmartShare": "Smart Share"
+    },
+    "StartedWindow": {
+        "MainTitle":"Lad os parre dit tilbehør ved hjælp af Smart Share",
+        "Content": "Tilslut nemt dit Bluetooth-tilbehør (mus, hovedtelefoner osv.) ved at trykke det mod din pc.",
+        "ContentGetStarted":"Tilslut nemt dit Bluetooth-tilbehør (mus, hovedtelefoner osv.) ved at trykke det mod din pc. Aktiver Bluetooth for at komme i gang.",
+        "StartedButton1": "Kom i gang",
+        "StartedButton2": "Aktiver Bluetooth",
+        "DelayButton1": "Udsæt",
+        "DelayButton2": "Påmind mig senere",
+        "DelayButton3": "Afvis"
+    },
+    "TapToPairWindow": {
+        "MainTitle": "Tryk to gange med dit Bluetooth-tilbehør nu",
+        "Prompt":"Få flere oplysninger {0}.",
+        "TipLink": "Lenovo Smart Share-app",
+        "Subtitle1": "1. Slå Bluetooth til på dit tilbehør",
+        "SubContent1": "Sæt dit tilbehør i Bluetooth-parringstilstand.",
+        "Subtitle2": "2. Tryk det to gange mod din pc",
+        "SubContent2": "Tryk forsigtigt dit tilbehør to gange mod en af siderne på din pc for at danne par.",
+        "ListTitle": "Enhed(er), der er trykket",
+        "ListConnectionPrompt":"Er der andet tilbehør, der skal parres? Tryk med det nu.",
+        "MultipleDevicePrompts":"Flere enheder i nærheden.",
+        "MultipleDeviceTitles":"Hvilken enhed vil du parre?",
+        "DeviceNotFound":"Kan du ikke se din enhed?",
+        "UnpairPrompt":"Er du sikker på, at du vil ophæve parringen af {0}?",
+        "BluetoothAbnormality":"For at fortsætte skal du sørge for, at din Bluetooth er slået til.",
+        "UnpairingDevice":"Ophæver parring af enheden {0}",
+        "SomethingWrong":"Der gik noget galt.",
+        "ClosePrompt":"Er du sikker på, at du vil afslutte?",
+        "ClosePromptDescription":"Alle parrede enheder forbliver parret, mens ventende enheder annulleres."
+    },
+    "EnjoyWindow": {
+        "Title": "Parringen er fuldført!",
+        "UnpairedTitle":"Par enheder med et dobbelttryk",
+        "Content":"Hvis du vil tilføje flere enheder på et senere tidspunkt, skal du sørge for, at Bluetooth er slået til på din pc, og at dit tilbehør er i parringstilstand. Derefter skal du blot trykke to gange med dit tilbehør mod din pc!",
+        "Content1":"Hvis du vil tilføje flere enheder på et senere tidspunkt, skal du sørge for, at Bluetooth er slået til på din pc, og at dit tilbehør er i parringstilstand. Derefter skal du blot trykke dit tilbehør mod din pc!",
+        "CheckboxText":"Aktiver Tryk for at danne par for senere enheder."
+    },
+    "MatchingWindow": {
+        "Title": "Tryk igen for at danne par",
+        "Title1": "Tryk igen for at bekræfte parringen",
+        "Title2": "Hvilken enhed vil du parre?",
+        "PairCanceled":"Parringen er annulleret.",
+        "SomeWrong":"Noget gik forkert",
+        "PairingCompletionPrompt1":"Har du andet tilbehør, du vil parre?{0}Tryk to gange med det nu.",
+        "PairingCompletionPrompt2":"Er der andet tilbehør, du vil parre?{0}Tryk med det nu.",
+        "BottomTip1": "Hvis du ikke vil parre Bluetooth-tilbehør, kan du deaktivere Tryk for at danne par i {0}.",
+        "BottomTip2": "Få flere oplysninger {0}.",
+        "BottomTipLink": "Lenovo Smart Share-app",
+        "DeviceScanningInProgress":"Identificering af enhed, der er trykket med",
+        "DeviceBTAbnormality":"Der gik noget galt. Sørg for, at Bluetooth er slået til, og prøv igen.",
+        "ClosePrompt":"Er du sikker på, at du vil lukke?",
+        "Selectable":"Kan vælges",
+        "NotSelectable":"Kan ikke vælges",
+        "PairFailed":"Parringen mislykkedes. Prøv igen.",
+        "BTAbnormality":"Sørg for, at Bluetooth er slået til, og prøv igen."
+    },
+    "Icon":{
+        "Close":"Luk",
+        "BluetoothGIF":"Animeret Bluetooth-logo, der pulserer for at angive, at en aktiv enhedsscanning eller -registrering er i gang.",
+        "InstructionalGIF":"Trinvis animation, der viser: \"Aktiver Bluetooth på dit tilbehør, og tryk det derefter to gange mod din pc\" for at starte parringen."
+    },
+    "DeviceType":{
+        "Settings":"Indstillinger",
+        "Devices":"Enheder",
+        "Mouse":"Mus",
+        "Headphone":"Hovedtelefon"
+    },
+    "ScrollBar":{
+        "Up":"Op",
+        "Down":"Ned",
+        "ScrollPosition":"Rulleposition"
+    },
+    "Button":{
+        "Pair":"Dan par",
+        "Cancel":"Annuller",
+        "Unpair":"Ophæv parring",
+        "TryAgain":"Prøv igen",
+        "Finish":"Udfør",
+        "Refresh":"Opdater",
+        "QuitSmartShare":"Afslut Smart Share",
+        "Quit":"Afslut",
+        "GoBack":"Gå tilbage",
+        "SmartShareSettings":"Smart Share-indstillinger",
+        "Done":"Udført",
+        "OpenSmartShareApp":"Åbn Smart Share-appen"
+    },
+    "PairTypeName":{
+        "DeviceScanningInProgress": "Identificering af enhed, der er trykket med...",
+        "NoDeviceFound":"Alle kendte enhedsoplysninger",
+        "Canceling":"Annullerer...",
+        "Cancelled":"Parringen blev annulleret.",
+        "Failed":"Det var ikke muligt at parre {0}",
+        "MatchingFailed": "Parringen mislykkedes",
+        "Pairing":"Parring",
+        "Canceling2":"Annullering",
+        "Paired":"Parret",
+        "Unpairing":"Ophævelse af parring",
+        "PairedSuccessfully":"parringen blev fuldført!"
+    }
+}

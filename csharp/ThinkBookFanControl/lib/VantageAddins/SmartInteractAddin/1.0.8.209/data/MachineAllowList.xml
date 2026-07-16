@@ -1,0 +1,37 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<MachineFamilyName xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <FamilyName name="Yoga Slim 7 14ITL05" />
+  <FamilyName name="IdeaPad Slim 7 14ITL05" />
+  <FamilyName name="Yoga Slim 7 15ITL05" />
+  <FamilyName name="IdeaPad Slim 7 15ITL05" />
+  <FamilyName name="Yoga 9 15IMH5" />
+  <FamilyName name="IdeaPad 5 Pro 14ITL6" />
+  <FamilyName name="Lenovo XiaoXinAir 14+ ITL 2021" />
+  <FamilyName name="IdeaPad 5 14ITL05" />
+  <FamilyName name="Lenovo XiaoXinAir 14ITL 2021" />
+  <FamilyName name="Lenovo XiaoXin 14ITL 2021" />
+  <FamilyName name="Lenovo XiaoXin 15ITL 2021" />
+  <FamilyName name="Lenovo XiaoXinAir 15ITL 2021" />
+  <FamilyName name="IdeaPad Flex 5 14ITL05" />
+  <FamilyName name="IdeaPad Flex 5 15ITL05" />
+  <FamilyName name="IdeaPad 3 14ITL6" />
+  <FamilyName name="IdeaPad 14sITL 2021" />
+  <FamilyName name="IdeaPad 3 15ITL6" />
+  <FamilyName name="IdeaPad 15sITL 2021" />
+  <FamilyName name="IdeaPad 3 17ITL6" />
+  <FamilyName name="IdeaPad 1 11IGL05" />
+  <FamilyName name="IdeaPad 1 14IGL05" />
+  <FamilyName name="IdeaPad 3 14IML05" />
+  <FamilyName name="IdeaPad 14sIML 2020" />
+  <FamilyName name="IdeaPad 3 15IML05" />
+  <FamilyName name="IdeaPad 15sIML 2020" />
+  <FamilyName name="IdeaPad 3 17IML05" />
+  <FamilyName name="IdeaPad 3 14ITL05" />
+  <FamilyName name="IdeaPad 3 15ITL05" />
+  <FamilyName name="IdeaPad 3 14IIL05" />
+  <FamilyName name="IdeaPad 14sIIL 2020" />
+  <FamilyName name="IdeaPad 3 17IIL05" />
+  <FamilyName name="IdeaPad 15sIIL 2020" />
+  <FamilyName name="IdeaPad 3 14IGL05" />
+  <FamilyName name="IdeaPad 3 15IGL05" />
+<Signature xmlns="http://www.w3.org/2000/09/xmldsig#"><SignedInfo><CanonicalizationMethod Algorithm="http://www.w3.org/TR/2001/REC-xml-c14n-20010315" /><SignatureMethod Algorithm="http://www.w3.org/2000/09/xmldsig#rsa-sha1" /><Reference URI=""><Transforms><Transform Algorithm="http://www.w3.org/2000/09/xmldsig#enveloped-signature" /><Transform Algorithm="http://www.w3.org/TR/2001/REC-xml-c14n-20010315" /></Transforms><DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha1" /><DigestValue>kWzc93H7kOWkQ/lyam7wL7oo4mQ=</DigestValue></Reference></SignedInfo><SignatureValue>iYYlAZ0zmbF7fkmjl/OIjKe8VHsoVSkP5itvuQbLNQ5VYjiuwplJji8brvYPbwq6dpvsiK5xvBY0wz8cwMNEBDqnRBAkGCbTr7p/df7xfK3AMjH+wphAATAka6RKxJSJVnaeMDScFzcYasgFnaRUn3OBMzFtDUV5pTUye+Iiz7mSRiJbt4EpLM/5FJFykyGt1LQ/aUkyf23p90DyQ/nhW6u2vcxH1Ns+vVMtj0tUg/3XdRYdMmX2RnoHbpGo20oPSUC283ApYNUOFcK4vNeSy/Jt/P69ROT6cL8lva18rSqKJdPfRb3ZBO6L8yRUdgxKopaaOiVmw08luYl1HduWaA==</SignatureValue><KeyInfo><X509Data><X509Certificate>MIIE9jCCA96gAwIBAgIQVxYYDbfUmJ3EoXCD3Pp1ZzANBgkqhkiG9w0BAQsFADB/MQswCQYDVQQGEwJVUzEdMBsGA1UEChMUU3ltYW50ZWMgQ29ycG9yYXRpb24xHzAdBgNVBAsTFlN5bWFudGVjIFRydXN0IE5ldHdvcmsxMDAuBgNVBAMTJ1N5bWFudGVjIENsYXNzIDMgU0hBMjU2IENvZGUgU2lnbmluZyBDQTAeFw0xNTAxMTMwMDAwMDBaFw0xODAxMTIyMzU5NTlaMF4xCzAJBgNVBAYTAlVTMRcwFQYDVQQIEw5Ob3J0aCBDYXJvbGluYTEUMBIGA1UEBxMLTW9ycmlzdmlsbGUxDzANBgNVBAoUBkxFTk9WTzEPMA0GA1UEAxQGTEVOT1ZPMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAtwVWMufFrSa68v9h+qMIEPTNZrZcxPzdiOoDfdTuX4A51yhSpbcySu9MbeXsu4Zg8f29nQMYnYsxSVfAUpaed3Sjjnff2k6/WHpSfoGzf5oDWrzY3Nss64VrE2/C3FZ0XVlp/xRAOO51MyRQ14Pz0KVOggw4LXgjQ8Tyy379Fi9CiDdBLmSFBt2rDoGVPfiiu0XPg6H6r/jw4U3sQ2iw1eyFWXa+tKqHm4uJKvWzWZWd5Wsls4iWx5RhHgT7+O3fLRc1FPf8oXl5QdVer/1UHGHN4wRbEJDDJWKhCUCbpzLxCkd1FIxMPQgojbiz9TkBBLi35zYzhHeRABHm1DX/BQIDAQABo4IBjTCCAYkwCQYDVR0TBAIwADAOBgNVHQ8BAf8EBAMCB4AwKwYDVR0fBCQwIjAgoB6gHIYaaHR0cDovL3N2LnN5bWNiLmNvbS9zdi5jcmwwZgYDVR0gBF8wXTBbBgtghkgBhvhFAQcXAzBMMCMGCCsGAQUFBwIBFhdodHRwczovL2Quc3ltY2IuY29tL2NwczAlBggrBgEFBQcCAjAZDBdodHRwczovL2Quc3ltY2IuY29tL3JwYTATBgNVHSUEDDAKBggrBgEFBQcDAzBXBggrBgEFBQcBAQRLMEkwHwYIKwYBBQUHMAGGE2h0dHA6Ly9zdi5zeW1jZC5jb20wJgYIKwYBBQUHMAKGGmh0dHA6Ly9zdi5zeW1jYi5jb20vc3YuY3J0MB8GA1UdIwQYMBaAFJY7U/B5M5evfYPvLivMyreGHnJmMB0GA1UdDgQWBBRSMmHtmvK1hUveuxeoJ/Jwj5J18jARBglghkgBhvhCAQEEBAMCBBAwFgYKKwYBBAGCNwIBGwQIMAYBAQABAf8wDQYJKoZIhvcNAQELBQADggEBAHW49q6GgSXkLVnqgvw2Zpsz7mqr3TOb9OXM4KOnGQWUpfYnT/HaJbHOpH46LlgOwBd9hVyOI5ON6S0JSe6gcp49NZ2aoYvyIqq+k6xsr0QxVqHzPD0gOotwWBXKhg0+CMyxIuKYAjXNxvnzBqeAmyRbZoGvFdPeqbGpm+kvS+MeMTdy8gmXMZCj9f2KhDNjm2gYjKAVEeyodrs/LqrYsAMB4+ie099pA5++gBM892Z4DEREh14Y1Ydv/sLsAtOrkNeGlRgnoTklzFVqaHHm55T/c6VzHjKabNHb/t8Wt3psevQUnN4KqxyHrk1oQp8V3wzJNNum4tA4+Dc5w9uUgRc=</X509Certificate></X509Data></KeyInfo></Signature></MachineFamilyName>

@@ -1,0 +1,104 @@
+﻿{
+    "Titles": {
+        "SmartShare": "Smart Share"
+    },
+    "StartedWindow": {
+        "MainTitle":"Pasangkan aksesori Anda menggunakan Smart Share",
+        "Content": "Sambungkan aksesori Bluetooth (seperti mouse, headphone, dan lainnya) dengan mudah dengan menempelkannya ke PC Anda.",
+        "ContentGetStarted":"Sambungkan aksesori Bluetooth (seperti mouse, headphone, dan lainnya) dengan mudah dengan menempelkannya ke PC Anda. Aktifkan Bluetooth untuk memulai.",
+        "StartedButton1": "Mulai",
+        "StartedButton2": "Aktifkan Bluetooth",
+        "DelayButton1": "Tunda",
+        "DelayButton2": "Ingatkan nanti",
+        "DelayButton3": "Abaikan"
+    },
+    "TapToPairWindow": {
+        "MainTitle": "Tempelkan dua kali aksesori Bluetooth Anda sekarang",
+        "Prompt":"Selengkapnya di {0}.",
+        "TipLink": "Aplikasi Lenovo Smart Share",
+        "Subtitle1": "1. Aktifkan Bluetooth di aksesori Anda",
+        "SubContent1": "Aktifkan mode pemasangan Bluetooth di aksesori Anda.",
+        "Subtitle2": "2. Tempelkan dua kali aksesori ke PC",
+        "SubContent2": "Sentuhkan aksesori dua kali secara perlahan ke salah satu sisi PC untuk memasangkannya.",
+        "ListTitle": "Perangkat yang Ditempelkan",
+        "ListConnectionPrompt":"Ada aksesori lain yang ingin dipasangkan? Tempelkan sekarang.",
+        "MultipleDevicePrompts":"Beberapa perangkat di sekitar.",
+        "MultipleDeviceTitles":"Manakah perangkat yang ingin Anda pasangkan?",
+        "DeviceNotFound":"Perangkat Anda tidak ada?",
+        "UnpairPrompt":"Yakin ingin membatalkan pemasangan {0}?",
+        "BluetoothAbnormality":"Untuk melanjutkan, pastikan Bluetooth Anda aktif.",
+        "UnpairingDevice":"Membatalkan pemasangan perangkat {0}",
+        "SomethingWrong":"Terjadi kesalahan.",
+        "ClosePrompt":"Anda yakin ingin berhenti?",
+        "ClosePromptDescription":"Perangkat yang sudah dipasangkan akan tetap terhubung, sedangkan perangkat yang masih menunggu akan dibatalkan."
+    },
+    "EnjoyWindow": {
+        "Title": "Pemasangan selesai!",
+        "UnpairedTitle":"Pasangkan perangkat dengan tempel dua kali",
+        "Content":"Untuk menambahkan lebih banyak perangkat di masa mendatang, pastikan Bluetooth di PC Anda telah aktif dan aksesori Anda dalam mode pemasangan. Lalu, cukup tempelkan perangkat tersebut dua kali ke PC Anda!",
+        "Content1":"Untuk menambahkan lebih banyak perangkat di masa mendatang, pastikan Bluetooth di PC Anda telah aktif dan aksesori Anda dalam mode pemasangan. Kemudian, cukup tempelkan ke PC Anda!",
+        "CheckboxText":"Aktifkan tempel untuk memasangkan perangkat di masa mendatang."
+    },
+    "MatchingWindow": {
+        "Title": "Tempelkan kembali untuk memasangkan",
+        "Title1": "Tempelkan kembali untuk mengonfirmasi pemasangan",
+        "Title2": "Manakah perangkat yang ingin Anda pasangkan?",
+        "PairCanceled":"Pemasangan dibatalkan.",
+        "SomeWrong":"Ada yang salah",
+        "PairingCompletionPrompt1":"Ada aksesori lain yang ingin dipasangkan?{0}Tempelkan dua kali sekarang.",
+        "PairingCompletionPrompt2":"Ada aksesori lain yang ingin dipasangkan?{0}Tempelkan sekarang.",
+        "BottomTip1": "Jika Anda tidak ingin memasangkan aksesori Bluetooth, Anda dapat menonaktifkan Tempel Pasang di {0}.",
+        "BottomTip2": "Selengkapnya di {0}.",
+        "BottomTipLink": "Aplikasi Lenovo Smart Share",
+        "DeviceScanningInProgress":"Mengidentifikasi perangkat yang ditempelkan",
+        "DeviceBTAbnormality":"Terjadi kesalahan. Pastikan Bluetooth Anda aktif dan coba lagi.",
+        "ClosePrompt":"Anda yakin ingin menutup jendela ini?",
+        "Selectable":"Dapat Dipilih",
+        "NotSelectable":"Tidak Dapat Dipilih",
+        "PairFailed":"Pemasangan gagal. Silakan coba lagi.",
+        "BTAbnormality":"Pastikan Bluetooth Anda aktif dan coba lagi."
+    },
+    "Icon":{
+        "Close":"Tutup",
+        "BluetoothGIF":"Logo animasi Bluetooth yang berkedip untuk menunjukkan bahwa proses pemindaian atau pendeteksian perangkat sedang berlangsung.",
+        "InstructionalGIF":"Animasi tutorial menampilkan: \"Aktifkan Bluetooth aksesori Anda, lalu tempelkan dua kali ke PC\" untuk mulai memasangkannya."
+    },
+    "DeviceType":{
+        "Settings":"Pengaturan",
+        "Devices":"Perangkat",
+        "Mouse":"Mouse",
+        "Headphone":"Headphone"
+    },
+    "ScrollBar":{
+        "Up":"Ke atas",
+        "Down":"Ke bawah",
+        "ScrollPosition":"Posisi Gulir"
+    },
+    "Button":{
+        "Pair":"Pasangkan",
+        "Cancel":"Batalkan",
+        "Unpair":"Batalkan pemasangan",
+        "TryAgain":"Coba lagi",
+        "Finish":"Selesai",
+        "Refresh":"Refresh",
+        "QuitSmartShare":"Keluar dari Smart Share",
+        "Quit":"Keluar",
+        "GoBack":"Kembali",
+        "SmartShareSettings":"Pengaturan Smart Share",
+        "Done":"Selesai",
+        "OpenSmartShareApp":"Buka aplikasi Smart Share"
+    },
+    "PairTypeName":{
+        "DeviceScanningInProgress": "Mengidentifikasi perangkat yang ditempelkan...",
+        "NoDeviceFound":"Detail perangkat yang dikenal",
+        "Canceling":"Membatalkan...",
+        "Cancelled":"Pemasangan dibatalkan.",
+        "Failed":"Gagal memasangkan {0}",
+        "MatchingFailed": "Pemasangan gagal",
+        "Pairing":"Memasangkan",
+        "Canceling2":"Membatalkan",
+        "Paired":"Dipasangkan",
+        "Unpairing":"Membatalkan pemasangan",
+        "PairedSuccessfully":"berhasil dipasangkan!"
+    }
+}

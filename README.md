@@ -82,13 +82,11 @@ The script creates two release folders under `dist`:
 - `ThinkBookFanControl-win-x64`: self-contained build, no .NET runtime install required.
 - `ThinkBookFanControl-win-x64-net9-runtime`: smaller build, requires .NET 9 Desktop Runtime.
 
-The build script also copies the required x64 files from installed Vantage
-display and sound add-ins into `VantageAddins` in each output directory. The
-app prefers these local copies and falls back to
-`C:\ProgramData\Lenovo\Vantage\Addins` when one is missing.
-Lenovo-authored DLLs used by the build are checked into
-`csharp\ThinkBookFanControl\lib\VantageAddins`; non-Lenovo dependencies are
-still sourced from the local installation and are not committed to Git.
+The required Vantage display, sound, and BIOS add-in files are checked into
+`csharp\ThinkBookFanControl\lib\VantageAddins` and copied into every build. The
+build does not read the installed Vantage directory. At runtime the app prefers
+the bundled files and falls back to `C:\ProgramData\Lenovo\Vantage\Addins` when
+one is missing.
 Local copies replace only the add-in file lookup; the related Lenovo services,
 drivers, and audio components must still be installed.
 

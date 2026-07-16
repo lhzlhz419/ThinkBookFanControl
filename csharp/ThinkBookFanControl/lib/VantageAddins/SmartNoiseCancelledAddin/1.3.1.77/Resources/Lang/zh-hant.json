@@ -1,0 +1,104 @@
+﻿{
+    "Titles": {
+        "SmartShare": "Smart Share"
+    },
+    "StartedWindow": {
+        "MainTitle":"讓我們使用 Smart Share 為您的配件配對",
+        "Content": "只要輕觸，即可輕鬆將您的藍牙配件（滑鼠、耳機等）與 PC 連線。",
+        "ContentGetStarted":"只要輕觸，即可輕鬆將您的藍牙配件（滑鼠、耳機等）與 PC 連線。啟用藍牙即可開始使用。",
+        "StartedButton1": "開始使用",
+        "StartedButton2": "啟用藍牙",
+        "DelayButton1": "忽略",
+        "DelayButton2": "稍後提醒我",
+        "DelayButton3": "略過"
+    },
+    "TapToPairWindow": {
+        "MainTitle": "立即輕按兩下您的藍牙配件",
+        "Prompt":"請至 {0}了解更多資訊。",
+        "TipLink": "Lenovo Smart Share 應用程式",
+        "Subtitle1": "1. 開啟配件的藍牙功能",
+        "SubContent1": "請將配件切換至藍牙配對模式。",
+        "Subtitle2": "2. 將配件輕觸兩下 PC",
+        "SubContent2": "輕輕將您的配件於 PC 任一側輕觸兩下以進行配對。",
+        "ListTitle": "已輕觸的裝置",
+        "ListConnectionPrompt":"還有其他要配對的配件嗎？請立即輕觸。",
+        "MultipleDevicePrompts":"偵測到多個裝置。",
+        "MultipleDeviceTitles":"您要配對哪個裝置？",
+        "DeviceNotFound":"找不到您的裝置？",
+        "UnpairPrompt":"您確定要取消配對{0}嗎？",
+        "BluetoothAbnormality":"若要繼續，請確認已開啟藍牙。",
+        "UnpairingDevice":"正在取消配對裝置 {0}",
+        "SomethingWrong":"出了點問題。",
+        "ClosePrompt":"您確定要退出嗎？",
+        "ClosePromptDescription":"任何已配對的裝置將保持配對狀態，而擱置中的裝置將取消。"
+    },
+    "EnjoyWindow": {
+        "Title": "配對完成！",
+        "UnpairedTitle":"輕按兩下即可配對裝置",
+        "Content":"若要在未來新增更多裝置，請確認您的 PC 已開啟藍牙，並讓配件進入配對模式。然後只要輕觸配件兩下即可完成與 PC 配對！",
+        "Content1":"若要在未來新增更多裝置，請確認您的 PC 已開啟藍牙，並讓配件進入配對模式。然後，只要輕觸配件即可完成配對！",
+        "CheckboxText":"啟用未來裝置的輕觸配對功能。"
+    },
+    "MatchingWindow": {
+        "Title": "再次輕觸以配對",
+        "Title1": "再次輕觸以確認配對",
+        "Title2": "您要配對哪個裝置？",
+        "PairCanceled":"配對已取消。",
+        "SomeWrong":"發生問題",
+        "PairingCompletionPrompt1":"還有其他配件要配對嗎？{0}請立即輕按兩下這些配件。",
+        "PairingCompletionPrompt2":"還有其他配件要配對嗎？{0}請立即輕觸這些配件。",
+        "BottomTip1": "如果您並非要配對藍牙配件，可在 {0}中停用輕觸配對。",
+        "BottomTip2": "請至 {0}了解更多資訊。",
+        "BottomTipLink": "Lenovo Smart Share 應用程式",
+        "DeviceScanningInProgress":"正在識別已輕觸的裝置",
+        "DeviceBTAbnormality":"出了點問題。請確認已開啟藍牙，然後再試一次。",
+        "ClosePrompt":"您確定要關閉嗎？",
+        "Selectable":"可選取",
+        "NotSelectable":"不可選取",
+        "PairFailed":"配對失敗。請重試。",
+        "BTAbnormality":"請確認已開啟藍牙，然後再試一次。"
+    },
+    "Icon":{
+        "Close":"關閉",
+        "BluetoothGIF":"動態藍牙標誌，脈動顯示裝置掃描或偵測進行中。",
+        "InstructionalGIF":"逐步動畫顯示：「開啟配件的藍牙，然後將配件輕觸兩下 PC」以開始配對。"
+    },
+    "DeviceType":{
+        "Settings":"設定",
+        "Devices":"裝置",
+        "Mouse":"滑鼠",
+        "Headphone":"耳機"
+    },
+    "ScrollBar":{
+        "Up":"向上",
+        "Down":"向下",
+        "ScrollPosition":"捲動位置"
+    },
+    "Button":{
+        "Pair":"配對",
+        "Cancel":"取消",
+        "Unpair":"取消配對",
+        "TryAgain":"再試一次",
+        "Finish":"完成",
+        "Refresh":"重新整理",
+        "QuitSmartShare":"退出 Smart Share",
+        "Quit":"退出",
+        "GoBack":"返回",
+        "SmartShareSettings":"Smart Share 設定",
+        "Done":"完成",
+        "OpenSmartShareApp":"開啟 Smart Share 應用程式"
+    },
+    "PairTypeName":{
+        "DeviceScanningInProgress": "正在識別已輕觸的裝置...",
+        "NoDeviceFound":"任何已知裝置的詳細資料",
+        "Canceling":"正在取消...",
+        "Cancelled":"配對已取消。",
+        "Failed":"配對 {0} 失敗",
+        "MatchingFailed": "配對失敗",
+        "Pairing":"配對中",
+        "Canceling2":"正在取消",
+        "Paired":"已配對",
+        "Unpairing":"正在取消配對",
+        "PairedSuccessfully":"配對成功！"
+    }
+}

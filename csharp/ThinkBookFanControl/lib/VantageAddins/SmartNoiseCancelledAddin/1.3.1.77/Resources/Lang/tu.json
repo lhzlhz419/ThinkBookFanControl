@@ -1,0 +1,104 @@
+﻿{
+    "Titles": {
+        "SmartShare": "Smart Share"
+    },
+    "StartedWindow": {
+        "MainTitle":"Smart Share'i kullanarak aksesuarlarınızı eşleştirelim",
+        "Content": "Bluetooth aksesuarlarınızı (fare, kulaklık vb.) bilgisayarınıza dokundurarak kolayca bağlayın.",
+        "ContentGetStarted":"Bluetooth aksesuarlarınızı (fare, kulaklık vb.) bilgisayarınıza dokundurarak kolayca bağlayın. Başlamak için Bluetooth'u etkinleştirin.",
+        "StartedButton1": "Başlayın",
+        "StartedButton2": "Bluetooth'u etkinleştir",
+        "DelayButton1": "Uyku",
+        "DelayButton2": "Bana sonra hatırlat",
+        "DelayButton3": "Kapat"
+    },
+    "TapToPairWindow": {
+        "MainTitle": "Şimdi Bluetooth aksesuarlarınıza iki kez dokunun",
+        "Prompt":"{0} uygulamasında daha fazla bilgi edinin.",
+        "TipLink": "Lenovo Smart Share uygulaması",
+        "Subtitle1": "1. Aksesuarınızın Bluetooth'unu açın",
+        "SubContent1": "Aksesuarınızı Bluetooth eşleme moduna alın.",
+        "Subtitle2": "2. Aksesuarınızı bilgisayarınıza iki kez dokundurun",
+        "SubContent2": "Eşleştirmek için aksesuarınızı bilgisayarınızın herhangi bir tarafına iki kez hafifçe dokundurun.",
+        "ListTitle": "Dokunulan Cihazlar",
+        "ListConnectionPrompt":"Eşleştirilecek başka aksesuarlar var mı? Onlara hemen dokunun.",
+        "MultipleDevicePrompts":"Yakınlarda birden fazla cihaz.",
+        "MultipleDeviceTitles":"Hangi cihazı eşleştirmek istiyorsunuz?",
+        "DeviceNotFound":"Cihazınızı göremiyor musunuz?",
+        "UnpairPrompt":"{0} eşleştirmesini kaldırmak istediğinizden emin misiniz?",
+        "BluetoothAbnormality":"Devam etmek için lütfen Bluetooth'unuzun açık olduğundan emin olun.",
+        "UnpairingDevice":"{0} cihazının eşleştirmesi kaldırılıyor",
+        "SomethingWrong":"Bir sorun oluştu.",
+        "ClosePrompt":"Çıkmak istediğinizden emin misiniz?",
+        "ClosePromptDescription":"Eşleştirilen tüm cihazlar eşleştirilmiş olarak kalırken bekleyen cihazlar iptal edilir."
+    },
+    "EnjoyWindow": {
+        "Title": "Eşleştirme tamamlandı!",
+        "UnpairedTitle":"Cihazları çift dokunarak eşleştirin",
+        "Content":"Gelecekte daha fazla cihaz eklemek için bilgisayarınızda Bluetooth'un açık olduğundan ve aksesuarlarınızın eşleştirme modunda olduğundan emin olun. Ardından, aksesuarları bilgisayarınıza çift dokundurabilirsiniz!",
+        "Content1":"Gelecekte daha fazla cihaz eklemek için bilgisayarınızda Bluetooth'un açık olduğundan ve aksesuarlarınızın eşleştirme modunda olduğundan emin olun. Ardından bunları bilgisayarınıza dokundurabilirsiniz!",
+        "CheckboxText":"Gelecekte cihazlara yönelik olarak eşleştirmek için dokunmayı etkinleştirin."
+    },
+    "MatchingWindow": {
+        "Title": "Eşleştirmek için tekrar dokunun",
+        "Title1": "Eşleştirmeyi onaylamak için tekrar dokunun",
+        "Title2": "Hangi cihazı eşleştirmek istiyorsunuz?",
+        "PairCanceled":"Eşleştirme iptal edildi.",
+        "SomeWrong":"Bir sorun oluştu",
+        "PairingCompletionPrompt1":"Eşleştirilecek başka aksesuar var mı?{0}Şimdi bunlara çift dokunun.",
+        "PairingCompletionPrompt2":"Eşleştirilecek başka aksesuar var mı?{0}Şimdi bunlara dokunun.",
+        "BottomTip1": "Bir Bluetooth aksesuarını eşleştirmeye çalışmıyorsanız {0} uygulamasında Eşleştirmek için dokunun özelliğini devre dışı bırakabilirsiniz.",
+        "BottomTip2": "{0} uygulamasında daha fazla bilgi edinin.",
+        "BottomTipLink": "Lenovo Smart Share uygulaması",
+        "DeviceScanningInProgress":"Dokunulan cihaz belirleniyor",
+        "DeviceBTAbnormality":"Bir sorun oluştu. Lütfen Bluetooth'unuzun açık olduğundan emin olun ve tekrar deneyin.",
+        "ClosePrompt":"Kapatmak istediğinizden emin misiniz?",
+        "Selectable":"Seçilebilir",
+        "NotSelectable":"Seçilemez",
+        "PairFailed":"Eşleştirilemedi. Lütfen yeniden deneyin.",
+        "BTAbnormality":"Lütfen Bluetooth'unuzun açık olduğundan emin olun ve tekrar deneyin."
+    },
+    "Icon":{
+        "Close":"Kapat",
+        "BluetoothGIF":"Aktif cihaz taramasının veya algılamasının devam ettiğini belirtmek için yanıp sönen animasyonlu Bluetooth logosu.",
+        "InstructionalGIF":"Eşleştirmeyi başlatmak için “Aksesuarınızın Bluetooth'unu açın ve ardından aksesuarınızı bilgisayarınıza çift dokundurun” adım adım animasyonu."
+    },
+    "DeviceType":{
+        "Settings":"Ayarlar",
+        "Devices":"Cihazlar",
+        "Mouse":"Fare",
+        "Headphone":"Kulaklık"
+    },
+    "ScrollBar":{
+        "Up":"Yukarı",
+        "Down":"Aşağı",
+        "ScrollPosition":"Kaydırma Konumu"
+    },
+    "Button":{
+        "Pair":"Eşleştir",
+        "Cancel":"İptal",
+        "Unpair":"Eşleştirmeyi kaldır",
+        "TryAgain":"Yeniden dene",
+        "Finish":"Son",
+        "Refresh":"Yenile",
+        "QuitSmartShare":"Smart Share'den çık",
+        "Quit":"Çık",
+        "GoBack":"Geri dön",
+        "SmartShareSettings":"Smart Share Ayarları",
+        "Done":"Bitti",
+        "OpenSmartShareApp":"Smart Share uygulamasını aç"
+    },
+    "PairTypeName":{
+        "DeviceScanningInProgress": "Dokunulan cihaz belirleniyor...",
+        "NoDeviceFound":"Bilinen cihaz ayrıntıları",
+        "Canceling":"İptal ediliyor...",
+        "Cancelled":"Eşleştirme iptal edildi.",
+        "Failed":"{0} eşleştirilemedi",
+        "MatchingFailed": "Eşleştirilemedi",
+        "Pairing":"Eşleştiriliyor",
+        "Canceling2":"İptal ediliyor",
+        "Paired":"Eşleştirildi",
+        "Unpairing":"Eşleştirme kaldırılıyor",
+        "PairedSuccessfully":"başarıyla eşleştirildi!"
+    }
+}

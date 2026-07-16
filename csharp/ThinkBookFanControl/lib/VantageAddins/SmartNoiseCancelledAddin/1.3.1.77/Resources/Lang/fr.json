@@ -1,0 +1,104 @@
+﻿{
+    "Titles": {
+        "SmartShare": "Smart Share"
+    },
+    "StartedWindow": {
+        "MainTitle":"Jumelons vos accessoires à l’aide de Smart Share",
+        "Content": "Connectez facilement vos accessoires Bluetooth (souris, écouteurs, etc.) en l'approchant de votre PC.",
+        "ContentGetStarted":"Connectez facilement vos accessoires Bluetooth (souris, écouteurs, etc.) en l'approchant de votre PC. Activez le Bluetooth pour la prise en main.",
+        "StartedButton1": "Démarrer",
+        "StartedButton2": "Activer le Bluetooth",
+        "DelayButton1": "Arrêt temporaire",
+        "DelayButton2": "Me le rappeler ultérieurement",
+        "DelayButton3": "Ignorer"
+    },
+    "TapToPairWindow": {
+        "MainTitle": "Approchez maintenant vos accessoires Bluetooth deux fois",
+        "Prompt":"Plus d'infos dans {0}.",
+        "TipLink": "l'application Lenovo Smart Share",
+        "Subtitle1": "1. Activez le Bluetooth de votre accessoire",
+        "SubContent1": "Mettez votre accessoire en mode de jumelage Bluetooth.",
+        "Subtitle2": "2. Approchez-le deux fois de votre PC",
+        "SubContent2": "Appuyez délicatement votre accessoire deux fois contre l’un ou l’autre côté de votre PC pour le jumeler.",
+        "ListTitle": "Périphérique(s) approché(s)",
+        "ListConnectionPrompt":"D’autres accessoires à jumeler ? Approchez-les maintenant.",
+        "MultipleDevicePrompts":"Plusieurs périphériques à proximité.",
+        "MultipleDeviceTitles":"Quel périphérique souhaitez-vous jumeler ?",
+        "DeviceNotFound":"Vous ne voyez pas votre périphérique ?",
+        "UnpairPrompt":"Voulez-vous vraiment désactiver le jumelage {0}?",
+        "BluetoothAbnormality":"Pour continuer, assurez-vous que le Bluetooth est activé.",
+        "UnpairingDevice":"Désactivation en cours du jumelage du périphérique {0}",
+        "SomethingWrong":"Une erreur est survenue.",
+        "ClosePrompt":"Voulez-vous vraiment quitter ?",
+        "ClosePromptDescription":"Tous les périphériques couplés resteront couplés tandis que les périphériques en attente seront annulés."
+    },
+    "EnjoyWindow": {
+        "Title": "Jumelage terminé !",
+        "UnpairedTitle":"Jumeler des périphériques en les approchant deux fois",
+        "Content":"Pour ajouter d’autres périphériques à l’avenir, assurez-vous que le Bluetooth est activé sur votre PC et que vos accessoires sont en mode de jumelage. Ensuite, il vous suffit de les approcher deux fois de votre PC !",
+        "Content1":"Pour ajouter d’autres périphériques à l’avenir, assurez-vous que le Bluetooth est activé sur votre PC et que vos accessoires sont en mode de jumelage. Ensuite, il vous suffit de les approcher de votre PC !",
+        "CheckboxText":"Activez l’option Approcher pour jumeler pour les périphériques à l’avenir."
+    },
+    "MatchingWindow": {
+        "Title": "Approcher à nouveau pour jumeler",
+        "Title1": "Approchez à nouveau pour confirmer le jumelage",
+        "Title2": "Quel périphérique souhaitez-vous jumeler ?",
+        "PairCanceled":"Jumelage annulé.",
+        "SomeWrong":"Une erreur est survenue",
+        "PairingCompletionPrompt1":"D’autres accessoires à jumeler ?{0}Approchez-les deux fois maintenant.",
+        "PairingCompletionPrompt2":"D’autres accessoires à jumeler ?{0}Approchez-les maintenant.",
+        "BottomTip1": "Si vous n’essayez pas de jumeler un accessoire Bluetooth, vous pouvez désactiver l’option Approcher pour jumeler dans le menu {0}.",
+        "BottomTip2": "Plus d'infos dans {0}.",
+        "BottomTipLink": "l'application Lenovo Smart Share",
+        "DeviceScanningInProgress":"Identification de l’appareil approché",
+        "DeviceBTAbnormality":"Une erreur est survenue. Assurez-vous que votre Bluetooth est activé et réessayez.",
+        "ClosePrompt":"Voulez-vous vraiment fermer ?",
+        "Selectable":"Sélectionnable",
+        "NotSelectable":"Non sélectionnable",
+        "PairFailed":"Échec du jumelage. Veuillez réessayer.",
+        "BTAbnormality":"Assurez-vous que votre Bluetooth est activé et réessayez."
+    },
+    "Icon":{
+        "Close":"Fermer",
+        "BluetoothGIF":"Logo Bluetooth animé, clignotant pour indiquer une analyse active de périphérique ou une détection en cours.",
+        "InstructionalGIF":"Animation étape par étape montrant : \"Activez le Bluetooth de votre accessoire, puis approchez-les deux fois de votre PC\" pour lancer le jumelage."
+    },
+    "DeviceType":{
+        "Settings":"Paramètres",
+        "Devices":"Périphériques",
+        "Mouse":"Souris",
+        "Headphone":"Casque"
+    },
+    "ScrollBar":{
+        "Up":"Haut",
+        "Down":"Bas",
+        "ScrollPosition":"Position du défilement"
+    },
+    "Button":{
+        "Pair":"Jumeler",
+        "Cancel":"Annuler",
+        "Unpair":"Désactiver le jumelage",
+        "TryAgain":"Réessayer",
+        "Finish":"Terminer",
+        "Refresh":"Actualiser",
+        "QuitSmartShare":"Quitter Smart Share",
+        "Quit":"Quitter",
+        "GoBack":"Revenir en arrière",
+        "SmartShareSettings":"Paramètres Smart Share",
+        "Done":"Terminé",
+        "OpenSmartShareApp":"Ouvrir l’application Smart Share"
+    },
+    "PairTypeName":{
+        "DeviceScanningInProgress": "Identification de l’appareil approché...",
+        "NoDeviceFound":"Détails sur tout périphérique connu",
+        "Canceling":"Annulation...",
+        "Cancelled":"Jumelage annulé.",
+        "Failed":"Échec du jumelage {0}",
+        "MatchingFailed": "Échec du jumelage",
+        "Pairing":"Jumelage en cours",
+        "Canceling2":"Annulation en cours",
+        "Paired":"Jumelé",
+        "Unpairing":"Désactivation du jumelage",
+        "PairedSuccessfully":"jumelage réussi !"
+    }
+}

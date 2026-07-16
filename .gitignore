@@ -30,4 +30,4 @@ Desktop.ini
 !csharp/ThinkBookFanControl/lib/LenovoPcManager/
 !csharp/ThinkBookFanControl/lib/LenovoPcManager/WrapPlugin.dll
 !csharp/ThinkBookFanControl/lib/VantageAddins/
-!csharp/ThinkBookFanControl/lib/VantageAddins/**/*.dll
+!csharp/ThinkBookFanControl/lib/VantageAddins/**

@@ -1,0 +1,104 @@
+﻿{
+    "Titles": {
+        "SmartShare": "Smart Share"
+    },
+    "StartedWindow": {
+        "MainTitle":"Să asociem accesoriile folosind Smart Share",
+        "Content": "Conectați cu ușurință accesoriile Bluetooth (mouse, căști etc.) atingându-le pe PC.",
+        "ContentGetStarted":"Conectați cu ușurință accesoriile Bluetooth (mouse, căști etc.) atingându-le pe PC. Activați funcția Bluetooth pentru a începe.",
+        "StartedButton1": "Începeți",
+        "StartedButton2": "Activați Bluetooth",
+        "DelayButton1": "Amânare",
+        "DelayButton2": "Reamintiți-mi mai târziu",
+        "DelayButton3": "Ignorați"
+    },
+    "TapToPairWindow": {
+        "MainTitle": "Atingeți de două ori accesoriile Bluetooth acum",
+        "Prompt":"Aflați mai multe în {0}.",
+        "TipLink": "Aplicația Lenovo Smart Share",
+        "Subtitle1": "1. Activați funcția Bluetooth a accesoriului",
+        "SubContent1": "Puneți accesoriul în modul de asociere Bluetooth.",
+        "Subtitle2": "2. Atingeți-l de două ori de PC",
+        "SubContent2": "Atingeți ușor accesoriul de două ori de oricare parte a PC-ului pentru a-l asocia.",
+        "ListTitle": "Dispozitive atinse",
+        "ListConnectionPrompt":"Alte accesorii de asociat? Atingeți-le acum.",
+        "MultipleDevicePrompts":"Mai multe dispozitive în apropiere.",
+        "MultipleDeviceTitles":"Ce dispozitiv doriți să asociați?",
+        "DeviceNotFound":"Nu vedeți dispozitivul dvs.?",
+        "UnpairPrompt":"Sigur doriți să anulați asocierea {0}?",
+        "BluetoothAbnormality":"Pentru a continua, asigurați-vă că Bluetooth este activat.",
+        "UnpairingDevice":"Se anulează asocierea dispozitivului {0}",
+        "SomethingWrong":"A apărut o eroare.",
+        "ClosePrompt":"Sigur vrei să renunți?",
+        "ClosePromptDescription":"Toate dispozitivele asociate vor rămâne asociate, în timp ce dispozitivele în așteptare vor fi anulate."
+    },
+    "EnjoyWindow": {
+        "Title": "Asociere finalizată!",
+        "UnpairedTitle":"Atingeți de două ori pentru a asocia dispozitivele",
+        "Content":"Pentru a adăuga mai multe dispozitive în viitor, asigurați-vă că PC-ul are Bluetooth activat și că accesoriile sunt în modul de asociere. Apoi, pur și simplu atingeți-le de două ori de PC!",
+        "Content1":"Pentru a adăuga mai multe dispozitive în viitor, asigurați-vă că PC-ul are Bluetooth activat și că accesoriile sunt în modul de asociere. Apoi, pur și simplu apropiați-le de PC!",
+        "CheckboxText":"Activați funcția de atingere pentru a asocia dispozitivele în viitor."
+    },
+    "MatchingWindow": {
+        "Title": "Atingeți din nou pentru a asocia",
+        "Title1": "Atingeți din nou pentru a confirma asocierea",
+        "Title2": "Ce dispozitiv doriți să asociați?",
+        "PairCanceled":"Asociere anulată.",
+        "SomeWrong":"Ceva nu a mers bine",
+        "PairingCompletionPrompt1":"Alte accesorii de asociat?{0}Atingeți-le de două ori acum.",
+        "PairingCompletionPrompt2":"Alte accesorii de asociat?{0}Atingeți-le acum.",
+        "BottomTip1": "Dacă nu încercați să asociați un accesoriu Bluetooth, puteți dezactiva funcția de atingeți pentru a asocia în {0}.",
+        "BottomTip2": "Aflați mai multe în {0}.",
+        "BottomTipLink": "Aplicația Lenovo Smart Share",
+        "DeviceScanningInProgress":"Identificarea dispozitivului atins",
+        "DeviceBTAbnormality":"A apărut o eroare. Asigurați-vă că Bluetooth este activat și încercați din nou.",
+        "ClosePrompt":"Sigur doriți să închideți?",
+        "Selectable":"Selectabil",
+        "NotSelectable":"Neselectabil",
+        "PairFailed":"Asocierea a eșuat. Încercați din nou.",
+        "BTAbnormality":"Asigurați-vă că Bluetooth este activat și încercați din nou."
+    },
+    "Icon":{
+        "Close":"Închidere",
+        "BluetoothGIF":"Logoul animat Bluetooth pulsează pentru a indica scanarea sau detectarea activă a dispozitivului în curs de desfășurare.",
+        "InstructionalGIF":"Animație pas cu pas care afișează: „Activați funcția Bluetooth a accesoriului și apoi atingeți-l de două ori de PC” pentru a iniția asocierea."
+    },
+    "DeviceType":{
+        "Settings":"Setări",
+        "Devices":"Dispozitive",
+        "Mouse":"Mouse",
+        "Headphone":"Cască"
+    },
+    "ScrollBar":{
+        "Up":"Sus",
+        "Down":"Jos",
+        "ScrollPosition":"Poziție derulare"
+    },
+    "Button":{
+        "Pair":"Împerechere",
+        "Cancel":"Anulare",
+        "Unpair":"Anulare asociere",
+        "TryAgain":"Încercați din nou",
+        "Finish":"Finalizare",
+        "Refresh":"Reîmprospătare",
+        "QuitSmartShare":"Ieșiți din Smart Share",
+        "Quit":"Ieșire",
+        "GoBack":"Înapoi",
+        "SmartShareSettings":"Setări Smart Share",
+        "Done":"Efectuat",
+        "OpenSmartShareApp":"Deschideți aplicația Smart Share"
+    },
+    "PairTypeName":{
+        "DeviceScanningInProgress": "Se identifică dispozitivul atins...",
+        "NoDeviceFound":"Orice detalii cunoscute ale dispozitivului",
+        "Canceling":"Se anulează...",
+        "Cancelled":"Asociere anulată.",
+        "Failed":"Asocierea {0} nu a reușit",
+        "MatchingFailed": "Asocierea nu a reușit",
+        "Pairing":"Se asociază",
+        "Canceling2":"Se anulează",
+        "Paired":"Asociat",
+        "Unpairing":"Anulare asociere",
+        "PairedSuccessfully":"asociat cu succes!"
+    }
+}

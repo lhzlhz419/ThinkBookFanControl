@@ -1,0 +1,104 @@
+﻿{
+    "Titles": {
+        "SmartShare": "Smart Share"
+    },
+    "StartedWindow": {
+        "MainTitle":"Koppeln Sie Ihr Zubehör mit Smart Share",
+        "Content": "Koppeln Sie Ihr Bluetooth-Zubehör (Maus, Kopfhörer usw.) ganz einfach, indem Sie es gegen Ihren PC halten.",
+        "ContentGetStarted":"Koppeln Sie Ihr Bluetooth-Zubehör (Maus, Kopfhörer usw.) ganz einfach, indem Sie es gegen Ihren PC halten. Aktivieren Sie Bluetooth, um mit den ersten Schritten zu beginnen.",
+        "StartedButton1": "Erste Schritte",
+        "StartedButton2": "Bluetooth aktivieren",
+        "DelayButton1": "Stummschalten",
+        "DelayButton2": "Später erinnern",
+        "DelayButton3": "Schließen"
+    },
+    "TapToPairWindow": {
+        "MainTitle": "Tippen Sie jetzt Ihr Bluetooth-Zubehör zweimal an",
+        "Prompt":"Mehr Infos finden Sie in der {0}.",
+        "TipLink": "Lenovo Smart Share-App.",
+        "Subtitle1": "1. Bluetooth auf Ihrem Zubehör aktivieren",
+        "SubContent1": "Versetzen Sie Ihr Zubehör in den Bluetooth-Kopplungsmodus.",
+        "Subtitle2": "2. Tippen Sie es zweimal gegen Ihren PC",
+        "SubContent2": "Berühren Sie zweimal leicht eine der beiden Seiten Ihres PCs mit dem Zubehör, um die Kopplung durchzuführen.",
+        "ListTitle": "Dagegengehaltene Geräte",
+        "ListConnectionPrompt":"Möchten Sie weiteres Zubehör koppeln? Halten Sie es einfach gegen den PC.",
+        "MultipleDevicePrompts":"Mehrere Geräte in der Nähe.",
+        "MultipleDeviceTitles":"Welches Gerät möchten Sie koppeln?",
+        "DeviceNotFound":"Ihr Gerät wird nicht angezeigt?",
+        "UnpairPrompt":"Möchten Sie die Kopplung von {0} wirklich trennen?",
+        "BluetoothAbnormality":"Bluetooth muss eingeschaltet sein, um fortzufahren.",
+        "UnpairingDevice":"Entkoppeln des Geräts {0}",
+        "SomethingWrong":"Etwas ist schiefgelaufen.",
+        "ClosePrompt":"Wirklich beenden?",
+        "ClosePromptDescription":"Alle gekoppelten Geräte bleiben gekoppelt, und ausstehende Gerätekopplungen werden abgebrochen."
+    },
+    "EnjoyWindow": {
+        "Title": "Kopplung abgeschlossen!",
+        "UnpairedTitle":"Koppeln von Geräten durch doppeltes Tippen",
+        "Content":"Wenn Sie in Zukunft weitere Geräte hinzufügen möchten, stellen Sie sicher, dass Bluetooth auf Ihrem PC aktiviert ist und sich Ihr Zubehör im Kopplungsmodus befindet. Anschließend kann die Kopplung durch ein doppeltes Tippen am PC erfolgen.",
+        "Content1":"Wenn Sie in Zukunft weitere Geräte hinzufügen möchten, stellen Sie sicher, dass Bluetooth auf Ihrem PC aktiviert ist und sich Ihr Zubehör im Kopplungsmodus befindet. Halten Sie das Zubehör anschließend einfach gegen Ihren PC!",
+        "CheckboxText":"Aktivieren Sie \"Zum Koppeln dagegenhalten\" für zukünftige Geräte."
+    },
+    "MatchingWindow": {
+        "Title": "Zum Koppeln erneut dagegenhalten",
+        "Title1": "Zum Bestätigen der Kopplung erneut dagegenhalten",
+        "Title2": "Welches Gerät möchten Sie koppeln?",
+        "PairCanceled":"Kopplung abgebrochen.",
+        "SomeWrong":"Etwas ist schiefgelaufen",
+        "PairingCompletionPrompt1":"Gibt es noch weiteres Zubehör zum Koppeln?{0}Tippen Sie es jetzt zweimal an.",
+        "PairingCompletionPrompt2":"Gibt es weiteres Zubehör zum Koppeln?{0}Tippen Sie es jetzt an.",
+        "BottomTip1": "Falls Sie kein Bluetooth-Zubehör koppeln möchten, können Sie \"Zum Koppeln dagegenhalten\" in der {0} deaktivieren.",
+        "BottomTip2": "Mehr Infos finden Sie in der {0}.",
+        "BottomTipLink": "Lenovo Smart Share-App.",
+        "DeviceScanningInProgress":"Dagegengehaltenes Gerät wird identifiziert",
+        "DeviceBTAbnormality":"Etwas ist schiefgelaufen. Stellen Sie sicher, dass Bluetooth eingeschaltet ist, und versuchen Sie es erneut.",
+        "ClosePrompt":"Wirklich schließen?",
+        "Selectable":"Auswählbar",
+        "NotSelectable":"Nicht auswählbar",
+        "PairFailed":"Die Kopplung ist fehlgeschlagen. Versuchen Sie es erneut.",
+        "BTAbnormality":"Stellen Sie sicher, dass Bluetooth eingeschaltet ist, und versuchen Sie es erneut."
+    },
+    "Icon":{
+        "Close":"Schließen",
+        "BluetoothGIF":"Pulsierendes Bluetooth-Logo, um anzuzeigen, dass aktiv nach anderen Geräten gesucht oder ein Gerät erkannt wird.",
+        "InstructionalGIF":"Schritt-für-Schritt-Animation: \"Aktivieren Sie das Bluetooth Ihres Zubehörs und tippen Sie es anschließend zweimal gegen Ihren PC\", um die Kopplung zu starten."
+    },
+    "DeviceType":{
+        "Settings":"Einstellungen",
+        "Devices":"Geräte",
+        "Mouse":"Maus",
+        "Headphone":"Kopfhörer"
+    },
+    "ScrollBar":{
+        "Up":"Nach oben",
+        "Down":"Nach unten",
+        "ScrollPosition":"Scroll-Position"
+    },
+    "Button":{
+        "Pair":"Koppeln",
+        "Cancel":"Aufheben",
+        "Unpair":"Kopplung trennen",
+        "TryAgain":"Erneut versuchen",
+        "Finish":"Abschließen",
+        "Refresh":"Neu laden",
+        "QuitSmartShare":"Smart Share beenden",
+        "Quit":"Beenden",
+        "GoBack":"Zurück",
+        "SmartShareSettings":"Smart Share-Einstellungen",
+        "Done":"Fertig",
+        "OpenSmartShareApp":"Smart Share-App öffnen"
+    },
+    "PairTypeName":{
+        "DeviceScanningInProgress": "Dagegengehaltenes Gerät wird identifiziert...",
+        "NoDeviceFound":"Details bekannter Geräte",
+        "Canceling":"Wird abgebrochen...",
+        "Cancelled":"Kopplung abgebrochen.",
+        "Failed":"Kopplung von {0} fehlgeschlagen",
+        "MatchingFailed": "Kopplung fehlgeschlagen",
+        "Pairing":"Kopplung",
+        "Canceling2":"Wird abgebrochen",
+        "Paired":"Gekoppelt",
+        "Unpairing":"Kopplung wird getrennt",
+        "PairedSuccessfully":"wurde erfolgreich gekoppelt!"
+    }
+}

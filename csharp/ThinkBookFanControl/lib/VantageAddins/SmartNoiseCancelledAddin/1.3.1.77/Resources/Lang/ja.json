@@ -1,0 +1,104 @@
+﻿{
+    "Titles": {
+        "SmartShare": "Smart Share"
+    },
+    "StartedWindow": {
+        "MainTitle":"Smart Share を使用してアクセサリーをペアリングしましょう",
+        "Content": "Bluetooth アクセサリー (マウス、ヘッドフォンなど) を PC にタップするだけで簡単に接続できます。",
+        "ContentGetStarted":"Bluetooth アクセサリー (マウス、ヘッドフォンなど) を PC にタップするだけで簡単に接続できます。Bluetooth を有効にして開始してください。",
+        "StartedButton1": "開始",
+        "StartedButton2": "Bluetooth を有効にする",
+        "DelayButton1": "スヌーズ",
+        "DelayButton2": "後で通知",
+        "DelayButton3": "閉じる"
+    },
+    "TapToPairWindow": {
+        "MainTitle": "今すぐ Bluetooth アクセサリをダブルタップしてください",
+        "Prompt":"{0} で詳細を確認してください。",
+        "TipLink": "Lenovo Smart Share アプリ",
+        "Subtitle1": "1. アクセサリーの Bluetooth をオンにする",
+        "SubContent1": "アクセサリーを Bluetooth ペアリング・モードにします。",
+        "Subtitle2": "2. PC にアクセサリーをダブルタップします",
+        "SubContent2": "アクセサリを PC のいずれかの側にそっとダブルタップして、ペアリングします。",
+        "ListTitle": "タップされたデバイス",
+        "ListConnectionPrompt":"ペアリングする他のアクセサリーはありますか? 今すぐタップしてください。",
+        "MultipleDevicePrompts":"近くに複数のデバイスがあります。",
+        "MultipleDeviceTitles":"どのデバイスをペアリングしますか?",
+        "DeviceNotFound":"お使いのデバイスが表示されませんか?",
+        "UnpairPrompt":"{0} のペアリングを解除してもよろしいですか",
+        "BluetoothAbnormality":"続行するには、Bluetooth がオンになっていることを確認してください。",
+        "UnpairingDevice":"デバイス {0} のペアリング解除中",
+        "SomethingWrong":"問題が発生しました。",
+        "ClosePrompt":"終了してもよろしいですか?",
+        "ClosePromptDescription":"ペアリングされたデバイスはペアリングされたままになりますが、保留中のデバイスはキャンセルされます。"
+    },
+    "EnjoyWindow": {
+        "Title": "ペアリングが完了しました!",
+        "UnpairedTitle":"ダブルタップしてデバイスをペアリングします",
+        "Content":"今後さらにデバイスを追加するには、PC で Bluetooth がオンになっていて、アクセサリーがペアリング・モードになっていることを確認してください。次に、それらを PC にダブルタップします。",
+        "Content1":"今後さらにデバイスを追加するには、PC で Bluetooth がオンになっていて、アクセサリーがペアリング・モードになっていることを確認してください。次に、それらを PC にタップするだけで接続できます。",
+        "CheckboxText":"今後使用するデバイスに対して「タップしてペアリング」を有効にします。"
+    },
+    "MatchingWindow": {
+        "Title": "もう一度タップしてペアリング",
+        "Title1": "もう一度タップしてペアリングを確認",
+        "Title2": "どのデバイスをペアリングしますか?",
+        "PairCanceled":"ペアリングがキャンセルされました。",
+        "SomeWrong":"問題が発生しました",
+        "PairingCompletionPrompt1":"他のアクセサリをペアリングしますか?{0}今すぐダブルタップしてください。",
+        "PairingCompletionPrompt2":"他のアクセサリをペアリングしますか?{0}今すぐタップしてください。",
+        "BottomTip1": "Bluetooth アクセサリーをペアリングしない場合は、{0} で「タップしてペアリング」を無効にすることができます",
+        "BottomTip2": "{0} で詳細を確認してください。",
+        "BottomTipLink": "Lenovo Smart Share アプリ",
+        "DeviceScanningInProgress":"タップされたデバイスの識別",
+        "DeviceBTAbnormality":"問題が発生しました。Bluetooth がオンになっていることを確認して、再試行してください。",
+        "ClosePrompt":"閉じてもよろしいですか?",
+        "Selectable":"選択可能",
+        "NotSelectable":"選択不可",
+        "PairFailed":"ペアリングに失敗しました。再試行してください。",
+        "BTAbnormality":"Bluetooth がオンになっていることを確認して、再試行してください。"
+    },
+    "Icon":{
+        "Close":"閉じる",
+        "BluetoothGIF":"アクティブなデバイスのスキャンまたは検出が進行中であることを示すアニメーション Bluetooth ロゴ。",
+        "InstructionalGIF":"「アクセサリの Bluetooth をオンにしてから、PC にダブルタップしてペアリングを開始してください」と示す手順を追ったアニメーション。"
+    },
+    "DeviceType":{
+        "Settings":"設定",
+        "Devices":"デバイス",
+        "Mouse":"マウス",
+        "Headphone":"ヘッドホン"
+    },
+    "ScrollBar":{
+        "Up":"上",
+        "Down":"下",
+        "ScrollPosition":"スクロール位置"
+    },
+    "Button":{
+        "Pair":"ペアリング",
+        "Cancel":"キャンセル",
+        "Unpair":"ペアリングを解除する",
+        "TryAgain":"再試行",
+        "Finish":"完了",
+        "Refresh":"更新",
+        "QuitSmartShare":"Smart Share を終了する",
+        "Quit":"終了",
+        "GoBack":"戻る",
+        "SmartShareSettings":"Smart Share 設定",
+        "Done":"完了",
+        "OpenSmartShareApp":"Smart Share アプリを開く"
+    },
+    "PairTypeName":{
+        "DeviceScanningInProgress": "タップされたデバイスの識別中...",
+        "NoDeviceFound":"既知のデバイスの詳細",
+        "Canceling":"キャンセルしています...",
+        "Cancelled":"ペアリングがキャンセルされました。",
+        "Failed":"{0} のペアリングに失敗しました",
+        "MatchingFailed": "ペアリングに失敗しました",
+        "Pairing":"ペアリング",
+        "Canceling2":"キャンセル中",
+        "Paired":"ペアリング済み",
+        "Unpairing":"ペアリングの解除中",
+        "PairedSuccessfully":"正常にペアリングされました。"
+    }
+}

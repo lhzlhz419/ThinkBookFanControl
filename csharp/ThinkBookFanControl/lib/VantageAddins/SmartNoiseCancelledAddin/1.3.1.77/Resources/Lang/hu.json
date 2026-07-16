@@ -1,0 +1,104 @@
+﻿{
+    "Titles": {
+        "SmartShare": "Smart Share"
+    },
+    "StartedWindow": {
+        "MainTitle":"Párosítsuk a kiegészítőket a Smart Share használatával",
+        "Content": "Egyszerűen csatlakoztathatja Bluetooth-tartozékait (egerét, fejhallgatóját stb.) úgy, hogy a számítógéphez érinti őket.",
+        "ContentGetStarted":"Egyszerűen csatlakoztathatja Bluetooth-tartozékait (egerét, fejhallgatóját stb.) úgy, hogy a számítógéphez érinti őket. Engedélyezze a Bluetootht a kezdéshez.",
+        "StartedButton1": "Első lépések",
+        "StartedButton2": "Bluetooth engedélyezése",
+        "DelayButton1": "Szundi",
+        "DelayButton2": "Emlékeztessen később",
+        "DelayButton3": "Bezárás"
+    },
+    "TapToPairWindow": {
+        "MainTitle": "Érintse kétszer a géphez a Bluetooth-tartozékokra most",
+        "Prompt":"További információval a {0} szolgál.",
+        "TipLink": "Lenovo Smart Share alkalmazás",
+        "Subtitle1": "1. Kapcsolja be a Bluetootht a tartozékon",
+        "SubContent1": "Állítsa a tartozékot Bluetooth-párosítási módba.",
+        "Subtitle2": "2. Érintse kétszer a számítógépéhez",
+        "SubContent2": "A párosításhoz óvatosan érintse a tartozékot kétszer a számítógép valamelyik oldalához.",
+        "ListTitle": "Hozzáérintett eszköz(ök)",
+        "ListConnectionPrompt":"Van más párosítandó tartozék? Érintse oda őket most.",
+        "MultipleDevicePrompts":"Több eszköz van a közelben.",
+        "MultipleDeviceTitles":"Melyik eszközt szeretné párosítani?",
+        "DeviceNotFound":"Nem látja az eszközét?",
+        "UnpairPrompt":"Biztosan meg szeretné szüntetni a(z) {0} párosítását?",
+        "BluetoothAbnormality":"A folytatáshoz ellenőrizze, hogy a Bluetooth be van-e kapcsolva.",
+        "UnpairingDevice":"Eszköz ({0}) párosításának törlése",
+        "SomethingWrong":"Hiba történt.",
+        "ClosePrompt":"Biztosan kilép?",
+        "ClosePromptDescription":"A párosított eszközök párosítása megmarad, a függőben lévő eszközök pedig törlődnek."
+    },
+    "EnjoyWindow": {
+        "Title": "A párosítás befejeződött!",
+        "UnpairedTitle":"Eszközök párosítása dupla érintéssel",
+        "Content":"Ha a jövőben további eszközöket szeretne hozzáadni, győződjön meg róla, hogy a számítógépen be van kapcsolva a Bluetooth, és hogy a tartozékok párosítási módban vannak. Ezután egyszerűen érintse őket kétszer a számítógéphez!",
+        "Content1":"Ha a jövőben további eszközöket szeretne hozzáadni, győződjön meg róla, hogy a számítógépen be van kapcsolva a Bluetooth, és hogy a tartozékok párosítási módban vannak. Ezután egyszerűen érintse őket a számítógéphez!",
+        "CheckboxText":"Az érintéses párosítás engedélyezése az eszközökhöz a jövőben."
+    },
+    "MatchingWindow": {
+        "Title": "Érintse oda újra a párosításhoz",
+        "Title1": "Érintse oda ismét a párosítás megerősítéséhez",
+        "Title2": "Melyik eszközt szeretné párosítani?",
+        "PairCanceled":"Párosítás megszakítva.",
+        "SomeWrong":"Valami hiba történt",
+        "PairingCompletionPrompt1":"Szeretne más tartozékot is párosítani?{0}Érintse őket kétszer a géphez.",
+        "PairingCompletionPrompt2":"Van más párosítható tartozéka is?{0}Érintse kétszer a géphez.",
+        "BottomTip1": "Ha nem szeretne Bluetooth-tartozékokat párosítani, letilthatja a Párosítás érintéssel funkciót a {0}ban.",
+        "BottomTip2": "További információval a {0} szolgál.",
+        "BottomTipLink": "Lenovo Smart Share alkalmazás",
+        "DeviceScanningInProgress":"Hozzáérintett eszköz azonosítása",
+        "DeviceBTAbnormality":"Hiba történt. Ellenőrizze, hogy a Bluetooth be van-e kapcsolva, majd próbálja újra.",
+        "ClosePrompt":"Biztosan be szeretné zárni?",
+        "Selectable":"Választható",
+        "NotSelectable":"Nem választható",
+        "PairFailed":"A párosítás sikertelen volt. Próbálja újra.",
+        "BTAbnormality":"Ellenőrizze, hogy a Bluetooth be van-e kapcsolva, majd próbálja újra."
+    },
+    "Icon":{
+        "Close":"Bezárás",
+        "BluetoothGIF":"Az animált Bluetooth-embléma pulzálása jelzi, hogy folyamatban van az aktív eszköz beolvasása vagy észlelése.",
+        "InstructionalGIF":"A következőt bemutató részletes animáció: Kapcsolja be a Bluetootht a tartozékon, majd érintse hozzá kétszer a számítógéphez a párosítás indításához."
+    },
+    "DeviceType":{
+        "Settings":"Gépház",
+        "Devices":"Eszközök",
+        "Mouse":"Egér",
+        "Headphone":"Fejhallgató"
+    },
+    "ScrollBar":{
+        "Up":"Fel",
+        "Down":"Le",
+        "ScrollPosition":"Görgetési pozíció"
+    },
+    "Button":{
+        "Pair":"Párosítás",
+        "Cancel":"Mégse",
+        "Unpair":"Párosítás törlése",
+        "TryAgain":"Próbálkozzon újra",
+        "Finish":"Befejezés",
+        "Refresh":"Frissítés",
+        "QuitSmartShare":"Kilépés a Smart Share-ből",
+        "Quit":"Kilépés",
+        "GoBack":"Visszalépés",
+        "SmartShareSettings":"Smart Share beállításai",
+        "Done":"Kész",
+        "OpenSmartShareApp":"Smart Share alkalmazás megnyitása"
+    },
+    "PairTypeName":{
+        "DeviceScanningInProgress": "Hozzáérintett eszköz azonosítása...",
+        "NoDeviceFound":"Bármely ismert eszköz adatai",
+        "Canceling":"Megszakítás...",
+        "Cancelled":"Párosítás megszakítva.",
+        "Failed":"Nem sikerült a(z) {0} párosítása",
+        "MatchingFailed": "Nem sikerült párosítani",
+        "Pairing":"Párosítás",
+        "Canceling2":"Megszakítás",
+        "Paired":"Párosítva",
+        "Unpairing":"Párosítás megszüntetése",
+        "PairedSuccessfully":"sikeresen párosítva!"
+    }
+}

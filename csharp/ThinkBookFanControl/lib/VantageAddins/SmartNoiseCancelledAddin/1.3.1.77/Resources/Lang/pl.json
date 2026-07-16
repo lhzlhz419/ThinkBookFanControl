@@ -1,0 +1,104 @@
+﻿{
+    "Titles": {
+        "SmartShare": "Smart Share"
+    },
+    "StartedWindow": {
+        "MainTitle":"Sparujmy Twoje akcesoria przy użyciu funkcji Smart Share",
+        "Content": "Łatwo podłącz akcesoria Bluetooth (mysz, słuchawki itp.), dotykając nimi komputera.",
+        "ContentGetStarted":"Łatwo podłącz akcesoria Bluetooth (mysz, słuchawki itp.), dotykając nimi komputera. Włącz Bluetooth, aby rozpocząć.",
+        "StartedButton1": "Rozpocznij",
+        "StartedButton2": "Włącz Bluetooth",
+        "DelayButton1": "Odłóż",
+        "DelayButton2": "Przypomnij mi później",
+        "DelayButton3": "Odrzuć"
+    },
+    "TapToPairWindow": {
+        "MainTitle": "Teraz stuknij dwukrotnie swoje akcesoria Bluetooth",
+        "Prompt":"Dowiedz się więcej w sekcji {0}.",
+        "TipLink": "Aplikacja Lenovo Smart Share",
+        "Subtitle1": "1. Włącz Bluetooth na akcesorium",
+        "SubContent1": "Przełącz akcesorium w tryb parowania Bluetooth.",
+        "Subtitle2": "2. Dwukrotnie stuknij akcesorium o komputer",
+        "SubContent2": "Delikatnie stuknij dwukrotnie swoim akcesorium o dowolną stronę komputera, aby przeprowadzić parowanie.",
+        "ListTitle": "Dotknięte urządzenia",
+        "ListConnectionPrompt":"Czy są jakieś inne akcesoria do sparowania? Dotknij ich teraz.",
+        "MultipleDevicePrompts":"Wiele urządzeń w pobliżu.",
+        "MultipleDeviceTitles":"Które urządzenie chcesz sparować?",
+        "DeviceNotFound":"Nie widzisz swojego urządzenia?",
+        "UnpairPrompt":"Czy na pewno chcesz usunąć sparowanie urządzenia {0}?",
+        "BluetoothAbnormality":"Aby kontynuować, upewnij się, że funkcja Bluetooth jest włączona.",
+        "UnpairingDevice":"Usuwanie sparowania urządzenia {0}",
+        "SomethingWrong":"Coś poszło nie tak.",
+        "ClosePrompt":"Czy na pewno chcesz wyjść?",
+        "ClosePromptDescription":"Wszystkie sparowane urządzenia pozostaną sparowane, a oczekujące parowania urządzeń zostaną anulowane."
+    },
+    "EnjoyWindow": {
+        "Title": "Parowanie zakończone!",
+        "UnpairedTitle":"Sparuj urządzenia poprzez dwukrotne stuknięcie",
+        "Content":"Aby w przyszłości dodać więcej urządzeń, upewnij się, że na komputerze jest włączona funkcja Bluetooth, a akcesoria są w trybie parowania. Następnie stuknij dwukrotnie swoim akcesorium o komputer!",
+        "Content1":"Aby w przyszłości dodać więcej urządzeń, upewnij się, że na komputerze jest włączona funkcja Bluetooth, a akcesoria są w trybie parowania. Następnie po prostu dotknij nimi komputera!",
+        "CheckboxText":"Włącz funkcję „Dotknij, aby sparować” dla urządzeń w przyszłości."
+    },
+    "MatchingWindow": {
+        "Title": "Dotknij ponownie, aby sparować",
+        "Title1": "Dotknij ponownie, aby potwierdzić parowanie",
+        "Title2": "Które urządzenie chcesz sparować?",
+        "PairCanceled":"Parowanie zostało anulowane.",
+        "SomeWrong":"Coś poszło nie tak",
+        "PairingCompletionPrompt1":"Masz inne akcesoria do sparowania?{0}Stuknij nimi dwukrotnie teraz.",
+        "PairingCompletionPrompt2":"Masz inne akcesoria do sparowania?{0}Stuknij nimi teraz.",
+        "BottomTip1": "Jeśli nie próbujesz sparować akcesorium Bluetooth, możesz wyłączyć funkcję Dotknij, aby sparować w obszarze {0}.",
+        "BottomTip2": "Dowiedz się więcej w sekcji {0}.",
+        "BottomTipLink": "Aplikacja Lenovo Smart Share",
+        "DeviceScanningInProgress":"Identyfikowanie dotkniętego urządzenia",
+        "DeviceBTAbnormality":"Coś poszło nie tak. Upewnij się, że funkcja Bluetooth jest włączona, i spróbuj ponownie.",
+        "ClosePrompt":"Czy na pewno chcesz zamknąć?",
+        "Selectable":"Wybieralny",
+        "NotSelectable":"Niewybieralny",
+        "PairFailed":"Nie udało się sparować. Spróbuj ponownie.",
+        "BTAbnormality":"Upewnij się, że funkcja Bluetooth jest włączona, i spróbuj ponownie."
+    },
+    "Icon":{
+        "Close":"Bliska",
+        "BluetoothGIF":"Animowane logo Bluetooth pulsuje, wskazując trwające skanowanie lub wykrywanie aktywnego urządzenia.",
+        "InstructionalGIF":"Animacja przedstawiająca krok po kroku proces: „Włącz funkcję Bluetooth w akcesorium, a następnie dwukrotnie stuknij swoim akcesorium o komputer”, aby rozpocząć parowanie."
+    },
+    "DeviceType":{
+        "Settings":"Ustawienia",
+        "Devices":"Urządzenia",
+        "Mouse":"Mysz",
+        "Headphone":"Słuchawka"
+    },
+    "ScrollBar":{
+        "Up":"Góra",
+        "Down":"Dół",
+        "ScrollPosition":"Pozycja przewijania"
+    },
+    "Button":{
+        "Pair":"Paruj",
+        "Cancel":"Anuluj",
+        "Unpair":"Usuń sparowanie",
+        "TryAgain":"Spróbuj ponownie",
+        "Finish":"Zakończ",
+        "Refresh":"Odśwież",
+        "QuitSmartShare":"Wyjdź z aplikacji Smart Share",
+        "Quit":"Wyjdź",
+        "GoBack":"Wstecz",
+        "SmartShareSettings":"Ustawienia Smart Share",
+        "Done":"Gotowe",
+        "OpenSmartShareApp":"Otwórz aplikację Smart Share"
+    },
+    "PairTypeName":{
+        "DeviceScanningInProgress": "Identyfikowanie dotkniętego urządzenia...",
+        "NoDeviceFound":"Wszelkie znane szczegóły urządzenia",
+        "Canceling":"Anulowanie...",
+        "Cancelled":"Parowanie anulowane.",
+        "Failed":"Nie udało się sparować urządzenia {0}",
+        "MatchingFailed": "Parowanie nie powiodło się",
+        "Pairing":"Parowanie",
+        "Canceling2":"Anulowanie",
+        "Paired":"Sparowano",
+        "Unpairing":"Usuwanie sparowania",
+        "PairedSuccessfully":"parowanie zakończone pomyślnie!"
+    }
+}

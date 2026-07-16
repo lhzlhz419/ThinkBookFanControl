@@ -1,0 +1,104 @@
+﻿{
+    "Titles": {
+        "SmartShare": "Smart Share"
+    },
+    "StartedWindow": {
+        "MainTitle":"בואו נשייך את האביזרים באמצעות Smart Share",
+        "Content": "באפשרותכם לחבר בקלות אביזרי Bluetooth (עכבר, אוזניות וכו') באמצעות שיוך שלהם עם המחשב.",
+        "ContentGetStarted":"באפשרותכם לחבר בקלות אביזרי Bluetooth (עכבר, אוזניות וכו') באמצעות שיוך שלהם עם המחשב. יש להפעיל קישוריות Bluetooth כדי להתחיל.",
+        "StartedButton1": "תחילת העבודה",
+        "StartedButton2": "הפעלת קישוריות Bluetooth",
+        "DelayButton1": "נודניק",
+        "DelayButton2": "הזכירו לי מאוחר יותר",
+        "DelayButton3": "ביטול"
+    },
+    "TapToPairWindow": {
+        "MainTitle": "יש להקיש כעת פעמיים על אביזרי Bluetooth",
+        "Prompt":"למידע נוסף במקטע {0}.",
+        "TipLink": "היישום Lenovo Smart Share",
+        "Subtitle1": "1. הפעלת קישוריות ה-Bluetooth באביזר",
+        "SubContent1": "יש להעביר את האביזר למצב שיוך Bluetooth.",
+        "Subtitle2": "2. יש לגעת פעמיים במחשב עם האביזר",
+        "SubContent2": "יש לגעת בעדינות פעמיים בצד כלשהו של המחשב עם האביזר כדי לבצע שיוך.",
+        "ListTitle": "מכשירים שחוברו",
+        "ListConnectionPrompt":"האם ברצונכם לשייך אביזרים נוספים? חברו אותם עכשיו.",
+        "MultipleDevicePrompts":"מספר מכשירים בקרבת מקום.",
+        "MultipleDeviceTitles":"אילו מכשירים ברצונכם לשייך?",
+        "DeviceNotFound":"ההתקן לא מוצג?",
+        "UnpairPrompt":"האם בטוח שברצונכם לבטל את השיוך של {0}?",
+        "BluetoothAbnormality":"להמשך, יש לוודא שקישוריות Bluetooth מופעלת.",
+        "UnpairingDevice":"ביטול שיוך עם ההתקן {0}",
+        "SomethingWrong":"משהו השתבש.",
+        "ClosePrompt":"האם בטוח שברצונכם לצאת?",
+        "ClosePromptDescription":"כל ההתקנים המשויכים לא יושפעו, אך ההתקנים שממשיכים לשיוך יבוטלו."
+    },
+    "EnjoyWindow": {
+        "Title": "תהליך השיוך הושלם!",
+        "UnpairedTitle":"שיוך בין התקנים באמצעות נגיעה כפולה",
+        "Content":"כדי להוסיף התקנים נוספים בעתיד, יש לוודא שקישוריות Bluetooth מופעלת במחשב וכי האביזרים במצב שיוך. לאחר מכן, יש פשוט לגעת פעמיים על המחשב עם ההתקן!",
+        "Content1":"כדי להוסיף התקנים נוספים בעתיד, יש לוודא שקישוריות Bluetooth מופעלת במחשב וכי האביזרים במצב שיוך. לאחר מכן, פשוט יש לקרב אותם אל המחשב!",
+        "CheckboxText":"הפעלת \"הקשה לשיוך\" לצורכי שיוך התקנים נוספים בעתיד."
+    },
+    "MatchingWindow": {
+        "Title": "יש להקיש שוב כדי לשייך",
+        "Title1": "יש להקיש שוב כדי לאשר את השיוך",
+        "Title2": "אילו מכשירים ברצונכם לשייך?",
+        "PairCanceled":"השיוך בוטל.",
+        "SomeWrong":"משהו השתבש",
+        "PairingCompletionPrompt1":"יש אביזרים נוספים לשיוך?{0}יש להקיש עליהם כעת פעמיים.",
+        "PairingCompletionPrompt2":"יש אביזרים נוספים להתאמה?{0}יש להקיש עליהם עכשיו.",
+        "BottomTip1": "אם אינכם מנסים לבצע שיוך של אביזר Bluetooth, תוכלו להשבית את התכונה \"הקשה לשיוך\" במקטע {0}.",
+        "BottomTip2": "למידע נוסף במקטע {0}.",
+        "BottomTipLink": "היישום Lenovo Smart Share",
+        "DeviceScanningInProgress":"מזהה מכשירים מחוברים",
+        "DeviceBTAbnormality":"משהו השתבש. יש לוודא שקישוריות Bluetooth מופעלת ולנסות שוב.",
+        "ClosePrompt":"האם אתם שברצונכם לסגור?",
+        "Selectable":"ניתן לבחירה",
+        "NotSelectable":"לא ניתן לבחירה",
+        "PairFailed":"השיוך נכשל. יש לנסות שוב.",
+        "BTAbnormality":"יש לוודא שקישוריות Bluetooth מופעלת ולנסות שוב."
+    },
+    "Icon":{
+        "Close":"סגירה",
+        "BluetoothGIF":"סמל לוגו מונפש של Bluetooth פועם כדי לציין סריקה או זיהוי פעיל של התקנים.",
+        "InstructionalGIF":"תצוגה של הנפשה מפורטת: \"יש להפעיל את קישוריות ה-Bluetooth באביזר ולאחר מכן לגעת באמצעותו פעמיים על גוף המחשב\" כדי להתחיל בתהליך השיוך."
+    },
+    "DeviceType":{
+        "Settings":"הגדרות",
+        "Devices":"מכשירים",
+        "Mouse":"עכבר",
+        "Headphone":"אוזניות"
+    },
+    "ScrollBar":{
+        "Up":"מעלה",
+        "Down":"מטה",
+        "ScrollPosition":"מיקום גלילה"
+    },
+    "Button":{
+        "Pair":"שיוך",
+        "Cancel":"ביטול",
+        "Unpair":"ביטול השיוך",
+        "TryAgain":"נסו שוב",
+        "Finish":"סיום",
+        "Refresh":"רענון",
+        "QuitSmartShare":"יציאה מ-Smart Share",
+        "Quit":"יציאה",
+        "GoBack":"חזרה",
+        "SmartShareSettings":"ההגדרות Smart Share",
+        "Done":"סיום",
+        "OpenSmartShareApp":"יש לפתוח את היישום Smart Share"
+    },
+    "PairTypeName":{
+        "DeviceScanningInProgress": "מזהה התקן משויך באמצעות מגע…",
+        "NoDeviceFound":"כל פרטי התקן ידועים",
+        "Canceling":"מבטל…",
+        "Cancelled":"תהליך השיוך בוטל.",
+        "Failed":"השיוך של {0} נכשל",
+        "MatchingFailed": "פעולת השיוך נכשלה",
+        "Pairing":"צימוד",
+        "Canceling2":"ביטול",
+        "Paired":"בוצע שיוך",
+        "Unpairing":"ביטול השיוך",
+        "PairedSuccessfully":"תהליך השיוך הסתיים בהצלחה!"
+    }
+}

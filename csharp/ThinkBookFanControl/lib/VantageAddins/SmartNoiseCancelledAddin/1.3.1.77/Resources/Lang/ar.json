@@ -1,0 +1,104 @@
+﻿{
+    "Titles": {
+        "SmartShare": "Smart Share"
+    },
+    "StartedWindow": {
+        "MainTitle":"دعنا نعمل على إقران الملحقات باستخدام Smart Share",
+        "Content": "قم بتوصيل ملحقات Bluetooth الخاصة بك بسهولة (الماوس وسماعات الرأس وما إلى ذلك) عن طريق لمس جهاز الكمبيوتر بها.",
+        "ContentGetStarted":"قم بتوصيل ملحقات Bluetooth الخاصة بك بسهولة (الماوس وسماعات الرأس وما إلى ذلك) عن طريق لمس جهاز الكمبيوتر بها. مكّن Bluetooth لبدء الاستخدام.",
+        "StartedButton1": "بدء الاستخدام",
+        "StartedButton2": "تمكين Bluetooth",
+        "DelayButton1": "تأجيل",
+        "DelayButton2": "ذكرني لاحقًا",
+        "DelayButton3": "تجاهل"
+    },
+    "TapToPairWindow": {
+        "MainTitle": "المس مرتين ملحقات Bluetooth الآن",
+        "Prompt":"اعرف المزيد في {0}.",
+        "TipLink": "تطبيق Lenovo Smart Share",
+        "Subtitle1": "1. شغّل Bluetooth الخاص بالملحق",
+        "SubContent1": "ضع الملحق في وضع إقران Bluetooth.",
+        "Subtitle2": "2. المس جهاز الكمبيوتر مرتين به",
+        "SubContent2": "المس مرتين برفق أي من جانبي جهاز الكمبيوتر بالملحق لإقرانه.",
+        "ListTitle": "الأجهزة التي لمسها",
+        "ListConnectionPrompt":"هل لديك أي ملحقات أخرى تريد إقرانها؟ المسها الآن.",
+        "MultipleDevicePrompts":"أجهزة متعددة قريبة.",
+        "MultipleDeviceTitles":"ما الجهاز الذي تريد إقرانه؟",
+        "DeviceNotFound":"ألا ترى جهازك؟",
+        "UnpairPrompt":"هل تريد بالتأكيد إلغاء إقران {0}؟",
+        "BluetoothAbnormality":"للمتابعة، يرجى التأكد من تشغيل Bluetooth.",
+        "UnpairingDevice":"جارٍ إلغاء إقران الجهاز {0}",
+        "SomethingWrong":"هناك خطأ ما.",
+        "ClosePrompt":"هل تريد بالتأكيد الإنهاء؟",
+        "ClosePromptDescription":"أي أجهزة مقترنة ستبقى مقترنة، بينما سيُلغى الاقتران مع الأجهزة المعلقة."
+    },
+    "EnjoyWindow": {
+        "Title": "اكتمل الإقران!",
+        "UnpairedTitle":"إقران الأجهزة بلمسها مرتين",
+        "Content":"لإضافة المزيد من الأجهزة في المستقبل، تأكد من تشغيل Bluetooth على الكمبيوتر ومن أن ملحقاتك في وضع الإقران. بعد ذلك، ما عليك سوى لمس جهاز الكمبيوتر بها مرتين!",
+        "Content1":"لإضافة المزيد من الأجهزة في المستقبل، تأكد من تشغيل Bluetooth على الكمبيوتر ومن أن ملحقاتك في وضع الإقران. بعد ذلك، ما عليك سوى لمس جهاز الكمبيوتر بها!",
+        "CheckboxText":"مكّن خيار \"لمس للإقران\" لإقران الأجهزة في المستقبل."
+    },
+    "MatchingWindow": {
+        "Title": "المس الجهاز مرة أخرى لإقرانه",
+        "Title1": "المس الجهاز مرة أخرى لتأكيد الإقران",
+        "Title2": "ما الجهاز الذي تريد إقرانه؟",
+        "PairCanceled":"تم إلغاء الإقران.",
+        "SomeWrong":"حدث خطأ ما",
+        "PairingCompletionPrompt1":"هل لديك أي ملحقات أخرى تريد إقرانها؟{0}يرجى لمسها مرتين الآن.",
+        "PairingCompletionPrompt2":"‏‫هل لديك أي ملحقات أخرى تريد إقرانها؟‬؟{0}يرجى لمسها الآن.",
+        "BottomTip1": "إذا كنت لا تحاول إقران ملحق Bluetooth، فيمكنك تعطيل الخيار \"لمس للإقران‬\" في {0}.",
+        "BottomTip2": "اعرف المزيد في {0}.",
+        "BottomTipLink": "تطبيق Lenovo Smart Share",
+        "DeviceScanningInProgress":"التعرف على الجهاز الذي تم لمسه",
+        "DeviceBTAbnormality":"هناك خطأ ما. يرجى التأكد من تشغيل Bluetooth وحاول مرة أخرى.",
+        "ClosePrompt":"هل تريد بالتأكيد الإغلاق؟",
+        "Selectable":"قابل للتحديد",
+        "NotSelectable":"غير قابل للتحديد",
+        "PairFailed":"فشلت عملية الإقران. حاول مرة أخرى.",
+        "BTAbnormality":"يرجى التأكد من تشغيل Bluetooth وحاول مرة أخرى."
+    },
+    "Icon":{
+        "Close":"قريبة",
+        "BluetoothGIF":"شعار Bluetooth متحرك ينبض للإشارة إلى أن عملية البحث عن الأجهزة أو اكتشافها قيد التقدم.",
+        "InstructionalGIF":"رسوم متحركة خطوة بخطوة تعرض: \"شغّل Bluetooth في الملحق، ثم المس الكمبيوتر به مرتين لبدء عملية الإقران.‬"
+    },
+    "DeviceType":{
+        "Settings":"الإعدادات",
+        "Devices":"الأجهزة",
+        "Mouse":"الماوس",
+        "Headphone":"سماعة الرأس"
+    },
+    "ScrollBar":{
+        "Up":"لأعلى",
+        "Down":"لأسفل",
+        "ScrollPosition":"موضع التمرير"
+    },
+    "Button":{
+        "Pair":"إقران",
+        "Cancel":"إلغاء",
+        "Unpair":"إلغاء الإقران",
+        "TryAgain":"حاول مرة أخرى",
+        "Finish":"إنهاء",
+        "Refresh":"تحديث",
+        "QuitSmartShare":"إنهاء Smart Share",
+        "Quit":"إنهاء",
+        "GoBack":"الرجوع للخلف",
+        "SmartShareSettings":"إعدادات Smart Share",
+        "Done":"تم",
+        "OpenSmartShareApp":"فتح تطبيق Smart Share"
+    },
+    "PairTypeName":{
+        "DeviceScanningInProgress": "جارٍ التعرف على الجهاز الذي تم لمسه...",
+        "NoDeviceFound":"تفاصيل أي جهاز معروف",
+        "Canceling":"جارٍ الإلغاء...",
+        "Cancelled":"تم إلغاء الإقران.",
+        "Failed":"فشل إقران {0}",
+        "MatchingFailed": "فشل الإقران",
+        "Pairing":"جارٍ الإقران",
+        "Canceling2":"جارٍ الإلغاء",
+        "Paired":"تم الإقران",
+        "Unpairing":"جارٍ إلغاء الإقران",
+        "PairedSuccessfully":"تم الإقران بنجاح!"
+    }
+}

@@ -1,0 +1,104 @@
+﻿{
+    "Titles": {
+        "SmartShare": "Smart Share"
+    },
+    "StartedWindow": {
+        "MainTitle":"Associamo gli accessori utilizzando Smart Share",
+        "Content": "Tocca con i tuoi accessori Bluetooth (mouse, cuffie, ecc.) il PC per collegarli facilmente.",
+        "ContentGetStarted":"Tocca con i tuoi accessori Bluetooth (mouse, cuffie, ecc.) il PC per collegarli facilmente. Abilita il Bluetooth per iniziare.",
+        "StartedButton1": "Inizia",
+        "StartedButton2": "Abilita Bluetooth",
+        "DelayButton1": "Posponi",
+        "DelayButton2": "Visualizza in seguito",
+        "DelayButton3": "Ignora"
+    },
+    "TapToPairWindow": {
+        "MainTitle": "Tocca due volte i tuoi accessori Bluetooth ora",
+        "Prompt":"Scopri di più nell'{0}.",
+        "TipLink": "app Lenovo Smart Share",
+        "Subtitle1": "1. Attiva il Bluetooth del tuo accessorio",
+        "SubContent1": "Attiva la modalità di associazione Bluetooth nel tuo accessorio.",
+        "Subtitle2": "2. Toccalo due volte sul tuo PC",
+        "SubContent2": "Tocca delicatamente due volte con l'accessorio entrambi i lati del PC per eseguire l'associazione.",
+        "ListTitle": "Dispositivi toccati",
+        "ListConnectionPrompt":"Altri accessori da associare? Toccali ora.",
+        "MultipleDevicePrompts":"Più dispositivi nelle vicinanze.",
+        "MultipleDeviceTitles":"Quale dispositivo vuoi associare?",
+        "DeviceNotFound":"Non vedi il dispositivo?",
+        "UnpairPrompt":"Annullare l'associazione con {0}?",
+        "BluetoothAbnormality":"Per continuare, verifica che il Bluetooth sia attivo.",
+        "UnpairingDevice":"Annullamento dell'associazione del dispositivo {0}",
+        "SomethingWrong":"Si è verificato un errore.",
+        "ClosePrompt":"Vuoi uscire?",
+        "ClosePromptDescription":"Tutti i dispositivi associati rimarranno tali, mentre i dispositivi in sospeso verranno annullati."
+    },
+    "EnjoyWindow": {
+        "Title": "Associazione completata.",
+        "UnpairedTitle":"Associa i dispositivi con un doppio tocco",
+        "Content":"Per aggiungere altri dispositivi in futuro, verifica che il Bluetooth sia attivato nel PC e che gli accessori siano in modalità di associazione. Basta quindi toccarli due volte sul tuo PC.",
+        "Content1":"Per aggiungere altri dispositivi in futuro, verifica che il Bluetooth sia attivato nel PC e che gli accessori siano in modalità di associazione. Basta quindi avvicinarli al tuo PC.",
+        "CheckboxText":"Abilita Tocca per associare per i dispositivi in futuro."
+    },
+    "MatchingWindow": {
+        "Title": "Tocca di nuovo per associare",
+        "Title1": "Tocca di nuovo per confermare l'associazione",
+        "Title2": "Quale dispositivo vuoi associare?",
+        "PairCanceled":"Associazione annullata.",
+        "SomeWrong":"Si è verificato un problema",
+        "PairingCompletionPrompt1":"Altri accessori da associare?{0}Toccali due volte ora.",
+        "PairingCompletionPrompt2":"Altri accessori da associare?{0}Toccali ora.",
+        "BottomTip1": "Se non stai tentando di associare un accessorio Bluetooth, puoi disabilitare Tocca per associare nell'{0}.",
+        "BottomTip2": "Scopri di più nell'{0}.",
+        "BottomTipLink": "app Lenovo Smart Share",
+        "DeviceScanningInProgress":"Identificazione del dispositivo toccato in corso",
+        "DeviceBTAbnormality":"Si è verificato un errore. Verifica che il Bluetooth sia attivo e riprova.",
+        "ClosePrompt":"Chiudere?",
+        "Selectable":"Selezionabile",
+        "NotSelectable":"Non selezionabile",
+        "PairFailed":"Associazione non riuscita. Riprova.",
+        "BTAbnormality":"Verifica che il Bluetooth sia attivo e riprova."
+    },
+    "Icon":{
+        "Close":"Chiudi",
+        "BluetoothGIF":"Logo Bluetooth animato lampeggiante per indicare che è in corso la scansione o il rilevamento del dispositivo attivo.",
+        "InstructionalGIF":"Animazione passo-passo che mostra: \"Attiva il Bluetooth del tuo accessorio, quindi con l'accessorio tocca due volte il tuo PC per avviare l'associazione."
+    },
+    "DeviceType":{
+        "Settings":"Impostazioni",
+        "Devices":"Dispositivi",
+        "Mouse":"Mouse",
+        "Headphone":"Cuffia"
+    },
+    "ScrollBar":{
+        "Up":"Su",
+        "Down":"Giù",
+        "ScrollPosition":"Posizione di scorrimento"
+    },
+    "Button":{
+        "Pair":"Associa",
+        "Cancel":"Annulla",
+        "Unpair":"Annulla associazione",
+        "TryAgain":"Riprova",
+        "Finish":"Fine",
+        "Refresh":"Aggiorna",
+        "QuitSmartShare":"Esci da Smart Share",
+        "Quit":"Esci",
+        "GoBack":"Indietro",
+        "SmartShareSettings":"Impostazioni di Smart Share",
+        "Done":"Fine",
+        "OpenSmartShareApp":"Apri l'app Smart Share"
+    },
+    "PairTypeName":{
+        "DeviceScanningInProgress": "Identificazione del dispositivo toccato...",
+        "NoDeviceFound":"Qualsiasi dettaglio del dispositivo noto",
+        "Canceling":"Annullamento in corso...",
+        "Cancelled":"Associazione annullata.",
+        "Failed":"Impossibile eseguire l'associazione di {0}",
+        "MatchingFailed": "Impossibile eseguire l'associazione",
+        "Pairing":"Associazione in corso",
+        "Canceling2":"Annullamento in corso",
+        "Paired":"Associato",
+        "Unpairing":"Annullamento dell'associazione in corso",
+        "PairedSuccessfully":"associazione riuscita."
+    }
+}

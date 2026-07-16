@@ -1,0 +1,104 @@
+﻿{
+    "Titles": {
+        "SmartShare": "Smart Share"
+    },
+    "StartedWindow": {
+        "MainTitle":"Nu länkar vi dina tillbehör med Smart Share",
+        "Content": "Anslut enkelt dina Bluetooth-tillbehör (mus, hörlurar osv.) genom att trycka dem mot datorn.",
+        "ContentGetStarted":"Anslut enkelt dina Bluetooth-tillbehör (mus, hörlurar osv.) genom att trycka dem mot datorn. Aktivera Bluetooth för att komma igång.",
+        "StartedButton1": "Kom igång",
+        "StartedButton2": "Aktivera Bluetooth",
+        "DelayButton1": "Snooze",
+        "DelayButton2": "Påminn mig senare",
+        "DelayButton3": "Stäng"
+    },
+    "TapToPairWindow": {
+        "MainTitle": "Tryck snabbt två gånger på dina Bluetooth-tillbehör nu",
+        "Prompt":"Läs mer i {0}.",
+        "TipLink": "Appen Lenovo Smart Share",
+        "Subtitle1": "1. Slå på Bluetooth på tillbehöret",
+        "SubContent1": "Sätt tillbehöret i Bluetooth-parkopplingsläge.",
+        "Subtitle2": "2. Tryck två gånger med det mot datorn",
+        "SubContent2": "Tryck försiktigt tillbehöret två gånger mot någon sida av datorn för att länka dem.",
+        "ListTitle": "Tryckta enheter",
+        "ListConnectionPrompt":"Några andra tillbehör att länka? Tryck med dem nu.",
+        "MultipleDevicePrompts":"Flera enheter i närheten.",
+        "MultipleDeviceTitles":"Vilken enhet vill du länka?",
+        "DeviceNotFound":"Ser du inte din enhet?",
+        "UnpairPrompt":"Vill du verkligen avlänka {0}?",
+        "BluetoothAbnormality":"Se till att Bluetooth är på om du vill gå vidare.",
+        "UnpairingDevice":"Enheten {0} avlänkas",
+        "SomethingWrong":"Något blev fel.",
+        "ClosePrompt":"Vill du verkligen avsluta?",
+        "ClosePromptDescription":"Alla länkade enheter förblir länkade medan väntande länkningar avbryts."
+    },
+    "EnjoyWindow": {
+        "Title": "Länkningen är klar!",
+        "UnpairedTitle":"Enheter länkas med en dubbeltryckning",
+        "Content":"Om du vill lägga till fler enheter framöver måste du se till att Bluetooth är aktiverat på datorn och att tillbehören är i parkopplingsläge. Sedan är det bara att dubbeltrycka dem mot datorn!",
+        "Content1":"Om du vill lägga till fler enheter framöver måste du se till att Bluetooth är aktiverat på datorn och att tillbehören är i parkopplingsläge. Sedan är det bara att trycka på dem mot din dator!",
+        "CheckboxText":"Aktivera tryck för att länka enheter framöver."
+    },
+    "MatchingWindow": {
+        "Title": "Tryck igen för att länka",
+        "Title1": "Tryck igen för att bekräfta länkningen",
+        "Title2": "Vilken enhet vill du länka?",
+        "PairCanceled":"Länkningen avbröts.",
+        "SomeWrong":"Något gick fel",
+        "PairingCompletionPrompt1":"Finns det några andra tillbehör att länka?{0}Dubbeltryck på dem nu.",
+        "PairingCompletionPrompt2":"Har du fler tillbehör att länka?{0}Tryck på dem nu.",
+        "BottomTip1": "Om du inte försöker länka ett Bluetooth-tillbehör kan du inaktivera Tryck för att länka i {0}.",
+        "BottomTip2": "Läs mer i {0}.",
+        "BottomTipLink": "Appen Lenovo Smart Share",
+        "DeviceScanningInProgress":"Identifiera tryckt enhet",
+        "DeviceBTAbnormality":"Något blev fel. Kontrollera att Bluetooth är aktiverat och försök igen.",
+        "ClosePrompt":"Vill du verkligen stänga?",
+        "Selectable":"Valbar",
+        "NotSelectable":"Inte valbar",
+        "PairFailed":"Länkningen misslyckades. Försök igen.",
+        "BTAbnormality":"Kontrollera att Bluetooth är aktiverat och försök igen."
+    },
+    "Icon":{
+        "Close":"Stäng",
+        "BluetoothGIF":"Animerad Bluetooth-logotyp som pulserar för att indikera att aktiv enhetsskanning eller detektering pågår.",
+        "InstructionalGIF":"Detaljerad animering med texten Slå på tillbehörets Bluetooth och tryck det sedan mot datorn för att starta länkningen."
+    },
+    "DeviceType":{
+        "Settings":"Inställningar",
+        "Devices":"Enheter",
+        "Mouse":"Mus",
+        "Headphone":"Hörlur"
+    },
+    "ScrollBar":{
+        "Up":"Upp",
+        "Down":"Ner",
+        "ScrollPosition":"Rullningsposition"
+    },
+    "Button":{
+        "Pair":"Länka",
+        "Cancel":"Avbryt",
+        "Unpair":"Avbryt länkning",
+        "TryAgain":"Försök igen",
+        "Finish":"Slutför",
+        "Refresh":"Uppdatera",
+        "QuitSmartShare":"Avsluta Smart Share",
+        "Quit":"Avsluta",
+        "GoBack":"Gå tillbaka",
+        "SmartShareSettings":"Inställningar för Smart Share",
+        "Done":"Klart",
+        "OpenSmartShareApp":"Öppna Smart Share-appen"
+    },
+    "PairTypeName":{
+        "DeviceScanningInProgress": "Identifiera tryckt enhet …",
+        "NoDeviceFound":"All känd enhetsinformation",
+        "Canceling":"Avbryter …",
+        "Cancelled":"Länkningen avbröts.",
+        "Failed":"Det gick inte att länka {0}",
+        "MatchingFailed": "Det gick inte att länka",
+        "Pairing":"Länkar",
+        "Canceling2":"Avbryter",
+        "Paired":"Länkade",
+        "Unpairing":"Avlänkning",
+        "PairedSuccessfully":"har länkats!"
+    }
+}

@@ -1,0 +1,104 @@
+﻿{
+    "Titles": {
+        "SmartShare": "Smart Share"
+    },
+    "StartedWindow": {
+        "MainTitle":"Uparimo vašu dodatnu opremu pomoću značajke Smart Share",
+        "Content": "Jednostavno dodirom povežite svoju Bluetooth dodatnu opremu na računalo (miš, slušalice i slično).",
+        "ContentGetStarted":"Jednostavno dodirom povežite svoju Bluetooth dodatnu opremu na računalo (miš, slušalice i slično). Omogućite Bluetooth za početak rada.",
+        "StartedButton1": "Početak rada",
+        "StartedButton2": "Omogući Bluetooth",
+        "DelayButton1": "Odgoda",
+        "DelayButton2": "Podsjeti me kasnije",
+        "DelayButton3": "Odbaci"
+    },
+    "TapToPairWindow": {
+        "MainTitle": "Dvaput dodirnite Bluetooth dodatnu opremu",
+        "Prompt":"Saznajte više u {0}.",
+        "TipLink": "Aplikacija Lenovo Smart Share",
+        "Subtitle1": "1. Uključite Bluetooth na svojoj dodatnoj opremi",
+        "SubContent1": "Postavite dodatnu opremu u način uparivanja Bluetooth.",
+        "Subtitle2": "2. Dvaput je dodirnite za uparivanje s računalom",
+        "SubContent2": "Dvaput lagano dodirnite dodatnu opremu pored računala za uparivanje.",
+        "ListTitle": "Dodirnuti uređaj(i)",
+        "ListConnectionPrompt":"Ima li još uređaja za uparivanje? Dodirnite ih sada.",
+        "MultipleDevicePrompts":"Više uređaja u blizini.",
+        "MultipleDeviceTitles":"Koji uređaj želite upariti?",
+        "DeviceNotFound":"Ne vidite svoj uređaj?",
+        "UnpairPrompt":"Jeste li sigurni da želite poništiti uparivanje za {0}?",
+        "BluetoothAbnormality":"Za nastavak, provjerite je li Bluetooth uključen.",
+        "UnpairingDevice":"Poništavanje uparivanja uređaja {0}",
+        "SomethingWrong":"Došlo je do pogreške.",
+        "ClosePrompt":"Jeste li sigurni da želite prekinuti?",
+        "ClosePromptDescription":"Svi upareni uređaji ostat će upareni, a otkazat će se uparivanje uređaja na čekanju."
+    },
+    "EnjoyWindow": {
+        "Title": "Uparivanje je dovršeno!",
+        "UnpairedTitle":"Uparite uređaje dvostrukim dodirom",
+        "Content":"Za dodavanje više uređaja u budućnosti, provjerite je li na vašem računalu uključen Bluetooth i je li vaša dodatna oprema u načinu rada za uparivanje. Zatim jednostavno dvaput dodirnite uređaj za uparivanje s računalom!",
+        "Content1":"Za dodavanje više uređaja u budućnosti, provjerite je li na vašem računalu uključen Bluetooth i je li vaša dodatna oprema u načinu rada za uparivanje. Zatim je jednostavno dodirnite za uparivanje s računalom!",
+        "CheckboxText":"Omogućite uparivanje dodirom za uređaje u budućnosti."
+    },
+    "MatchingWindow": {
+        "Title": "Dodirni ponovno za uparivanje",
+        "Title1": "Dodirni ponovno za potvrdu uparivanja",
+        "Title2": "Koji uređaj želite upariti?",
+        "PairCanceled":"Uparivanje otkazano.",
+        "SomeWrong":"Došlo je do pogreške",
+        "PairingCompletionPrompt1":"Ima li još dodataka za uparivanje?{0}Dodirnite ih dvaput sada.",
+        "PairingCompletionPrompt2":"Ima li još dodataka za uparivanje?{0}Dodirnite ih sada.",
+        "BottomTip1": "Ako ne pokušavate upariti Bluetooth dodatnu opremu možete onemogućiti opciju Dodirni za uparivanje u odjeljku {0}.",
+        "BottomTip2": "Saznajte više u {0}.",
+        "BottomTipLink": "Aplikacija Lenovo Smart Share",
+        "DeviceScanningInProgress":"Identificiranje dodirnutog uređaja",
+        "DeviceBTAbnormality":"Došlo je do pogreške. Provjerite je li Bluetooth uključen i pokušajte ponovno.",
+        "ClosePrompt":"Jeste li sigurni da želite zatvoriti?",
+        "Selectable":"Može se odabrati",
+        "NotSelectable":"Ne može se odabrati",
+        "PairFailed":"Uparivanje nije uspjelo. Pokušajte ponovno.",
+        "BTAbnormality":"Provjerite je li Bluetooth uključen i pokušajte ponovno."
+    },
+    "Icon":{
+        "Close":"Zatvori",
+        "BluetoothGIF":"Animirani pulsirajući logotip Bluetooth označava aktivno skeniranje ili otkrivanje uređaja u tijeku.",
+        "InstructionalGIF":"Detaljna animacija prikazuje sljedeće: \"Uključite Bluetooth na dodatnoj opremi i zatim dvaput dodirnite uređaj u blizini računala\" za pokretanje uparivanja."
+    },
+    "DeviceType":{
+        "Settings":"Postavke",
+        "Devices":"Uređaji",
+        "Mouse":"Miš",
+        "Headphone":"Slušalice"
+    },
+    "ScrollBar":{
+        "Up":"Gore",
+        "Down":"Dolje",
+        "ScrollPosition":"Položaj pomicanja"
+    },
+    "Button":{
+        "Pair":"Upari",
+        "Cancel":"Otkaži",
+        "Unpair":"Poništi uparivanje",
+        "TryAgain":"Pokušaj ponovno",
+        "Finish":"Završi",
+        "Refresh":"Osvježi",
+        "QuitSmartShare":"Prekini Smart Share",
+        "Quit":"Prekini",
+        "GoBack":"Idi natrag",
+        "SmartShareSettings":"Postavke Smart Share",
+        "Done":"Gotovo",
+        "OpenSmartShareApp":"Otvori aplikaciju Smart Share"
+    },
+    "PairTypeName":{
+        "DeviceScanningInProgress": "Identificiranje dodirnutog uređaja...",
+        "NoDeviceFound":"Ostale poznate pojedinosti uređaja",
+        "Canceling":"Otkazivanje...",
+        "Cancelled":"Uparivanje je otkazano.",
+        "Failed":"Uparivanje nije uspjelo {0}",
+        "MatchingFailed": "Uparivanje nije uspjelo",
+        "Pairing":"Uparivanje",
+        "Canceling2":"Otkazivanje",
+        "Paired":"Upareno",
+        "Unpairing":"Poništavanje uparivanja",
+        "PairedSuccessfully":"uređaj uspješno uparen!"
+    }
+}

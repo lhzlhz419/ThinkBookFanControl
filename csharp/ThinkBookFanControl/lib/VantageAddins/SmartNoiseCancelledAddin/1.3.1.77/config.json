@@ -1,0 +1,534 @@
+{
+  "plugin": {
+    "arch": "x64",
+    "moduleid": 5001,
+    "keepalive": 1
+  },
+  "contracts": [
+    "SEHeadphonePlugin"
+  ],
+  "eventsubscribe": {
+    "session_event": [ "session_lock", "session_unlock" ],
+    "sys_event": [ "uninstall_resetsetting" ]
+  },
+  "includeFamilyConsumer": [
+    "ideapad",
+    "yoga",
+    "lenovo",
+    "legion",
+    "loq",
+    "g5000",
+    "slim",
+    "flex"
+  ],
+  "includeFamilySMB": [
+    "^ThinkPad E14 Gen ([8-9]|[1-9]\\d{1,})$",
+    "^ThinkPad E16 Gen ([4-9]|[1-9]\\d{1,})$",
+    "^ThinkPad R14 Gen ([6-9]|[1-9]\\d{1,})$",
+    "^ThinkPad L14p Gen ([6-9]|[1-9]\\d{1,})$",
+    "^ThinkPad T14p Gen ([4-9]|[1-9]\\d{1,})$",
+    "^ThinkPad X9-15 Gen ([1-9]\\d*)$",
+    "^ThinkPad X9-14 Gen ([1-9]\\d*)$",
+    "^ThinkPad X9-15p Gen ([1-9]\\d*)$",
+    "^ThinkPad X14 Gen ([1-9]\\d*)$",
+    "^ThinkPad X1 Carbon Gen (1[3-9]|[2-9]\\d|[1-9]\\d{2,})$",
+    "^ThinkPad X1 2-in-1 Gen ([1-9]\\d{1,})$"
+  ],
+  "supportSmartConnect": [
+    "83U9",
+    "83SF",
+    "83SN",
+    "83SE",
+    "83QK",
+    "83QM",
+    "83QN",
+    "83QU",
+    "83R0",
+    "83QV",
+    "83QW",
+    "83TC",
+    "83TE",
+    "F0JK",
+    "F0JL"
+  ],
+  "toastPopupWndOptimizeParamSMB": {
+    "enableOpt": 1,
+    "popupAfterBleReconnect": 0,
+    "connectedMaxAllowSeconds": 30,
+    "connectedMinDisplaySeconds": 5
+  },
+  "toastPopupWndOptimizeParamConsumer": {
+    "enableOpt": 1,
+    "popupAfterBleReconnect": 0,
+    "connectedMaxAllowSeconds": 30,
+    "connectedMinDisplaySeconds": 5
+  },
+  "twsFirmwareUpdParamConsumer": {
+    "removeFromShelf": 0,
+    "UseQaEnvironment": 0,
+    "GetUDSServerFWVersionMaxTime": 6,
+    "FwDownloadMaxTime": 240,
+    "FwInstallMaxTime": 120,
+    "FwDownloadUpdPercentInterval": 1000,
+    "FwUpgradeUpdPercentInterval": 1000
+  },
+  "twsFirmwareUpdParamSMB": {
+    "removeFromShelf": 0,
+    "UseQaEnvironment": 0,
+    "GetUDSServerFWVersionMaxTime": 6,
+    "FwDownloadMaxTime": 240,
+    "FwInstallMaxTime": 120,
+    "FwDownloadUpdPercentInterval": 1000,
+    "FwUpgradeUpdPercentInterval": 1000
+  },
+  "92C804A9-6667-4272-B09B-3AC6206F6848": {
+    "toastId": "92C804A9-6667-4272-B09B-3AC6206F6848",
+    "machineType": "SMB",
+    "cmd": "tws_first_connect_popup",
+    "bt_addr": {
+      "toastFiledName": "bt_addr_For_toast",
+      "isVisible": "0",
+      "isSend": "0"
+    },
+    "model": {
+      "toastFiledName": "model_For_FUJI",
+      "isVisible": "0",
+      "isSend": "0"
+    }
+  },
+  "D393823A-C9E9-4988-BF72-091B1E1AF966": {
+    "toastId": "D393823A-C9E9-4988-BF72-091B1E1AF966",
+    "machineType": "SMB",
+    "cmd": "tws_connected_popup",
+    "bt_addr": {
+      "toastFiledName": "bt_addr_For_toast",
+      "isVisible": "0",
+      "isSend": "0"
+    },
+    "battery_left": {
+      "toastFiledName": "_battery_level_left_",
+      "isVisible": "0",
+      "isSend": "1"
+    },
+    "battery_right": {
+      "toastFiledName": "_battery_level_right_",
+      "isVisible": "0",
+      "isSend": "1"
+    },
+    "battery_case": {
+      "toastFiledName": "_battery_level_case_",
+      "isVisible": "0",
+      "isSend": "1"
+    },
+    "model": {
+      "toastFiledName": "model_For_FUJI",
+      "isVisible": "0",
+      "isSend": "0"
+    }
+  },
+  "574B8533-15EE-435F-BC2F-DEC2F74FC39D": {
+    "toastId": "574B8533-15EE-435F-BC2F-DEC2F74FC39D",
+    "machineType": "SMB",
+    "cmd": "tws_low_battery_popup_leftEarpodLow",
+    "bt_addr": {
+      "toastFiledName": "bt_addr_For_toast",
+      "isVisible": "0",
+      "isSend": "0"
+    },
+    "battery_left": {
+      "toastFiledName": "_battery_level_left_",
+      "isVisible": "0",
+      "isSend": "1"
+    },
+    "battery_right": {
+      "toastFiledName": "_battery_level_right_",
+      "isVisible": "0",
+      "isSend": "1"
+    },
+    "battery_case": {
+      "toastFiledName": "_battery_level_case_",
+      "isVisible": "0",
+      "isSend": "1"
+    },
+    "model": {
+      "toastFiledName": "model_For_FUJI",
+      "isVisible": "0",
+      "isSend": "0"
+    }
+  },
+  "442ED04F-D271-44B6-B457-062CB3F64DFA": {
+    "toastId": "442ED04F-D271-44B6-B457-062CB3F64DFA",
+    "machineType": "SMB",
+    "cmd": "tws_low_battery_popup_rightEarpodLow",
+    "bt_addr": {
+      "toastFiledName": "bt_addr_For_toast",
+      "isVisible": "0",
+      "isSend": "0"
+    },
+    "battery_left": {
+      "toastFiledName": "_battery_level_left_",
+      "isVisible": "0",
+      "isSend": "1"
+    },
+    "battery_right": {
+      "toastFiledName": "_battery_level_right_",
+      "isVisible": "0",
+      "isSend": "1"
+    },
+    "battery_case": {
+      "toastFiledName": "_battery_level_case_",
+      "isVisible": "0",
+      "isSend": "1"
+    },
+    "model": {
+      "toastFiledName": "model_For_FUJI",
+      "isVisible": "0",
+      "isSend": "0"
+    }
+  },
+  "B18A0A12-4F60-4127-B874-2791B3E20F05": {
+    "toastId": "B18A0A12-4F60-4127-B874-2791B3E20F05",
+    "machineType": "SMB",
+    "cmd": "tws_low_battery_popup_caselow",
+    "bt_addr": {
+      "toastFiledName": "bt_addr_For_toast",
+      "isVisible": "0",
+      "isSend": "0"
+    },
+    "battery_left": {
+      "toastFiledName": "_battery_level_left_",
+      "isVisible": "0",
+      "isSend": "1"
+    },
+    "battery_right": {
+      "toastFiledName": "_battery_level_right_",
+      "isVisible": "0",
+      "isSend": "1"
+    },
+    "battery_case": {
+      "toastFiledName": "_battery_level_case_",
+      "isVisible": "0",
+      "isSend": "1"
+    },
+    "model": {
+      "toastFiledName": "model_For_FUJI",
+      "isVisible": "0",
+      "isSend": "0"
+    }
+  },
+  "9D910001-B90C-498B-B3AB-1E5DF042BB73": {
+    "toastId": "9D910001-B90C-498B-B3AB-1E5DF042BB73",
+    "machineType": "SMB",
+    "cmd": "tws_low_battery_popup_earpodsLow",
+    "bt_addr": {
+      "toastFiledName": "bt_addr_For_toast",
+      "isVisible": "0",
+      "isSend": "0"
+    },
+    "battery_left": {
+      "toastFiledName": "_battery_level_left_",
+      "isVisible": "0",
+      "isSend": "1"
+    },
+    "battery_right": {
+      "toastFiledName": "_battery_level_right_",
+      "isVisible": "0",
+      "isSend": "1"
+    },
+    "battery_case": {
+      "toastFiledName": "_battery_level_case_",
+      "isVisible": "0",
+      "isSend": "1"
+    },
+    "model": {
+      "toastFiledName": "model_For_FUJI",
+      "isVisible": "0",
+      "isSend": "0"
+    }
+  },
+  "4E8A3829-F16A-4AD8-91B7-968E1B0C8BDD": {
+    "toastId": "4E8A3829-F16A-4AD8-91B7-968E1B0C8BDD",
+    "machineType": "SMB",
+    "cmd": "tws_low_battery_popup_rightEarpodVeryLow",
+    "bt_addr": {
+      "toastFiledName": "bt_addr_For_toast",
+      "isVisible": "0",
+      "isSend": "0"
+    },
+    "battery_left": {
+      "toastFiledName": "_battery_level_left_",
+      "isVisible": "0",
+      "isSend": "1"
+    },
+    "battery_right": {
+      "toastFiledName": "_battery_level_right_",
+      "isVisible": "0",
+      "isSend": "1"
+    },
+    "battery_case": {
+      "toastFiledName": "_battery_level_case_",
+      "isVisible": "0",
+      "isSend": "1"
+    },
+    "model": {
+      "toastFiledName": "model_For_FUJI",
+      "isVisible": "0",
+      "isSend": "0"
+    }
+  },
+  "AC9DBF6A-49EE-43B8-B0A5-175F2E22CF4F": {
+    "toastId": "AC9DBF6A-49EE-43B8-B0A5-175F2E22CF4F",
+    "machineType": "SMB",
+    "cmd": "tws_low_battery_popup_LeftEarpodVeryLow",
+    "bt_addr": {
+      "toastFiledName": "bt_addr_For_toast",
+      "isVisible": "0",
+      "isSend": "0"
+    },
+    "battery_left": {
+      "toastFiledName": "_battery_level_left_",
+      "isVisible": "0",
+      "isSend": "1"
+    },
+    "battery_right": {
+      "toastFiledName": "_battery_level_right_",
+      "isVisible": "0",
+      "isSend": "1"
+    },
+    "battery_case": {
+      "toastFiledName": "_battery_level_case_",
+      "isVisible": "0",
+      "isSend": "1"
+    },
+    "model": {
+      "toastFiledName": "model_For_FUJI",
+      "isVisible": "0",
+      "isSend": "0"
+    }
+  },
+  "BABF4C5B-A879-4451-8A7F-079927D12800": {
+    "toastId": "BABF4C5B-A879-4451-8A7F-079927D12800",
+    "machineType": "SMB",
+    "cmd": "tws_low_battery_popup_caseVerylow",
+    "bt_addr": {
+      "toastFiledName": "bt_addr_For_toast",
+      "isVisible": "0",
+      "isSend": "0"
+    },
+    "battery_left": {
+      "toastFiledName": "_battery_level_left_",
+      "isVisible": "0",
+      "isSend": "1"
+    },
+    "battery_right": {
+      "toastFiledName": "_battery_level_right_",
+      "isVisible": "0",
+      "isSend": "1"
+    },
+    "battery_case": {
+      "toastFiledName": "_battery_level_case_",
+      "isVisible": "0",
+      "isSend": "1"
+    },
+    "model": {
+      "toastFiledName": "model_For_FUJI",
+      "isVisible": "0",
+      "isSend": "0"
+    }
+  },
+  "FF311506-489E-470F-9022-DAF7A30654FA": {
+    "toastId": "FF311506-489E-470F-9022-DAF7A30654FA",
+    "machineType": "SMB",
+    "cmd": "tws_low_battery_popup_earpodsVeryLow",
+    "bt_addr": {
+      "toastFiledName": "bt_addr_For_toast",
+      "isVisible": "0",
+      "isSend": "0"
+    },
+    "battery_left": {
+      "toastFiledName": "_battery_level_left_",
+      "isVisible": "0",
+      "isSend": "1"
+    },
+    "battery_right": {
+      "toastFiledName": "_battery_level_right_",
+      "isVisible": "0",
+      "isSend": "1"
+    },
+    "battery_case": {
+      "toastFiledName": "_battery_level_case_",
+      "isVisible": "0",
+      "isSend": "1"
+    },
+    "model": {
+      "toastFiledName": "model_For_FUJI",
+      "isVisible": "0",
+      "isSend": "0"
+    }
+  },
+  "CD77A892-8BDE-41FD-AB20-4220C3550536-CONSUMER": {
+    "toastId": "CD77A892-8BDE-41FD-AB20-4220C3550536",
+    "machineType": "CONSUMER",
+    "cmd": "tws_first_connect_popup",
+    "bt_addr": {
+      "toastFiledName": "bt_addr_For_toast",
+      "isVisible": "0",
+      "isSend": "0"
+    },
+    "model": {
+      "toastFiledName": "model_For_FUJI",
+      "isVisible": "0",
+      "isSend": "0"
+    }
+  },
+  "B67A26EE-C7EC-46B8-BABA-D3BD62021BCB": {
+    "toastId": "B67A26EE-C7EC-46B8-BABA-D3BD62021BCB",
+    "machineType": "CONSUMER",
+    "cmd": "tws_connected_popup",
+    "bt_addr": {
+      "toastFiledName": "bt_addr_For_toast",
+      "isVisible": "0",
+      "isSend": "0"
+    },
+    "battery_left": {
+      "toastFiledName": "_battery_level_left_",
+      "isVisible": "0",
+      "isSend": "1"
+    },
+    "battery_right": {
+      "toastFiledName": "_battery_level_right_",
+      "isVisible": "0",
+      "isSend": "1"
+    },
+    "battery_case": {
+      "toastFiledName": "_battery_level_case_",
+      "isVisible": "0",
+      "isSend": "1"
+    },
+    "model": {
+      "toastFiledName": "model_For_YOGA",
+      "isVisible": "0",
+      "isSend": "0"
+    }
+  },
+  "3F9456EE-968D-4C28-8DEE-CA1CF3AA53B3": {
+    "toastId": "3F9456EE-968D-4C28-8DEE-CA1CF3AA53B3",
+    "machineType": "CONSUMER",
+    "cmd": "tws_low_battery_popup_leftEarpodLow",
+    "bt_addr": {
+      "toastFiledName": "bt_addr_For_toast",
+      "isVisible": "0",
+      "isSend": "0"
+    },
+    "battery_left": {
+      "toastFiledName": "_battery_level_left_",
+      "isVisible": "0",
+      "isSend": "1"
+    },
+    "battery_right": {
+      "toastFiledName": "_battery_level_right_",
+      "isVisible": "0",
+      "isSend": "1"
+    },
+    "battery_case": {
+      "toastFiledName": "_battery_level_case_",
+      "isVisible": "0",
+      "isSend": "1"
+    },
+    "model": {
+      "toastFiledName": "model_For_FUJI",
+      "isVisible": "0",
+      "isSend": "0"
+    }
+  },
+  "43C4DCAD-073D-47AC-8DF7-B46B856BBA79": {
+    "toastId": "43C4DCAD-073D-47AC-8DF7-B46B856BBA79",
+    "machineType": "CONSUMER",
+    "cmd": "tws_low_battery_popup_rightEarpodLow",
+    "bt_addr": {
+      "toastFiledName": "bt_addr_For_toast",
+      "isVisible": "0",
+      "isSend": "0"
+    },
+    "battery_left": {
+      "toastFiledName": "_battery_level_left_",
+      "isVisible": "0",
+      "isSend": "1"
+    },
+    "battery_right": {
+      "toastFiledName": "_battery_level_right_",
+      "isVisible": "0",
+      "isSend": "1"
+    },
+    "battery_case": {
+      "toastFiledName": "_battery_level_case_",
+      "isVisible": "0",
+      "isSend": "1"
+    },
+    "model": {
+      "toastFiledName": "model_For_FUJI",
+      "isVisible": "0",
+      "isSend": "0"
+    }
+  },
+  "D393823A-C9E9-4988-BF72-091B1E1AF966_CONSUMER1": {
+    "toastId": "D393823A-C9E9-4988-BF72-091B1E1AF966",
+    "machineType": "CONSUMER",
+    "cmd": "tws_connected_popup_Use_FUJI_ID",
+    "bt_addr": {
+      "toastFiledName": "bt_addr_For_toast",
+      "isVisible": "0",
+      "isSend": "0"
+    },
+    "battery_left": {
+      "toastFiledName": "_battery_level_left_",
+      "isVisible": "0",
+      "isSend": "1"
+    },
+    "battery_right": {
+      "toastFiledName": "_battery_level_right_",
+      "isVisible": "0",
+      "isSend": "1"
+    },
+    "battery_case": {
+      "toastFiledName": "_battery_level_case_",
+      "isVisible": "0",
+      "isSend": "1"
+    },
+    "model": {
+      "toastFiledName": "model_For_FUJI",
+      "isVisible": "0",
+      "isSend": "0"
+    }
+  },
+  "5C158FD8-5356-4C70-AD36-45C597D128AE": {
+    "toastId": "5C158FD8-5356-4C70-AD36-45C597D128AE",
+    "machineType": "CONSUMER",
+    "cmd": "tws_low_battery_popup_earpodsLow",
+    "bt_addr": {
+      "toastFiledName": "bt_addr_For_toast",
+      "isVisible": "0",
+      "isSend": "0"
+    },
+    "battery_left": {
+      "toastFiledName": "_battery_level_left_",
+      "isVisible": "0",
+      "isSend": "1"
+    },
+    "battery_right": {
+      "toastFiledName": "_battery_level_right_",
+      "isVisible": "0",
+      "isSend": "1"
+    },
+    "battery_case": {
+      "toastFiledName": "_battery_level_case_",
+      "isVisible": "0",
+      "isSend": "1"
+    },
+    "model": {
+      "toastFiledName": "model_For_FUJI",
+      "isVisible": "0",
+      "isSend": "0"
+    }
+  }
+}
