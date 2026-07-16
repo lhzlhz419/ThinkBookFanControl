@@ -22,6 +22,11 @@
       <TargetPath>LenovoPcManager\WrapPlugin.dll</TargetPath>
     </Content>
 
+    <Content Include="lib\VantageAddins\**\*.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <TargetPath>VantageAddins\%(RecursiveDir)%(Filename)%(Extension)</TargetPath>
+    </Content>
+
     <PackageReference Include="DiskInfoToolkit" Version="2.1.0" />
     <PackageReference Include="HidSharp" Version="2.6.4" />
     <PackageReference Include="Mono.Posix.NETStandard" Version="1.0.0" />

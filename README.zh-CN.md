@@ -77,7 +77,9 @@ SHA-256 摘要和保修日期，不保存明文序列号。
 
 构建脚本还会把本机已安装的 Vantage 显示和声音插件中实际使用的 x64
 文件复制到发布目录下的 `VantageAddins`。程序运行时优先使用这些本地副本，缺失时再回退到
-`C:\ProgramData\Lenovo\Vantage\Addins`。第三方插件文件不会提交到 Git。
+`C:\ProgramData\Lenovo\Vantage\Addins`。构建规则用到的联想 DLL 已放在
+`csharp\ThinkBookFanControl\lib\VantageAddins` 并提交到 Git；非联想依赖仍从本机安装目录补齐，
+不会提交到 Git。编译和发布本项目不要求安装 Lenovo Vantage 或联想电脑管家。
 本地副本只替代插件文件路径，相关 Lenovo 服务、驱动和音频组件仍需存在。
 
 仓库包含电脑管家 x86 `WrapPlugin.dll`，用于调用原版

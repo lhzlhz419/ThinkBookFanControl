@@ -86,7 +86,9 @@ The build script also copies the required x64 files from installed Vantage
 display and sound add-ins into `VantageAddins` in each output directory. The
 app prefers these local copies and falls back to
 `C:\ProgramData\Lenovo\Vantage\Addins` when one is missing.
-Third-party add-in binaries are not committed to Git.
+Lenovo-authored DLLs used by the build are checked into
+`csharp\ThinkBookFanControl\lib\VantageAddins`; non-Lenovo dependencies are
+still sourced from the local installation and are not committed to Git.
 Local copies replace only the add-in file lookup; the related Lenovo services,
 drivers, and audio components must still be installed.
 

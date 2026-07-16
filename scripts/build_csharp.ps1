@@ -22,6 +22,7 @@ $selfContainedZip = "$selfContainedPublishDir.zip"
 $frameworkDependentZip = "$frameworkDependentPublishDir.zip"
 $publishBuildDir = Join-Path $root ".tmp\csharp-publish-bin"
 $legacyOutputDir = Join-Path $root "csharp\ThinkBookFanControl\bin\$Configuration\net9.0-windows\win-x64"
+$checkedInVantageAddinsRoot = Join-Path $root "csharp\ThinkBookFanControl\lib\VantageAddins"
 $vantageInstalledAddinsRoot = "C:\ProgramData\Lenovo\Vantage\Addins"
 $vantageAddinCopyRules = [ordered]@{
     SmartInteractAddin = @{
@@ -119,6 +120,11 @@ function Copy-VantageAddins {
     $localAddinsRoot = Join-Path $safeDestination "VantageAddins"
     Remove-SafeDirectory $localAddinsRoot
     New-Item -ItemType Directory -Path $localAddinsRoot -Force | Out-Null
+
+    if (Test-Path -LiteralPath $checkedInVantageAddinsRoot -PathType Container) {
+        Get-ChildItem -LiteralPath $checkedInVantageAddinsRoot |
+            Copy-Item -Destination $localAddinsRoot -Recurse -Force
+    }
 
     foreach ($entry in $vantageAddinCopyRules.GetEnumerator()) {
         $addinName = $entry.Key

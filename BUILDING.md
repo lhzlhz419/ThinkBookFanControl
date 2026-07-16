@@ -31,12 +31,18 @@ Lenovo Vantage add-ins into `VantageAddins` in each build or publish directory:
 - `SmartNoiseCancelledAddin`
 - `LenovoProductivitySystemAddin` (BIOS advanced-toolkit native interface)
 
+Lenovo-authored DLLs used by these rules are checked into
+`csharp\ThinkBookFanControl\lib\VantageAddins` and are always copied first.
+This makes the Lenovo binary inputs available when building on a machine that
+does not have the matching Vantage add-ins installed. Lenovo Vantage and
+Lenovo PC Manager are not required to compile or publish the project.
+
 Only the x64 files and feature-specific dependencies used by the app are
 copied. ARM64/x86 binaries, localization resources, and unrelated Multimedia
-components are omitted. Required native dependencies, config files, resources,
-and license notices stay beside their assemblies. These third-party files
-remain ignored by Git. At runtime the app searches the local copy first, then
-the installed Vantage add-in directory.
+components are omitted. When Vantage is installed, required non-Lenovo native
+dependencies, config files, resources, and license notices are copied from the
+local installation and remain ignored by Git. At runtime the app searches the
+local copy first, then the installed Vantage add-in directory.
 Bundling add-in files does not replace the Lenovo services, drivers, or audio
 components used by those add-ins.
 
