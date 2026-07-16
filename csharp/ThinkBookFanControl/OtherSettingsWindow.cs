@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
@@ -15,6 +16,7 @@ internal sealed class OtherSettingsWindow : Window
     private readonly Func<string, string> _t;
     private readonly Func<TimeSpan> _refreshInterval;
     private readonly DispatcherTimer _refreshTimer;
+    private readonly CancellationTokenSource _lifetimeCts = new();
     private readonly ComboBox _brightnessCombo = new() { Width = 128 };
     private readonly CheckBox _autoOffToggle = new()
     {
@@ -24,6 +26,11 @@ internal sealed class OtherSettingsWindow : Window
         Margin = new Thickness(0, 0, 0, 8)
     };
     private readonly Dictionary<InputSettingKind, CheckBox> _inputToggles = [];
+    private readonly Button _bootLogoButton = new();
+    private readonly Button _biosSetupButton = new();
+    private readonly Button _startupInterruptButton = new();
+    private readonly Button _secureWipeButton = new();
+    private WarrantyCard _warrantyCard = null!;
     private bool _isDark;
     private KeyboardBacklightState? _currentState;
     private InputSettingsState? _inputState;
@@ -39,14 +46,15 @@ internal sealed class OtherSettingsWindow : Window
         Func<TimeSpan> refreshInterval)
     {
         _t = translate;
+        _isDark = isDark;
         _refreshInterval = refreshInterval;
         _refreshTimer = new DispatcherTimer
         {
             Interval = CurrentRefreshInterval()
         };
         Title = _t("OtherSettings");
-        Width = 580;
-        Height = 500;
+        Width = 620;
+        Height = 650;
         MinWidth = 520;
         MinHeight = 450;
         ResizeMode = ResizeMode.NoResize;
@@ -64,12 +72,17 @@ internal sealed class OtherSettingsWindow : Window
         Loaded += async (_, _) =>
         {
             SyncRefreshTimerInterval();
+            var warrantyTask = _warrantyCard.LoadAsync(_lifetimeCts.Token);
+            var biosSupportTask = LoadBiosSupportAsync();
             await LoadCurrentStateAsync(showReading: true);
             _refreshTimer.Start();
+            await Task.WhenAll(warrantyTask, biosSupportTask);
         };
         Closed += (_, _) =>
         {
             _refreshTimer.Stop();
+            _lifetimeCts.Cancel();
+            _lifetimeCts.Dispose();
         };
     }
 
@@ -86,7 +99,7 @@ internal sealed class OtherSettingsWindow : Window
         var grid = new Grid();
         grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
         grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-        for (var row = 0; row < 7; row++)
+        for (var row = 0; row < 9; row++)
             grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
 
         AddSettingRow(grid, 0, _t("KeyboardBacklightBrightness"), _brightnessCombo);
@@ -97,6 +110,15 @@ internal sealed class OtherSettingsWindow : Window
         AddInputSettingRow(grid, 5, _t("FnCtrlSwap"), InputSettingKind.FnCtrlSwap);
         AddInputSettingRow(grid, 6, _t("Touchpad"), InputSettingKind.Touchpad);
 
+        var advancedTools = BuildAdvancedTools();
+        Grid.SetRow(advancedTools, 7);
+        Grid.SetColumnSpan(advancedTools, 2);
+        grid.Children.Add(advancedTools);
+
+        _warrantyCard = new WarrantyCard(_t, _isDark);
+        Grid.SetRow(_warrantyCard, 8);
+        Grid.SetColumnSpan(_warrantyCard, 2);
+        grid.Children.Add(_warrantyCard);
 
         var closeButton = new Button
         {
@@ -123,6 +145,157 @@ internal sealed class OtherSettingsWindow : Window
         root.Children.Add(closeButton);
         return root;
     }
+
+    private UIElement BuildAdvancedTools()
+    {
+        ConfigureAdvancedButton(_bootLogoButton, "BootLogoCustomization", CustomizeBootLogoAsync);
+        ConfigureAdvancedButton(_biosSetupButton, "BiosSetup", () => RunBootFunctionAsync(BiosBootFunction.SetupUtility));
+        ConfigureAdvancedButton(_startupInterruptButton, "StartupInterrupt", () => RunBootFunctionAsync(BiosBootFunction.InterruptMenu));
+        ConfigureAdvancedButton(_secureWipeButton, "SecureWipe", () => RunBootFunctionAsync(BiosBootFunction.SecureWipe));
+
+        var buttons = new Grid();
+        buttons.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        buttons.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        buttons.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+        buttons.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+        AddAdvancedButton(buttons, _bootLogoButton, 0, 0);
+        AddAdvancedButton(buttons, _biosSetupButton, 0, 1);
+        AddAdvancedButton(buttons, _startupInterruptButton, 1, 0);
+        AddAdvancedButton(buttons, _secureWipeButton, 1, 1);
+
+        var content = new StackPanel();
+        content.Children.Add(new TextBlock
+        {
+            Text = _t("AdvancedToolkit"),
+            FontSize = FontSize + 2,
+            FontWeight = FontWeights.SemiBold,
+            Margin = new Thickness(0, 0, 0, 10)
+        });
+        content.Children.Add(buttons);
+        return new Border
+        {
+            Padding = new Thickness(14),
+            Margin = new Thickness(0, 10, 0, 0),
+            CornerRadius = new CornerRadius(10),
+            BorderThickness = new Thickness(1),
+            BorderBrush = Brush(_isDark ? "#374151" : "#d9dee7"),
+            Background = Brush(_isDark ? "#1f2937" : "#f8fafc"),
+            Child = content
+        };
+    }
+
+    private void ConfigureAdvancedButton(
+        Button button,
+        string textKey,
+        Func<Task> action)
+    {
+        button.Content = _t(textKey);
+        button.IsEnabled = false;
+        button.MinHeight = 44;
+        button.Margin = new Thickness(5);
+        button.Background = Brush(_isDark ? "#2b3444" : "#e5e7eb");
+        button.Foreground = Brush(_isDark ? "#dbe4f0" : "#111827");
+        button.BorderBrush = Brush(_isDark ? "#46556b" : "#aeb6c2");
+        button.BorderThickness = new Thickness(1);
+        button.Click += async (_, _) => await action();
+    }
+
+    private static void AddAdvancedButton(Grid grid, Button button, int row, int column)
+    {
+        Grid.SetRow(button, row);
+        Grid.SetColumn(button, column);
+        grid.Children.Add(button);
+    }
+
+    private async Task LoadBiosSupportAsync()
+    {
+        try
+        {
+            var support = await Task.Run(BiosAdvancedController.ReadSupport, _lifetimeCts.Token);
+            if (_lifetimeCts.IsCancellationRequested) return;
+            SetAdvancedButtonSupport(_bootLogoButton, support.LogoDiy);
+            SetAdvancedButtonSupport(_biosSetupButton, support.SetupUtility);
+            SetAdvancedButtonSupport(_startupInterruptButton, support.InterruptMenu);
+            SetAdvancedButtonSupport(_secureWipeButton, support.SecureWipe);
+        }
+        catch (Exception ex)
+        {
+            foreach (var button in AdvancedButtons())
+            {
+                button.IsEnabled = false;
+                button.ToolTip = string.Format(_t("AdvancedToolkitUnavailableFormat"), ex.Message);
+            }
+        }
+    }
+
+    private void SetAdvancedButtonSupport(Button button, bool supported)
+    {
+        button.IsEnabled = supported;
+        button.ToolTip = supported ? null : _t("NotSupported");
+    }
+
+    private Task CustomizeBootLogoAsync()
+    {
+        var dialog = new BootLogoCustomizationWindow(
+            this, _t, _isDark, FontFamily, FontSize);
+        dialog.ShowDialog();
+        return Task.CompletedTask;
+    }
+
+    private async Task RunBootFunctionAsync(BiosBootFunction function)
+    {
+        var prefix = function switch
+        {
+            BiosBootFunction.SetupUtility => "BiosSetup",
+            BiosBootFunction.InterruptMenu => "StartupInterrupt",
+            BiosBootFunction.SecureWipe => "SecureWipe",
+            _ => throw new ArgumentOutOfRangeException(nameof(function))
+        };
+        var icon = function == BiosBootFunction.SecureWipe
+            ? MessageBoxImage.Warning
+            : MessageBoxImage.Question;
+        if (!Confirm(_t(prefix + "ConfirmFirst"), icon)) return;
+        if (!VantageConfirmationWindow.Show(
+                this,
+                _t("Attention"),
+                _t(prefix + "ConfirmSecond"),
+                _t("Cancel"),
+                _t("RestartNow"),
+                _isDark)) return;
+
+        SetAdvancedButtonsBusy(true);
+        try
+        {
+            await Task.Run(() => BiosAdvancedController.SetBootFunction(function), _lifetimeCts.Token);
+            BiosAdvancedController.RestartComputer();
+        }
+        catch (OperationCanceledException) { }
+        catch (Exception ex)
+        {
+            SetAdvancedButtonsBusy(false);
+            ShowAdvancedFailure(ex);
+        }
+    }
+
+    private bool Confirm(string message, MessageBoxImage image) =>
+        MessageBox.Show(this, message, Title, MessageBoxButton.YesNo, image, MessageBoxResult.No) == MessageBoxResult.Yes;
+
+    private void ShowAdvancedFailure(Exception exception) =>
+        MessageBox.Show(
+            this,
+            string.Format(_t("AdvancedToolkitFailedFormat"), exception.Message),
+            Title,
+            MessageBoxButton.OK,
+            MessageBoxImage.Error);
+
+    private void SetAdvancedButtonsBusy(bool busy)
+    {
+        foreach (var button in AdvancedButtons())
+            button.IsEnabled = !busy && button.ToolTip is null;
+    }
+
+    private Button[] AdvancedButtons() =>
+        [_bootLogoButton, _biosSetupButton, _startupInterruptButton, _secureWipeButton];
 
     private static void AddSettingRow(Grid grid, int row, string label, UIElement control)
     {

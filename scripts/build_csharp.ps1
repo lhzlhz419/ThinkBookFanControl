@@ -53,6 +53,15 @@ $vantageAddinCopyRules = [ordered]@{
         Directories = @("Resources", "x64")
         ExcludeFiles = @("ElevocControlSDK_ARM64.dll")
     }
+    LenovoProductivitySystemAddin = @{
+        Files = @(
+            "BiosUtility.dll",
+            "PackageMetaData.xml",
+            "ThirdPartyNotices.txt"
+        )
+        Directories = @()
+        ExcludeFiles = @()
+    }
 }
 
 function Assert-SafePath {

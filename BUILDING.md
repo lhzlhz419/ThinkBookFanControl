@@ -29,6 +29,7 @@ Lenovo Vantage add-ins into `VantageAddins` in each build or publish directory:
 - `SmartColorAddin`
 - `MultimediaAddin`
 - `SmartNoiseCancelledAddin`
+- `LenovoProductivitySystemAddin` (BIOS advanced-toolkit native interface)
 
 Only the x64 files and feature-specific dependencies used by the app are
 copied. ARM64/x86 binaries, localization resources, and unrelated Multimedia

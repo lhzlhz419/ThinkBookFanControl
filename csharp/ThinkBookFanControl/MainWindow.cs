@@ -99,8 +99,11 @@ public sealed class MainWindow : Window
     private readonly Button _deviceModelButton = new()
     {
         Padding = new Thickness(4, 1, 4, 3),
+        Margin = new Thickness(12, 0, 0, 0),
+        FontSize = 16,
         HorizontalAlignment = HorizontalAlignment.Right,
         HorizontalContentAlignment = HorizontalAlignment.Right,
+        VerticalAlignment = VerticalAlignment.Center,
         Background = Brushes.Transparent,
         BorderThickness = new Thickness(0),
         Cursor = Cursors.Hand
@@ -359,14 +362,22 @@ public sealed class MainWindow : Window
     {
         var panel = new StackPanel { Margin = new Thickness(12, 0, 12, 8) };
 
-        var row1 = new WrapPanel { Orientation = Orientation.Horizontal };
-        AddLabeledControl(row1, _intervalLabel, _intervalCombo);
-        AddLabeledControl(row1, _languageLabel, _languageCombo);
-        AddLabeledControl(row1, _themeLabel, _themeCombo);
-        row1.Children.Add(_startupCheck);
-        row1.Children.Add(_startToTrayCheck);
-        row1.Children.Add(_minimizeToTrayCheck);
-        row1.Children.Add(_closeToTrayCheck);
+        var row1 = new Grid();
+        row1.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        row1.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        var generalControls = new WrapPanel { Orientation = Orientation.Horizontal };
+        AddLabeledControl(generalControls, _intervalLabel, _intervalCombo);
+        AddLabeledControl(generalControls, _languageLabel, _languageCombo);
+        AddLabeledControl(generalControls, _themeLabel, _themeCombo);
+        generalControls.Children.Add(_startupCheck);
+        generalControls.Children.Add(_startToTrayCheck);
+        generalControls.Children.Add(_minimizeToTrayCheck);
+        generalControls.Children.Add(_closeToTrayCheck);
+        row1.Children.Add(generalControls);
+        _deviceModelButton.Click += (_, _) => ShowDeviceInformationWindow();
+        _deviceModelButton.ToolTip = T("OpenDeviceInformation");
+        Grid.SetColumn(_deviceModelButton, 1);
+        row1.Children.Add(_deviceModelButton);
         panel.Children.Add(row1);
 
         var row3 = new Grid { Margin = new Thickness(0, 6, 0, 0) };
@@ -406,16 +417,8 @@ public sealed class MainWindow : Window
 
         _otherSettingsButton.Click += (_, _) => ShowOtherSettingsWindow();
         settingsActions.Children.Add(_otherSettingsButton);
-        _deviceModelButton.Click += (_, _) => ShowDeviceInformationWindow();
-        _deviceModelButton.ToolTip = T("OpenDeviceInformation");
-        var deviceAndSettings = new StackPanel
-        {
-            HorizontalAlignment = HorizontalAlignment.Right
-        };
-        deviceAndSettings.Children.Add(_deviceModelButton);
-        deviceAndSettings.Children.Add(settingsActions);
-        Grid.SetColumn(deviceAndSettings, 1);
-        row3.Children.Add(deviceAndSettings);
+        Grid.SetColumn(settingsActions, 1);
+        row3.Children.Add(settingsActions);
         panel.Children.Add(row3);
 
         return panel;
@@ -3186,14 +3189,24 @@ public sealed class MainWindow : Window
             "ReadingDeviceInformation" => "\u6b63\u5728\u8bfb\u53d6\u8bbe\u5907\u4fe1\u606f\u2026",
             "DeviceInformationReadFailedFormat" => "\u8bbe\u5907\u4fe1\u606f\u8bfb\u53d6\u5931\u8d25\uff1a{0}",
             "Device" => "\u8bbe\u5907",
+            "WindowsVersion" => "Windows \u7248\u672c",
             "DeviceName" => "\u8bbe\u5907\u540d\u79f0",
             "DeviceModel" => "\u8bbe\u5907\u578b\u53f7",
             "ProductNumber" => "\u4ea7\u54c1\u7f16\u53f7",
+            "DeviceCode" => "\u8bbe\u5907\u4ee3\u53f7",
             "SerialNumber" => "\u5e8f\u5217\u53f7",
             "BiosVersion" => "BIOS \u7248\u672c",
             "EcVersion" => "EC \u7248\u672c",
+            "SmbiosVersion" => "SMBIOS \u7248\u672c",
+            "MeVersion" => "ME \u7248\u672c",
+            "AmdPspVersion" => "AMD PSP \u7248\u672c",
+            "AcpiVersion" => "ACPI \u7248\u672c",
+            "UefiVersion" => "UEFI \u7248\u672c",
             "DeviceId" => "\u8bbe\u5907 ID",
             "ProductId" => "\u4ea7\u54c1 ID",
+            "Copy" => "\u590d\u5236",
+            "ShowSerialNumber" => "\u663e\u793a\u5e8f\u5217\u53f7",
+            "HideSerialNumber" => "\u9690\u85cf\u5e8f\u5217\u53f7",
             "CpuTopologyFormat" => "{0} \u6838\u5fc3 / {1} \u7ebf\u7a0b",
             "VideoMemoryFormat" => "\u663e\u5b58\uff1a{0}",
             "SharedGraphicsMemory" => "\u4f7f\u7528\u5171\u4eab\u7cfb\u7edf\u5185\u5b58",
@@ -3218,6 +3231,32 @@ public sealed class MainWindow : Window
             "WarrantyCached" => "\u8054\u7f51\u67e5\u8be2\u5931\u8d25\uff0c\u6b63\u5728\u663e\u793a\u4e0a\u6b21\u7f13\u5b58\u7684\u4fdd\u4fee\u4fe1\u606f\u3002",
             "WarrantyQueryFailedFormat" => "\u4fdd\u4fee\u4fe1\u606f\u67e5\u8be2\u5931\u8d25\uff1a{0}",
             "WarrantyDateFormat" => "yyyy\u5e74MM\u6708dd\u65e5",
+            "AdvancedToolkit" => "\u9ad8\u7ea7\u8bbe\u7f6e",
+            "BootLogoCustomization" => "\u5f00\u673a\u753b\u9762\u5b9a\u5236",
+            "BootLogoCustomizationTitle" => "\u5f00\u673a\u753b\u9762\u81ea\u5b9a\u4e49",
+            "BootLogoResolutionFormat" => "\u652f\u6301\u7684\u6700\u5927\u5206\u8fa8\u7387\uff1a {0} \u00d7 {1}",
+            "BootLogoFormatsFormat" => "\u652f\u6301\u7684\u56fe\u50cf\u683c\u5f0f\uff1a {0}",
+            "ShowWindowsLoadingIcon" => "\u663e\u793a\u52a0\u8f7d\u56fe\u6807",
+            "Customize" => "\u81ea\u5b9a\u4e49",
+            "ResetToDefault" => "\u91cd\u7f6e\u4e3a\u9ed8\u8ba4\u8bbe\u7f6e",
+            "Confirm" => "\u786e\u8ba4",
+            "Attention" => "\u6ce8\u610f",
+            "BiosSetup" => "BIOS \u8bbe\u7f6e",
+            "StartupInterrupt" => "\u542f\u52a8\u4e2d\u65ad",
+            "SecureWipe" => "\u5b89\u5168\u64e6\u9664",
+            "AdvancedToolkitUnavailableFormat" => "\u9ad8\u7ea7\u8bbe\u7f6e\u4e0d\u53ef\u7528\uff1a{0}",
+            "AdvancedToolkitFailedFormat" => "\u64cd\u4f5c\u5931\u8d25\uff1a{0}",
+            "BootLogoApplyConfirmFirst" => "\u5373\u5c06\u5e94\u7528\u5f53\u524d\u7684\u5f00\u673a\u753b\u9762\u8bbe\u7f6e\uff0c\u662f\u5426\u7ee7\u7eed\uff1f",
+            "BootLogoApplyConfirmSecond" => "\u8fd9\u662f\u7b2c\u4e8c\u6b21\u786e\u8ba4\u3002\u7a0b\u5e8f\u5c06\u4fee\u6539 EFI \u7cfb\u7edf\u5206\u533a\u548c\u542f\u52a8\u914d\u7f6e\uff0c\u662f\u5426\u7acb\u5373\u5e94\u7528\uff1f",
+            "BootLogoResetConfirmFirst" => "\u5373\u5c06\u6062\u590d Lenovo \u9ed8\u8ba4\u5f00\u673a\u753b\u9762\uff0c\u662f\u5426\u7ee7\u7eed\uff1f",
+            "BootLogoResetConfirmSecond" => "\u8fd9\u662f\u7b2c\u4e8c\u6b21\u786e\u8ba4\u3002\u7a0b\u5e8f\u5c06\u5220\u9664 EFI \u5206\u533a\u4e2d\u7684\u81ea\u5b9a\u4e49\u5f00\u673a\u753b\u9762\uff0c\u662f\u5426\u7ee7\u7eed\uff1f",
+            "BootLogoSuccess" => "\u5f00\u673a\u753b\u9762\u8bbe\u7f6e\u5df2\u5e94\u7528\uff0c\u5c06\u5728\u4e0b\u6b21\u542f\u52a8\u65f6\u751f\u6548\u3002",
+            "BiosSetupConfirmFirst" => "\u7cfb\u7edf\u5c06\u8bbe\u7f6e\u4e0b\u6b21\u542f\u52a8\u76f4\u63a5\u8fdb\u5165 BIOS Setup Utility\u3002\u662f\u5426\u7ee7\u7eed\uff1f",
+            "BiosSetupConfirmSecond" => "\u7cfb\u7edf\u5c06\u91cd\u65b0\u542f\u52a8\u5e76\u5f15\u5bfc\u8fdb\u5165 BIOS Setup Utility\u3002\u60a8\u53ef\u4ee5\u901a\u8fc7\u6b64\u529f\u80fd\u66f4\u6539\u9ad8\u7ea7\u8bbe\u7f6e\uff0c\u4f8b\u5982\u7981\u7528\u6216\u542f\u7528\u5b89\u5168\u5f15\u5bfc\u3001\u66f4\u6539\u5f15\u5bfc\u987a\u5e8f\u53ca\u5176\u4ed6\u8bbe\u7f6e\u3002\n\u662f\u5426\u91cd\u65b0\u542f\u52a8\u7cfb\u7edf\u5e76\u8fdb\u5165 BIOS Setup Utility\uff1f",
+            "StartupInterruptConfirmFirst" => "\u7cfb\u7edf\u5c06\u8bbe\u7f6e\u4e0b\u6b21\u542f\u52a8\u8fdb\u5165 Lenovo \u542f\u52a8\u4e2d\u65ad\u83dc\u5355\u3002\u662f\u5426\u7ee7\u7eed\uff1f",
+            "StartupInterruptConfirmSecond" => "\u7cfb\u7edf\u5c06\u91cd\u65b0\u542f\u52a8\u5e76\u5f15\u5bfc\u8fdb\u5165\u201c\u542f\u52a8\u4e2d\u65ad\u201d\u83dc\u5355\u3002\u60a8\u53ef\u4ee5\u901a\u8fc7\u6b64\u529f\u80fd\uff0c\u6309\u76f8\u5e94\u6309\u952e\u6765\u8fdb\u5165 BIOS Setup Utility\u3001\u8bca\u65ad\u786c\u4ef6\u3001\u6062\u590d\u7cfb\u7edf\u548c\u8fdb\u884c\u5176\u4ed6\u9ad8\u7ea7\u914d\u7f6e\u3002\n\u662f\u5426\u8981\u91cd\u65b0\u542f\u52a8\u7cfb\u7edf\u5e76\u8fdb\u5165\u201c\u542f\u52a8\u4e2d\u65ad\u201d\u83dc\u5355\uff1f",
+            "SecureWipeConfirmFirst" => "\u5b89\u5168\u64e6\u9664\u53ef\u4ee5\u6c38\u4e45\u5220\u9664\u5b58\u50a8\u8bbe\u5907\u4e0a\u7684\u6570\u636e\u3002\u662f\u5426\u7ee7\u7eed\u8fdb\u5165\u786e\u8ba4\u6d41\u7a0b\uff1f",
+            "SecureWipeConfirmSecond" => "\u7cfb\u7edf\u5c06\u91cd\u65b0\u542f\u52a8\u5e76\u8fdb\u5165\u201c\u5b89\u5168\u64e6\u9664\u201d\u5e94\u7528\u7a0b\u5e8f\u3002\u60a8\u53ef\u4ee5\u901a\u8fc7\u6b64\u529f\u80fd\u9009\u62e9\u67d0\u4e2a\u5b58\u50a8\u8bbe\u5907\u5e76\u901a\u8fc7\u6240\u9009\u7684\u65b9\u5f0f\u64e6\u9664\u6574\u4e2a\u6216\u90e8\u5206\u5b58\u50a8\u3002\n\u662f\u5426\u8981\u91cd\u65b0\u542f\u52a8\u7cfb\u7edf\u5e76\u8fdb\u5165\u201c\u5b89\u5168\u64e6\u9664\u201d\u5e94\u7528\u7a0b\u5e8f\uff1f",
             "BatteryChargeMode" => "\u5145\u7535\u6a21\u5f0f",
             "BatteryChargeModeDescription" => "\u9009\u62e9\u7535\u6c60\u5145\u7535\u7b56\u7565\u3002\u517b\u62a4\u6a21\u5f0f\u9650\u5236\u5145\u7535\u91cf\uff0c\u5feb\u5145\u6a21\u5f0f\u63d0\u9ad8\u5145\u7535\u529f\u7387\u3002",
             "BatteryConservationMode" => "\u517b\u62a4",
@@ -3473,14 +3512,24 @@ public sealed class MainWindow : Window
             "ReadingDeviceInformation" => "Reading device information...",
             "DeviceInformationReadFailedFormat" => "Failed to read device information: {0}",
             "Device" => "Device",
+            "WindowsVersion" => "Windows version",
             "DeviceName" => "Device name",
             "DeviceModel" => "Model",
             "ProductNumber" => "Product number",
+            "DeviceCode" => "Device code",
             "SerialNumber" => "Serial number",
             "BiosVersion" => "BIOS version",
             "EcVersion" => "EC version",
+            "SmbiosVersion" => "SMBIOS version",
+            "MeVersion" => "ME version",
+            "AmdPspVersion" => "AMD PSP version",
+            "AcpiVersion" => "ACPI version",
+            "UefiVersion" => "UEFI version",
             "DeviceId" => "Device ID",
             "ProductId" => "Product ID",
+            "Copy" => "Copy",
+            "ShowSerialNumber" => "Show serial number",
+            "HideSerialNumber" => "Hide serial number",
             "CpuTopologyFormat" => "{0} cores / {1} threads",
             "VideoMemoryFormat" => "VRAM: {0}",
             "SharedGraphicsMemory" => "Uses shared system memory",
@@ -3505,6 +3554,32 @@ public sealed class MainWindow : Window
             "WarrantyCached" => "The online lookup failed. Showing the last cached warranty information.",
             "WarrantyQueryFailedFormat" => "Warranty lookup failed: {0}",
             "WarrantyDateFormat" => "yyyy-MM-dd",
+            "AdvancedToolkit" => "Advanced settings",
+            "BootLogoCustomization" => "Boot logo customization",
+            "BootLogoCustomizationTitle" => "Customize boot logo",
+            "BootLogoResolutionFormat" => "Maximum supported resolution: {0} \u00d7 {1}",
+            "BootLogoFormatsFormat" => "Supported image formats: {0}",
+            "ShowWindowsLoadingIcon" => "Show loading icon",
+            "Customize" => "Customize",
+            "ResetToDefault" => "Reset to default",
+            "Confirm" => "Confirm",
+            "Attention" => "Attention",
+            "BiosSetup" => "BIOS setup",
+            "StartupInterrupt" => "Startup interrupt",
+            "SecureWipe" => "Secure wipe",
+            "AdvancedToolkitUnavailableFormat" => "Advanced settings unavailable: {0}",
+            "AdvancedToolkitFailedFormat" => "Operation failed: {0}",
+            "BootLogoApplyConfirmFirst" => "Apply the current boot logo settings?",
+            "BootLogoApplyConfirmSecond" => "This is the second confirmation. The EFI system partition and boot configuration will be modified. Apply now?",
+            "BootLogoResetConfirmFirst" => "Restore the default Lenovo boot logo?",
+            "BootLogoResetConfirmSecond" => "This is the second confirmation. The custom boot logo will be removed from the EFI partition. Continue?",
+            "BootLogoSuccess" => "The boot logo settings were applied and will take effect on the next boot.",
+            "BiosSetupConfirmFirst" => "The next boot will be directed to BIOS Setup Utility. Continue?",
+            "BiosSetupConfirmSecond" => "The system will restart and boot into BIOS Setup Utility. This function lets you change advanced settings such as Secure Boot, boot order, and other options.\nRestart the system and enter BIOS Setup Utility?",
+            "StartupInterruptConfirmFirst" => "The next boot will be directed to the Lenovo startup interrupt menu. Continue?",
+            "StartupInterruptConfirmSecond" => "The system will restart and boot into the Startup Interrupt menu. From there you can enter BIOS Setup Utility, diagnose hardware, recover the system, and access other advanced configuration.\nRestart and enter the Startup Interrupt menu?",
+            "SecureWipeConfirmFirst" => "Secure wipe can permanently delete data from a storage device. Continue to the confirmation step?",
+            "SecureWipeConfirmSecond" => "The system will restart and enter the Secure Wipe application. You can select a storage device and erase all or part of it using the selected method.\nRestart and enter the Secure Wipe application?",
             "BatteryChargeMode" => "Charging mode",
             "BatteryChargeModeDescription" => "Choose the battery charging strategy. Conservation limits charge level, while rapid charge uses more power.",
             "BatteryConservationMode" => "Conservation",
@@ -3849,7 +3924,7 @@ public sealed class MainWindow : Window
         _fullSpeedCheck.Foreground = IsDark ? Brush("#ffffff") : muted;
         foreach (var value in new[] { _cpuTempText, _cpuPowerText, _gpuTempText, _gpuPowerText, _vramTempText, _fan1Text, _fan2Text, _targetText })
             value.Foreground = text;
-        _deviceModelButton.Foreground = Brush(IsDark ? "#8db8ff" : "#2563eb");
+        _deviceModelButton.Foreground = muted;
 
         _cpuChart.SetTheme(IsDark);
         _gpuChart.SetTheme(IsDark);

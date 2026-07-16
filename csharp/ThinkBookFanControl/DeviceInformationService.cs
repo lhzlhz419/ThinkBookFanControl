@@ -12,19 +12,23 @@ namespace ThinkBookFanControl;
 internal sealed record DeviceIdentity(
     string Model,
     string ProductNumber,
+    string DeviceCode,
     string SerialNumber,
     string BiosVersion,
-    string EcVersion);
+    string EcVersion,
+    string SmbiosVersion);
 
 internal sealed record CpuInfo(string Name, int Cores, int Threads);
 internal sealed record GpuInfo(string Name, ulong? DedicatedMemoryBytes, bool UsesSharedMemory);
 internal sealed record MemoryInfo(string Locator, ulong Capacity, uint Speed, string Type, string Manufacturer, string PartNumber);
 internal sealed record MotherboardInfo(string Manufacturer, string Product, string Version, string SerialNumber);
 internal sealed record DisplayInfo(string Name, uint Width, uint Height, uint RefreshRate);
-internal sealed record PartitionInfo(string Name, ulong UsedBytes, ulong TotalBytes, string DiskModel);
+internal sealed record PartitionInfo(string Name, string VolumeLabel, ulong UsedBytes, ulong TotalBytes, string DiskModel);
 
 internal sealed record DeviceInformationSnapshot(
     DeviceIdentity Identity,
+    FirmwareInformation Firmware,
+    string WindowsVersion,
     string DeviceName,
     string DeviceId,
     string WindowsProductId,
@@ -61,14 +65,17 @@ internal static class DeviceInformationService
         return new(
             Clean(model),
             Clean(productNumber),
+            ProductCode(productNumber),
             Clean(serial),
             Clean(bios),
-            Clean(smbios.EcVersion));
+            Clean(smbios.EcVersion),
+            Clean(smbios.SmbiosVersion));
     }
 
     public static DeviceInformationSnapshot ReadAll()
     {
         var identity = ReadIdentity();
+        var firmware = BiosAdvancedController.ReadFirmwareInformation();
         var memory = Safe(ReadMemory, Array.Empty<MemoryInfo>());
         var installed = memory.Aggregate<MemoryInfo, ulong>(0, (total, item) => total + item.Capacity);
         var status = new MemoryStatusEx();
@@ -77,8 +84,10 @@ internal static class DeviceInformationService
 
         return new(
             identity,
+            firmware,
+            ReadWindowsVersion(),
             Environment.MachineName,
-            ReadRegistryString(Registry.LocalMachine, @"SOFTWARE\Microsoft\SQMClient", "MachineId"),
+            ReadRegistryString(Registry.LocalMachine, @"SOFTWARE\Microsoft\SQMClient", "MachineId").Trim('{', '}'),
             ReadRegistryString(Registry.LocalMachine, @"SOFTWARE\Microsoft\Windows NT\CurrentVersion", "ProductId"),
             installed,
             status.TotalPhysical,
@@ -194,7 +203,12 @@ internal static class DeviceInformationService
                 }
             }
             catch { }
-            result.Add(new(drive.Name.TrimEnd('\\'), (ulong)(drive.TotalSize - drive.AvailableFreeSpace), (ulong)drive.TotalSize, disk));
+            result.Add(new(
+                drive.Name.TrimEnd('\\'),
+                drive.VolumeLabel,
+                (ulong)(drive.TotalSize - drive.AvailableFreeSpace),
+                (ulong)drive.TotalSize,
+                disk));
         }
         return result;
     }
@@ -255,6 +269,30 @@ internal static class DeviceInformationService
         return "";
     }
 
+    private static string ReadWindowsVersion()
+    {
+        try
+        {
+            using var key = Registry.LocalMachine.OpenSubKey(@"SOFTWARE\Microsoft\Windows NT\CurrentVersion");
+            var productName = Clean(key?.GetValue("ProductName"));
+            var displayVersion = Clean(key?.GetValue("DisplayVersion"));
+            var buildText = Clean(key?.GetValue("CurrentBuildNumber"));
+            if (int.TryParse(buildText, out var build) && build >= 22000)
+                productName = productName.Replace("Windows 10", "Windows 11", StringComparison.OrdinalIgnoreCase);
+            return JoinNonEmpty(productName, displayVersion);
+        }
+        catch { return RuntimeInformation.OSDescription; }
+    }
+
+    private static string ProductCode(string productNumber)
+    {
+        var normalized = Clean(productNumber);
+        return normalized.Length >= 4 ? normalized[..4] : normalized;
+    }
+
+    private static string JoinNonEmpty(params string[] values) =>
+        string.Join(" ", values.Where(value => !string.IsNullOrWhiteSpace(value)));
+
     private static T Safe<T>(Func<T> read, T fallback)
     {
         try { return read(); }
@@ -299,19 +337,20 @@ internal static class DeviceInformationService
     [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Auto)]
     private struct MemoryStatusEx { public uint Length; public uint MemoryLoad; public ulong TotalPhysical, AvailablePhysical, TotalPageFile, AvailablePageFile, TotalVirtual, AvailableVirtual, AvailableExtendedVirtual; }
 
-    private sealed record RawSmbios(string BiosVersion, string EcVersion, string SystemSerial, string SystemSku)
+    private sealed record RawSmbios(string BiosVersion, string EcVersion, string SmbiosVersion, string SystemSerial, string SystemSku)
     {
         public static RawSmbios Read()
         {
             try
             {
                 var size = GetSystemFirmwareTable(Rsmb, 0, IntPtr.Zero, 0);
-                if (size == 0) return new("", "", "", "");
+                if (size == 0) return new("", "", "", "", "");
                 var ptr = Marshal.AllocHGlobal((int)size);
                 try
                 {
-                    if (GetSystemFirmwareTable(Rsmb, 0, ptr, size) != size) return new("", "", "", "");
+                    if (GetSystemFirmwareTable(Rsmb, 0, ptr, size) != size) return new("", "", "", "", "");
                     var data = new byte[size]; Marshal.Copy(ptr, data, 0, data.Length);
+                    var smbiosVersion = data.Length >= 3 ? $"{data[1]}.{data[2]}" : "";
                     var index = 8; string bios = "", ec = "", serial = "", sku = "";
                     while (index + 4 <= data.Length)
                     {
@@ -342,11 +381,11 @@ internal static class DeviceInformationService
                         if (type == 127) break;
                         index = Math.Min(data.Length, end + 2);
                     }
-                    return new(bios, ec, serial, sku);
+                    return new(bios, ec, smbiosVersion, serial, sku);
                 }
                 finally { Marshal.FreeHGlobal(ptr); }
             }
-            catch { return new("", "", "", ""); }
+            catch { return new("", "", "", "", ""); }
         }
 
         private static string GetSmbiosString(byte[] data, int start, int end, int number)
