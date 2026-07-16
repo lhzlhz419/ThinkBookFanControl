@@ -115,6 +115,9 @@ public static class CurveProfileStore
             defaults.StartToTray = loaded.StartToTray;
             defaults.MinimizeToTray = loaded.MinimizeToTray;
             defaults.CloseToTray = loaded.CloseToTray;
+            defaults.DisableControlOnSleep =
+                !settingsJson.Contains(nameof(AppSettings.DisableControlOnSleep), StringComparison.OrdinalIgnoreCase) ||
+                loaded.DisableControlOnSleep;
             defaults.PendingGpuMode = loaded.PendingGpuMode is
                 nameof(GpuWorkingMode.Hybrid) or
                 nameof(GpuWorkingMode.IntegratedOnly) or

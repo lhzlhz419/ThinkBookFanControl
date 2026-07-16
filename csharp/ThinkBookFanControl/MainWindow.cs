@@ -40,6 +40,12 @@ public sealed class MainWindow : Window
     private const int FanWriteUrgentDeltaRpm = 800;
     private const int FixedModeHotkeyId = 0x54424643;
     private const int WmHotkey = 0x0312;
+    private const int WmPowerBroadcast = 0x0218;
+    private const int PbtApmSuspend = 0x0004;
+    private const int PbtApmResumeCritical = 0x0006;
+    private const int PbtApmResumeSuspend = 0x0007;
+    private const int PbtApmResumeAutomatic = 0x0012;
+    private const uint DeviceNotifyWindowHandle = 0x00000000;
     private const uint ModAlt = 0x0001;
     private const uint ModControl = 0x0002;
     private const uint ModShift = 0x0004;
@@ -117,6 +123,7 @@ public sealed class MainWindow : Window
     private readonly CheckBox _startToTrayCheck = new() { VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 10, 0) };
     private readonly CheckBox _minimizeToTrayCheck = new() { VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 10, 0) };
     private readonly CheckBox _closeToTrayCheck = new() { VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 10, 0) };
+    private readonly CheckBox _disableControlOnSleepCheck = new() { VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 10, 0) };
 
     private readonly CurveEditor _cpuChart;
     private readonly CurveEditor _gpuChart;
@@ -170,7 +177,15 @@ public sealed class MainWindow : Window
     private bool _fullSpeedEnabled;
     private bool _fullSpeedSwitching;
     private bool _resumeFanControlAfterFullSpeed;
+    private bool _sleepTransitionPending;
+    private bool _resumingAfterSleep;
+    private bool _resumeFanControlAfterSleep;
+    private bool _resumeFullSpeedAfterSleep;
     private readonly SemaphoreSlim _fanIoLock = new(1, 1);
+    // WM_POWERBROADCAST must complete synchronously, so it cannot await the
+    // semaphore above. This lock serializes that path with every Lenovo WMI
+    // fan read and write performed on background threads.
+    private readonly object _fanWmiLock = new();
     private FanTargets? _lastTarget;
     private FanTargets? _lastAppliedTarget;
     private FanTargets? _queuedTarget;
@@ -182,6 +197,7 @@ public sealed class MainWindow : Window
     private bool _updatingFixedModeCombo;
     private bool _capturingFixedModeHotkey;
     private HwndSource? _hotkeySource;
+    private IntPtr _suspendResumeNotification;
     private bool _globalFixedModeHotkeyRegistered;
     private bool _fanCurveWarningShownThisRun;
     private bool _hasConfirmedFixedState;
@@ -373,6 +389,7 @@ public sealed class MainWindow : Window
         generalControls.Children.Add(_startToTrayCheck);
         generalControls.Children.Add(_minimizeToTrayCheck);
         generalControls.Children.Add(_closeToTrayCheck);
+        generalControls.Children.Add(_disableControlOnSleepCheck);
         row1.Children.Add(generalControls);
         _deviceModelButton.Click += (_, _) => ShowDeviceInformationWindow();
         _deviceModelButton.ToolTip = T("OpenDeviceInformation");
@@ -808,7 +825,8 @@ public sealed class MainWindow : Window
             FanSnapshot fans;
             try
             {
-                fans = await Task.Run(() => _fanController.ReadSnapshot());
+                fans = await Task.Run(() => ExecuteFanWmiOperation(
+                    _fanController.ReadSnapshot));
             }
             finally
             {
@@ -888,7 +906,8 @@ public sealed class MainWindow : Window
                     if (!_running || _fullSpeedEnabled || _fullSpeedSwitching)
                         break;
 
-                    await Task.Run(() => _fanController.Apply(target.Fan1Rpm, target.Fan2Rpm));
+                    await Task.Run(() => ExecuteFanWmiOperation(
+                        () => _fanController.Apply(target.Fan1Rpm, target.Fan2Rpm)));
                     _lastAppliedTarget = target;
                     _lastFanWriteTime = DateTimeOffset.Now;
                 }
@@ -1388,8 +1407,8 @@ public sealed class MainWindow : Window
                 SuspendFanControlForFullSpeed();
                 _statusText.Text = T("EnablingFullSpeed");
 
-                // D1 manual mode makes the EC skip its normal FNST output path,
-                // so both manual targets must be cleared before FNST is set.
+                // Clear both WMI manual targets before enabling the firmware's
+                // FNST full-speed mode so stale target RPMs cannot remain active.
                 await RestoreAutoWithLockAsync();
                 await SetFullSpeedWithLockAsync(true);
                 _fullSpeedEnabled = true;
@@ -1550,6 +1569,7 @@ public sealed class MainWindow : Window
         _itsModeTimer.Stop();
         _gpuModeTimer.Stop();
         UnregisterFixedModeHotkey();
+        UnregisterSuspendResumeNotifications();
         _hotkeySource?.RemoveHook(WndProc);
         if (_running || _fullSpeedEnabled)
         {
@@ -1562,17 +1582,17 @@ public sealed class MainWindow : Window
                     {
                         try
                         {
-                            _fanController.SetFullSpeed(false);
+                            ExecuteFanWmiOperation(() => _fanController.SetFullSpeed(false));
                         }
                         catch
                         {
-                            // Still attempt to clear D1 manual targets below.
+                            // Still attempt to clear the WMI manual targets below.
                         }
                     }
 
                     try
                     {
-                        _fanController.RestoreAuto();
+                        ExecuteFanWmiOperation(_fanController.RestoreAuto);
                     }
                     catch
                     {
@@ -1599,11 +1619,121 @@ public sealed class MainWindow : Window
         await _fanIoLock.WaitAsync();
         try
         {
-            await Task.Run(() => _fanController.RestoreAuto());
+            await Task.Run(() => ExecuteFanWmiOperation(
+                _fanController.RestoreAuto));
         }
         finally
         {
             _fanIoLock.Release();
+        }
+    }
+
+    private void ExecuteFanWmiOperation(Action operation)
+    {
+        lock (_fanWmiLock)
+            operation();
+    }
+
+    private T ExecuteFanWmiOperation<T>(Func<T> operation)
+    {
+        lock (_fanWmiLock)
+            return operation();
+    }
+
+    private void BeginSuspendFanControlForSleep()
+    {
+        var fullSpeedActiveOrEnabling = _fullSpeedEnabled ||
+                                        (_fullSpeedSwitching && _fullSpeedCheck.IsChecked == true);
+        if (!_settings.DisableControlOnSleep ||
+            _sleepTransitionPending ||
+            (!_running && !fullSpeedActiveOrEnabling))
+        {
+            return;
+        }
+
+        _sleepTransitionPending = true;
+        _resumeFanControlAfterSleep = _running;
+        _resumeFullSpeedAfterSleep = fullSpeedActiveOrEnabling;
+        SuspendFanControlForSleep();
+    }
+
+    private void SuspendFanControlForSleep()
+    {
+        _running = false;
+        _fullSpeedEnabled = false;
+        ResetFanTargetState();
+        _startButton.Content = T("Start");
+        _fullSpeedCheck.IsChecked = false;
+        _targetText.Text = "--";
+
+        Exception? failure = null;
+        ExecuteFanWmiOperation(() =>
+        {
+            if (_resumeFullSpeedAfterSleep)
+            {
+                try
+                {
+                    _fanController.SetFullSpeed(false);
+                }
+                catch (Exception ex)
+                {
+                    failure = ex;
+                }
+            }
+
+            try
+            {
+                _fanController.RestoreAuto();
+            }
+            catch (Exception ex)
+            {
+                failure ??= ex;
+            }
+        });
+
+        _statusText.Text = failure is null
+            ? T("AutoRestored")
+            : $"{T("SleepControlFailed")}: {failure.Message}";
+        UpdateTrayMenu();
+    }
+
+    private async Task ResumeFanControlAfterSleepAsync()
+    {
+        if (!_sleepTransitionPending || _resumingAfterSleep)
+            return;
+
+        _resumingAfterSleep = true;
+        try
+        {
+            if (_resumeFullSpeedAfterSleep)
+            {
+                await SetFullSpeedWithLockAsync(true);
+                _fullSpeedEnabled = true;
+                _fullSpeedCheck.IsChecked = true;
+                _startButton.IsEnabled = false;
+                _targetText.Text = T("FullSpeed");
+                _statusText.Text = T("FullSpeedEnabled");
+            }
+            else if (_resumeFanControlAfterSleep)
+            {
+                StartFanControl();
+                _statusText.Text = T("ControlResumedAfterSleep");
+                await SampleAsync(force: true);
+            }
+        }
+        catch (Exception ex)
+        {
+            _statusText.Text = $"{T("RestoreAutoFailed")}: {ex.Message}";
+        }
+        finally
+        {
+            _resumeFanControlAfterSleep = false;
+            _resumeFullSpeedAfterSleep = false;
+            _sleepTransitionPending = false;
+            _resumingAfterSleep = false;
+            _startButton.IsEnabled = !_fullSpeedEnabled;
+            _fullSpeedCheck.IsEnabled = true;
+            UpdateTrayMenu();
         }
     }
 
@@ -1793,13 +1923,13 @@ public sealed class MainWindow : Window
             if (!_running || _fullSpeedEnabled || _fullSpeedSwitching)
                 return;
 
-            await Task.Run(() =>
+            await Task.Run(() => ExecuteFanWmiOperation(() =>
             {
                 if (target.Fan1Rpm == 0 && target.Fan2Rpm == 0)
                     _fanController.RestoreAuto();
                 else
                     _fanController.Apply(target.Fan1Rpm, target.Fan2Rpm);
-            });
+            }));
             _lastAppliedTarget = target;
             _lastFanWriteTime = DateTimeOffset.Now;
         }
@@ -2087,7 +2217,32 @@ public sealed class MainWindow : Window
     {
         _hotkeySource = HwndSource.FromHwnd(new WindowInteropHelper(this).Handle);
         _hotkeySource?.AddHook(WndProc);
+        RegisterSuspendResumeNotifications();
         RegisterFixedModeHotkey();
+    }
+
+    private void RegisterSuspendResumeNotifications()
+    {
+        if (_hotkeySource is null || _suspendResumeNotification != IntPtr.Zero)
+            return;
+
+        _suspendResumeNotification = RegisterSuspendResumeNotification(
+            _hotkeySource.Handle,
+            DeviceNotifyWindowHandle);
+        if (_suspendResumeNotification == IntPtr.Zero)
+        {
+            _statusText.Text =
+                $"Power notification registration failed: {Marshal.GetLastWin32Error()}";
+        }
+    }
+
+    private void UnregisterSuspendResumeNotifications()
+    {
+        if (_suspendResumeNotification == IntPtr.Zero)
+            return;
+
+        UnregisterSuspendResumeNotification(_suspendResumeNotification);
+        _suspendResumeNotification = IntPtr.Zero;
     }
 
     private void RegisterFixedModeHotkey()
@@ -2130,6 +2285,22 @@ public sealed class MainWindow : Window
         {
             ToggleManualFixedMode();
             handled = true;
+        }
+        else if (msg == WmPowerBroadcast)
+        {
+            switch (wParam.ToInt32())
+            {
+                case PbtApmSuspend:
+                    BeginSuspendFanControlForSleep();
+                    handled = true;
+                    return new IntPtr(1);
+                case PbtApmResumeCritical:
+                case PbtApmResumeSuspend:
+                case PbtApmResumeAutomatic:
+                    _ = ResumeFanControlAfterSleepAsync();
+                    handled = true;
+                    return new IntPtr(1);
+            }
         }
 
         return IntPtr.Zero;
@@ -2194,6 +2365,12 @@ public sealed class MainWindow : Window
 
     [DllImport("user32.dll", SetLastError = true)]
     private static extern bool UnregisterHotKey(IntPtr hWnd, int id);
+
+    [DllImport("user32.dll", SetLastError = true)]
+    private static extern IntPtr RegisterSuspendResumeNotification(IntPtr hRecipient, uint flags);
+
+    [DllImport("user32.dll", SetLastError = true)]
+    private static extern bool UnregisterSuspendResumeNotification(IntPtr handle);
 
     private void ApplyStrategyVisibility()
     {
@@ -2425,7 +2602,8 @@ public sealed class MainWindow : Window
         await _fanIoLock.WaitAsync();
         try
         {
-            await Task.Run(() => _fanController.SetFullSpeed(enabled));
+            await Task.Run(() => ExecuteFanWmiOperation(
+                () => _fanController.SetFullSpeed(enabled)));
         }
         finally
         {
@@ -3044,6 +3222,8 @@ public sealed class MainWindow : Window
         _minimizeToTrayCheck.Unchecked += (_, _) => UpdateBooleanSetting("minimizeToTray", false);
         _closeToTrayCheck.Checked += (_, _) => UpdateBooleanSetting("closeToTray", true);
         _closeToTrayCheck.Unchecked += (_, _) => UpdateBooleanSetting("closeToTray", false);
+        _disableControlOnSleepCheck.Checked += (_, _) => UpdateBooleanSetting("disableControlOnSleep", true);
+        _disableControlOnSleepCheck.Unchecked += (_, _) => UpdateBooleanSetting("disableControlOnSleep", false);
     }
 
     private void LoadSettingsControls()
@@ -3066,6 +3246,7 @@ public sealed class MainWindow : Window
         _startToTrayCheck.IsChecked = _settings.StartToTray;
         _minimizeToTrayCheck.IsChecked = _settings.MinimizeToTray;
         _closeToTrayCheck.IsChecked = _settings.CloseToTray;
+        _disableControlOnSleepCheck.IsChecked = _settings.DisableControlOnSleep;
         RefreshFixedRpmBoxes();
         _loadingSettings = false;
         ApplyStrategyVisibility();
@@ -3091,6 +3272,9 @@ public sealed class MainWindow : Window
                 break;
             case "closeToTray":
                 _settings.CloseToTray = value;
+                break;
+            case "disableControlOnSleep":
+                _settings.DisableControlOnSleep = value;
                 break;
             case "syncFanSpeeds":
                 _settings.SyncFanSpeeds = value;
@@ -3349,6 +3533,9 @@ public sealed class MainWindow : Window
             "StartToTray" => "\u542f\u52a8\u5230\u6258\u76d8",
             "MinimizeToTray" => "\u6700\u5c0f\u5316\u5230\u6258\u76d8",
             "CloseToTray" => "\u5173\u95ed\u65f6\u6700\u5c0f\u5316",
+            "DisableControlOnSleep" => "\u7761\u7720\u65f6\u5173\u95ed WMI \u98ce\u6247\u63a7\u5236",
+            "ControlResumedAfterSleep" => "\u5524\u9192\u540e\u5df2\u6062\u590d WMI \u98ce\u6247\u63a7\u5236",
+            "SleepControlFailed" => "\u7761\u7720\u65f6\u5173\u95ed WMI \u98ce\u6247\u63a7\u5236\u5931\u8d25",
             "ShowWindow" => "\u663e\u793a\u7a97\u53e3",
             "Exit" => "\u9000\u51fa",
             "Normal" => "\u5e73\u65f6",
@@ -3665,6 +3852,9 @@ public sealed class MainWindow : Window
             "StartToTray" => "Start to tray",
             "MinimizeToTray" => "Minimize to tray",
             "CloseToTray" => "Close to tray",
+            "DisableControlOnSleep" => "Disable WMI fan control while sleeping",
+            "ControlResumedAfterSleep" => "WMI fan control resumed after sleep",
+            "SleepControlFailed" => "Failed to disable WMI fan control for sleep",
             "ShowWindow" => "Show window",
             "Exit" => "Exit",
             "Normal" => "Normal",
@@ -3842,6 +4032,7 @@ public sealed class MainWindow : Window
         _startToTrayCheck.Content = T("StartToTray");
         _minimizeToTrayCheck.Content = T("MinimizeToTray");
         _closeToTrayCheck.Content = T("CloseToTray");
+        _disableControlOnSleepCheck.Content = T("DisableControlOnSleep");
         _fullSpeedCheck.Content = T("FullSpeed");
         _startButton.Content = _running ? T("Stop") : T("Start");
         _fixedStrategyTab!.Header = T("FixedRpm");
@@ -3919,7 +4110,7 @@ public sealed class MainWindow : Window
 
         foreach (var label in _labels)
             label.Foreground = muted;
-        foreach (var checkBox in new[] { _syncFanSpeedsCheck, _fixedSyncFanSpeedsCheck, _autoDetectGamesCheck, _startupCheck, _startToTrayCheck, _minimizeToTrayCheck, _closeToTrayCheck })
+        foreach (var checkBox in new[] { _syncFanSpeedsCheck, _fixedSyncFanSpeedsCheck, _autoDetectGamesCheck, _startupCheck, _startToTrayCheck, _minimizeToTrayCheck, _closeToTrayCheck, _disableControlOnSleepCheck })
             checkBox.Foreground = muted;
         _fullSpeedCheck.Foreground = IsDark ? Brush("#ffffff") : muted;
         foreach (var value in new[] { _cpuTempText, _cpuPowerText, _gpuTempText, _gpuPowerText, _vramTempText, _fan1Text, _fan2Text, _targetText })
